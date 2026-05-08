@@ -69,14 +69,19 @@ except Exception:
 " 2>/dev/null
 }
 
-# Merge project-level and global-level enabled plugins (deduplicated)
+# Merge project-level and global-level enabled plugins (deduplicated).
+# Global config respects $CLAUDE_CONFIG_DIR (used by the test harness to
+# isolate config under a workspace tmpdir), falling back to ~/.claude when
+# the variable is unset.
+GLOBAL_SETTINGS="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/settings.json"
+
 enabled_plugins=()
 while IFS= read -r plugin; do
   [[ -n "$plugin" ]] && enabled_plugins+=("$plugin")
 done < <(
   {
     extract_plugins "${PROJECT_DIR}/.claude/settings.json"
-    extract_plugins "${HOME}/.claude/settings.json"
+    extract_plugins "$GLOBAL_SETTINGS"
   } | sort -u
 )
 

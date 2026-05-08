@@ -13,5 +13,6 @@
     "business-intelligence",
     "competitive-analysis",
     "market-research"
-  ]
+  ],
+  "dependencies": ["research-conventions"]
 }

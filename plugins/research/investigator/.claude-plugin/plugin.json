@@ -13,5 +13,6 @@
     "domain-intel",
     "people-research",
     "public-records"
-  ]
+  ],
+  "dependencies": ["research-conventions"]
 }

@@ -485,6 +485,18 @@
       ]
     },
     {
+      "name": "research-conventions",
+      "source": "./plugins/research/research-conventions",
+      "description": "Shared rules for research output: report frontmatter contract, file naming, source citation quality. Installed automatically as a dependency of analyst, investigator, and dossier",
+      "version": "1.14.0",
+      "category": "research",
+      "tags": [
+        "research",
+        "conventions",
+        "rules"
+      ]
+    },
+    {
       "name": "analyst",
       "source": "./plugins/research/analyst",
       "description": "Research and business intelligence agents — web research with source attribution, and company/market analysis from public sources",
