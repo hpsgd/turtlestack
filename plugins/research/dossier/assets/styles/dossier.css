@@ -1,0 +1,243 @@
+/* report.css — default stylesheet for /publishing:write-document-pdf.
+ *
+ * Aligns with the hps.gd brand palette defined in the shared UI package
+ * (packages/ui/src/theme.css). The website uses a purple→pink gradient on
+ * headings; xhtml2pdf can't render gradients, so we take the gradient start
+ * (purple #6114cc) as the primary heading colour. Body text uses blue-black
+ * #051133 for warmth; links use brand blue #174be6.
+ *
+ * xhtml2pdf supports a 1990s subset of CSS — no flexbox/grid, no CSS
+ * variables, no gradient, no color-mix(). Every rule here is verified
+ * against that subset.
+ *
+ * @font-face declarations are injected by the Python renderer with the right
+ * URL syntax for xhtml2pdf (bare absolute path). This stylesheet just
+ * references the families.
+ */
+
+@page {
+  size: A4;
+  margin: 22mm 18mm 22mm 18mm;
+  @frame footer {
+    -pdf-frame-content: footer;
+    bottom: 10mm;
+    left: 18mm;
+    width: 174mm;
+    height: 8mm;
+  }
+}
+
+body {
+  font-family: 'Inter', Helvetica, sans-serif;
+  font-size: 10pt;
+  line-height: 1.5;
+  color: #051133;
+}
+
+/* --- Cover page --- */
+
+.cover {
+  page-break-after: always;
+  padding-top: 60mm;
+}
+
+.cover-title {
+  font-family: 'Mona Sans', Helvetica, sans-serif;
+  font-size: 32pt;
+  font-weight: normal;
+  color: #6114cc;
+  margin: 0 0 6pt 0;
+  border: none;
+  padding: 0;
+}
+
+.cover-subtitle {
+  font-family: 'Inter', Helvetica, sans-serif;
+  font-size: 14pt;
+  color: #430e8c;
+  margin: 0 0 30pt 0;
+}
+
+.cover-meta {
+  width: 100%;
+  margin-top: 30pt;
+  border-collapse: collapse;
+}
+.cover-meta th, .cover-meta td {
+  border: none;
+  border-bottom: 0.5pt solid #c4ace6;
+  padding: 6pt 8pt;
+  text-align: left;
+  vertical-align: top;
+  font-size: 10pt;
+}
+.cover-meta th {
+  width: 30%;
+  background-color: transparent;
+  font-weight: normal;
+  color: #430e8c;
+}
+.cover-meta td {
+  color: #051133;
+}
+
+/* --- Body content --- */
+
+h1 {
+  font-family: 'Mona Sans', Helvetica, sans-serif;
+  font-size: 20pt;
+  font-weight: normal;
+  margin: 0 0 8pt 0;
+  color: #6114cc;
+  border-bottom: 0.5pt solid #c4ace6;
+  padding-bottom: 4pt;
+}
+
+h2 {
+  font-family: 'Mona Sans', Helvetica, sans-serif;
+  font-size: 14pt;
+  font-weight: normal;
+  margin: 16pt 0 5pt 0;
+  color: #6114cc;
+}
+
+h3 {
+  font-family: 'Mona Sans', Helvetica, sans-serif;
+  font-size: 11pt;
+  font-weight: normal;
+  margin: 10pt 0 3pt 0;
+  color: #6114cc;
+}
+
+h4 {
+  font-family: 'Inter', Helvetica, sans-serif;
+  font-size: 10pt;
+  font-weight: bold;
+  margin: 8pt 0 3pt 0;
+  color: #430e8c;
+}
+
+p {
+  margin: 0 0 6pt 0;
+}
+
+ul, ol {
+  margin: 0 0 6pt 18pt;
+  padding: 0;
+}
+
+li {
+  margin-bottom: 2pt;
+}
+
+a {
+  color: #174be6;
+  text-decoration: underline;
+}
+
+strong {
+  font-weight: bold;
+  color: #051133;
+}
+
+/* --- Tables --- */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 4pt 0 8pt 0;
+}
+
+th, td {
+  border: 0.5pt solid #c4ace6;
+  padding: 4pt 6pt;
+  text-align: left;
+  vertical-align: top;
+  font-size: 9.5pt;
+}
+
+th {
+  background-color: #f4eefd;
+  font-weight: bold;
+  color: #430e8c;
+}
+
+/* --- Blockquote --- */
+
+blockquote {
+  margin: 6pt 0 8pt 0;
+  padding: 4pt 10pt;
+  border-left: 2pt solid #6114cc;
+  background-color: #f4eefd;
+  color: #430e8c;
+  font-style: italic;
+}
+
+/* --- Code --- */
+
+code {
+  font-family: Courier, monospace;
+  font-size: 9pt;
+  background-color: #eef0fa;
+  color: #0e2e8c;
+  padding: 1pt 3pt;
+}
+
+pre {
+  font-family: Courier, monospace;
+  font-size: 9pt;
+  background-color: #eef0fa;
+  color: #051133;
+  padding: 6pt 8pt;
+  border: 0.5pt solid #acbae6;
+  margin: 6pt 0;
+}
+
+pre code {
+  background-color: transparent;
+  color: inherit;
+  padding: 0;
+}
+
+/* --- Footer (page number frame) --- */
+
+#footer {
+  font-size: 8pt;
+  color: #acbae6;
+  text-align: right;
+  font-family: 'Inter', Helvetica, sans-serif;
+}
+
+/* --- Dossier overrides ---
+ * Each embedded report's title becomes an h1 in the consolidated document.
+ * That h1 marks the page boundary: every report starts on a fresh page.
+ * The dossier's own "Executive summary" is rendered as h2 so it shares the
+ * page that follows the cover, rather than forcing a blank page break.
+ *
+ * Keep this file in sync with publishing/assets/styles/report.css when the
+ * base styling changes. It is duplicated rather than @import-ed because
+ * xhtml2pdf collapses the resolved CSS into a single <style> block at render
+ * time, and the renderer accepts only one --css path.
+ */
+
+h1 {
+  page-break-before: always;
+}
+
+/* The cover-title is also an h1 in the rendered HTML. Without this override
+ * the page-break rule above would force a blank page before the cover.
+ */
+.cover .cover-title {
+  page-break-before: avoid;
+}
+
+/* The provenance footer under each embedded report — rendered as italic
+ * source-citation prose. Matches the inline italic but slightly muted.
+ */
+.dossier-provenance {
+  font-size: 8.5pt;
+  color: #430e8c;
+  font-style: italic;
+  margin-top: -2pt;
+  margin-bottom: 12pt;
+}

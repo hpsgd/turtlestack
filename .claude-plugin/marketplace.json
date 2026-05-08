@@ -525,6 +525,20 @@
       ]
     },
     {
+      "name": "dossier",
+      "source": "./plugins/research/dossier",
+      "description": "Consolidate research outputs that conform to the report frontmatter contract into a single brand-styled PDF dossier, or drive an end-to-end campaign on a target",
+      "version": "1.14.0",
+      "category": "research",
+      "tags": [
+        "research",
+        "dossier",
+        "consolidation",
+        "investigation",
+        "due-diligence"
+      ]
+    },
+    {
       "name": "workflow-tools",
       "source": "./plugins/engineering/workflow-tools",
       "description": "Utility skills for common engineering workflow patterns — content retrieval with four-tier escalation strategy (WebFetch → curl → Playwright → BrightData)",
