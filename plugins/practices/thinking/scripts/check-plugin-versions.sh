@@ -107,3 +107,4 @@ mkdir -p "$(dirname "$DRIFT_FILE")"
 } > "$DRIFT_FILE"
 
 echo "<plugin-version-drift>${count} ${MARKETPLACE} plugin(s) out of date — see ${DRIFT_FILE}</plugin-version-drift>"
+echo "⚠  ${count} ${MARKETPLACE} plugin(s) out of date — see ${DRIFT_FILE}" >&2
