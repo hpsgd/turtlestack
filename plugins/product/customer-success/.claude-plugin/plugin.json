@@ -1,7 +1,7 @@
 {
   "name": "customer-success",
   "description": "Customer Success Manager — health monitoring, churn prevention, expansion, onboarding quality, proactive customer engagement",
-  "version": "1.14.0",
+  "version": "1.15.0",
   "author": {
     "name": "hps.gd"
   },
