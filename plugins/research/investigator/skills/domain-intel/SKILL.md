@@ -48,7 +48,7 @@ Copy the template at `${CLAUDE_PLUGIN_ROOT}/templates/domain-intel.md` to the ou
 
 | Placeholder | Replace with |
 |---|---|
-| `{DOMAIN}` | The normalised domain |
+| `{SUBJECT}` | The normalised domain |
 | `{SUBTITLE}` | The engagement directory's basename, title-cased; or leave the placeholder line for the user to fill if no useful inference is possible |
 | `{DATE}` | Today's ISO date (`YYYY-MM-DD`) |
 

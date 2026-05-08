@@ -1,10 +1,10 @@
 ---
-title: Domain intel — {DOMAIN}
+title: Domain intel — {SUBJECT}
 subtitle: {SUBTITLE}
 date: {DATE}
 author: domain-intel
 category: Technical
-subject: {DOMAIN}
+subject: {SUBJECT}
 status: Draft
 ---
 
