@@ -106,5 +106,16 @@ mkdir -p "$(dirname "$DRIFT_FILE")"
     echo '```'
 } > "$DRIFT_FILE"
 
-echo "<plugin-version-drift>${count} ${MARKETPLACE} plugin(s) out of date — see ${DRIFT_FILE}</plugin-version-drift>"
-echo "⚠  ${count} ${MARKETPLACE} plugin(s) out of date — see ${DRIFT_FILE}" >&2
+python3 - "$count" "$MARKETPLACE" "$DRIFT_FILE" <<'PY'
+import json, sys
+count, marketplace, drift_file = sys.argv[1:4]
+context = f"<plugin-version-drift>{count} {marketplace} plugin(s) out of date — see {drift_file}</plugin-version-drift>"
+message = f"⚠  {count} {marketplace} plugin(s) out of date — see {drift_file}"
+print(json.dumps({
+    "hookSpecificOutput": {
+        "hookEventName": "SessionStart",
+        "additionalContext": context,
+    },
+    "systemMessage": message,
+}))
+PY
