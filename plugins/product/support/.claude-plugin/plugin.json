@@ -1,7 +1,7 @@
 {
   "name": "support",
   "description": "Customer support — ticket triage, feedback synthesis, knowledge base, bug escalation",
-  "version": "1.13.0",
+  "version": "1.14.0",
   "author": {
     "name": "hps.gd"
   },
