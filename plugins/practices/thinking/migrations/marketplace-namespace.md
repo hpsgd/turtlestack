@@ -89,14 +89,28 @@ Tests using `LEARNINGS_DIR`/`GLOBAL_LEARNINGS_DIR`/`HANDOFF_DIR` env overrides k
 
 Run once per project after the marketplace change ships and the user has run `claude plugin update thinking@turtlestack` and restarted.
 
+> [!IMPORTANT]
+> The SessionStart hooks under v1.17.0 populate the new namespaced paths the first time you start a session, so by the time you run this migration `.claude/turtlestack/learnings/` already exists with placeholder data from one session. The snippets below handle that collision: they treat the **old path** as authoritative (it has full history) and replace the placeholder new-path data with it. If you've been running v1.17.0 for many sessions before migrating and want to keep the new-path data, do a manual `rsync -a` instead of the `rm -rf`.
+
 ```bash
 # Per-project state — run from project root
 cd <project-root>
 mkdir -p .claude/turtlestack
 
-# Move data we want to keep — learnings and handoffs contain real signal
-[ -d .claude/learnings ] && mv .claude/learnings .claude/turtlestack/learnings
-[ -d .claude/handoff ] && mv .claude/handoff .claude/turtlestack/handoff
+# Learnings: old path has full history; new path has fresh placeholder.
+# Replace the placeholder with the historical data.
+if [ -d .claude/learnings ]; then
+    rm -rf .claude/turtlestack/learnings
+    mv .claude/learnings .claude/turtlestack/learnings
+fi
+
+# Handoff: new path holds the live handoff queue; old path may hold
+# resumed/. Move resumed across, then drop the empty old dir.
+if [ -d .claude/handoff/resumed ]; then
+    mkdir -p .claude/turtlestack/handoff
+    mv .claude/handoff/resumed .claude/turtlestack/handoff/resumed
+fi
+[ -d .claude/handoff ] && rmdir .claude/handoff 2>/dev/null
 
 # Regenerable — safe to delete; the hook will recreate where needed
 [ -f .claude/scheduled_tasks.lock ] && mv .claude/scheduled_tasks.lock .claude/turtlestack/ 2>/dev/null
@@ -104,9 +118,12 @@ rm -f .claude/plugin-updates-*.md
 ```
 
 ```bash
-# Global state — run once per machine
+# Global state — run once per machine. Same pattern: old wins.
 mkdir -p ~/.claude/turtlestack
-[ -d ~/.claude/learnings ] && mv ~/.claude/learnings ~/.claude/turtlestack/learnings
+if [ -d ~/.claude/learnings ]; then
+    rm -rf ~/.claude/turtlestack/learnings
+    mv ~/.claude/learnings ~/.claude/turtlestack/learnings
+fi
 ```
 
 Then update the project's `.gitignore`:
