@@ -13,5 +13,8 @@
     "cicd",
     "deployment",
     "monitoring"
+  ],
+  "dependencies": [
+    "engineering-conventions"
   ]
 }

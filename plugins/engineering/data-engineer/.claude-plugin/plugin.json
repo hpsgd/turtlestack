@@ -13,5 +13,8 @@
     "pipelines",
     "event-tracking",
     "metrics"
+  ],
+  "dependencies": [
+    "engineering-conventions"
   ]
 }

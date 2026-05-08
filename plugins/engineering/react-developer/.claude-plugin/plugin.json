@@ -13,5 +13,8 @@
     "typescript",
     "tailwind",
     "frontend"
+  ],
+  "dependencies": [
+    "engineering-conventions"
   ]
 }

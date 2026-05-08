@@ -12,5 +12,8 @@
     "threat-model",
     "compliance",
     "vulnerability"
+  ],
+  "dependencies": [
+    "engineering-conventions"
   ]
 }

@@ -316,6 +316,18 @@
       ]
     },
     {
+      "name": "engineering-conventions",
+      "source": "./plugins/engineering/engineering-conventions",
+      "description": "Shared rules for engineering plugins: spec-first implementation. Installed automatically as a dependency of ai-engineer, data-engineer, devops, python-developer, qa-engineer, react-developer, and security-engineer",
+      "version": "1.14.0",
+      "category": "engineering",
+      "tags": [
+        "engineering",
+        "conventions",
+        "rules"
+      ]
+    },
+    {
       "name": "architect",
       "source": "./plugins/engineering/architect",
       "description": "Software architect — system design, ADRs, technology evaluation, API strategy",

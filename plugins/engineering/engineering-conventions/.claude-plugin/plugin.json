@@ -1,0 +1,16 @@
+{
+  "name": "engineering-conventions",
+  "description": "Shared rules for engineering plugins: spec-first implementation, definition of ready. Installed automatically as a dependency of ai-engineer, data-engineer, devops, python-developer, qa-engineer, react-developer, and security-engineer — declare it as a dependency in any new engineering plugin.",
+  "version": "1.14.0",
+  "author": {
+    "name": "hps.gd"
+  },
+  "repository": "https://github.com/hpsgd/turtlestack",
+  "license": "Unlicense",
+  "keywords": [
+    "engineering",
+    "conventions",
+    "rules",
+    "spec-first"
+  ]
+}

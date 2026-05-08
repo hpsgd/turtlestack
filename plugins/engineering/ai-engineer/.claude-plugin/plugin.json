@@ -15,5 +15,8 @@
     "rag",
     "embeddings",
     "model-evaluation"
+  ],
+  "dependencies": [
+    "engineering-conventions"
   ]
 }
