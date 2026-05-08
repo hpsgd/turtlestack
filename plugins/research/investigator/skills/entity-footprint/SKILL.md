@@ -1,14 +1,48 @@
 ---
 name: entity-footprint
-description: "Map an organisation's complete public digital presence: domains, web presence, social profiles, apps, code repositories, job postings, and regulatory filings."
-argument-hint: "[organisation name]"
+description: "Map an organisation's complete public digital presence: domains, web presence, social profiles, apps, code repositories, job postings, and regulatory filings. Writes a conforming report (per report-conventions) to <engagement_dir>/entity-footprint/<entity-slug>.md."
+argument-hint: "<organisation name> [engagement_dir]"
 user-invocable: true
-allowed-tools: WebSearch, WebFetch
+allowed-tools: WebSearch, WebFetch, Read, Write, Bash
 ---
 
-Map the public digital footprint of $ARGUMENTS.
+Map the public digital footprint of the named organisation and write a conforming report.
 
-## Step 1: Owned domains
+## Step 0: Resolve arguments
+
+Parse `$ARGUMENTS` as `<organisation name> [engagement_dir]`. Trailing path-shaped token is the engagement directory; otherwise default to `pwd`. Resolve to an absolute path.
+
+## Step 1: Compute the output path
+
+Subject slug: full organisation name, kebab-case, lowercase, ASCII (per report-conventions). Strip apostrophes and other punctuation; keep legal suffixes lower-cased.
+
+Examples:
+
+- `Acme Corp Pty Ltd` → `acme-corp-pty-ltd`
+- `Stripe, Inc.` → `stripe-inc`
+
+Output path: `$ENG/entity-footprint/<slug>.md`
+
+If a file already exists at that path, ask before overwriting.
+
+## Step 2: Stage the report from the template
+
+```bash
+mkdir -p "$ENG/entity-footprint"
+cp "${CLAUDE_PLUGIN_ROOT}/templates/entity-footprint.md" "$ENG/entity-footprint/<slug>.md"
+```
+
+Replace placeholders in frontmatter:
+
+| Placeholder | Replace with |
+|---|---|
+| `{SUBJECT}` | The organisation name |
+| `{SUBTITLE}` | Engagement directory basename, title-cased; drop the line if no useful inference |
+| `{DATE}` | Today's ISO date |
+
+## Step 3: Investigation
+
+### Owned domains
 
 Establish the primary domain, then discover related ones.
 
@@ -16,7 +50,7 @@ Establish the primary domain, then discover related ones.
 - **Certificate transparency:** search [crt.sh](https://crt.sh) for the primary domain — wildcard and SANs often reveal subdomain patterns and product domains
 - **Search variation:** `"[org name]" site:domain` patterns, regional variants (`.com.au`, `.co.nz`), product-specific domains, acquired brand domains
 
-## Step 2: Web presence
+### Web presence
 
 - Primary site and its key sections (products, pricing, about, careers)
 - Regional variants or localised sites
@@ -26,7 +60,7 @@ Establish the primary domain, then discover related ones.
 
 Use Wayback Machine to understand when properties were established and how they've evolved.
 
-## Step 3: Social profiles
+### Social profiles
 
 Search each platform:
 
@@ -38,9 +72,9 @@ Search each platform:
 | YouTube | Product demos, conference talks, webinar archives |
 | Facebook | Company page (often useful for older or B2C companies) |
 
-Note: the absence of a platform presence is itself a signal — a tech company with no GitHub presence is unusual.
+The absence of a platform presence is itself a signal — a tech company with no GitHub presence is unusual.
 
-## Step 4: App store presence
+### App store presence
 
 Search iOS App Store and Google Play for the organisation's name.
 
@@ -51,7 +85,7 @@ Published apps reveal:
 - Update frequency (activity signal)
 - Tech stack signals from app categories and permissions
 
-## Step 5: Code repositories
+### Code repositories
 
 [GitHub](https://github.com) organisation search:
 
@@ -62,7 +96,7 @@ Published apps reveal:
 
 Also check [GitLab](https://gitlab.com) for organisations with non-GitHub presence.
 
-## Step 6: Job postings as leading indicator
+### Job postings as leading indicator
 
 Current job postings reveal operational reality more reliably than press releases.
 
@@ -72,20 +106,28 @@ Current job postings reveal operational reality more reliably than press release
 
 Look for: technology stack requirements, new functional areas being built out, seniority distribution of open roles, hiring volume relative to declared company size.
 
-## Step 7: Press and regulatory filings
+### Press and regulatory filings
 
 - News search for the last 12 months
 - Regulatory filings: [ASIC Connect](https://connect.asic.gov.au) (AU), [NZ Companies Office](https://companies.govt.nz) (NZ), Companies House (UK), SEC EDGAR (US public companies)
 - AU broadcast/telco entities: [ACMA](https://www.acma.gov.au) register
 - Any relevant industry-specific regulatory bodies
 
+## Step 4: Finalise the report
+
+- Confirm every section has either content or an explicit "none found" note. A minimal footprint is itself a finding.
+- Replace placeholder source rows with actual sources, tagged with tier per source-quality.
+- Set `status: Final` once complete; optionally set `confidence: 0-4`.
+
 ## Follow-on skills
 
 This skill maps the surface of an organisation's digital presence. For deeper investigation of specific assets found here:
 
-- **Domains discovered** → `/investigator:domain-intel` for registration, DNS, cert transparency, and hosting detail on any domain worth investigating further
+- **Domains discovered** → `/investigator:domain-intel` for registration, DNS, cert transparency, and hosting detail
 - **IP addresses surfaced** → `/investigator:ip-intel` for ownership, ASN, and reputation
 - **Ownership structure questions** → `/investigator:corporate-ownership`
+
+When the dossier plugin is in use, suggest `/dossier:consolidate <engagement_dir>` once the campaign is complete.
 
 ## Rules
 
@@ -93,50 +135,8 @@ This skill maps the surface of an organisation's digital presence. For deeper in
 - Passive only — no authenticated access, no scraping behind login walls.
 - Every claim about the organisation's footprint needs a source.
 - A minimal footprint is a finding. A company that's hard to find online is telling you something.
+- One file per invocation.
 
-## Output format
+## Output
 
-```markdown
-## Entity footprint: [Organisation]
-
-**Date:** [today]
-**Purpose logged:** [stated purpose]
-**Methods:** Passive open-source only
-
-### Domain inventory
-
-[Primary domain + related domains with discovery method]
-
-### Web presence
-
-[Primary site, regional variants, product properties, documentation]
-
-### Social profiles
-
-| Platform | Account | Followers/size | Activity |
-|---|---|---|---|
-
-### App store
-
-[iOS/Android apps, rating, update frequency — or "none found"]
-
-### Code repositories
-
-[GitHub/GitLab presence, key repos, tech stack signals — or "none found"]
-
-### Hiring signals
-
-[Job posting patterns, technology stack from JDs, growth areas]
-
-### Regulatory and press
-
-[Filing status, recent news, regulatory actions]
-
-### Notable observations
-
-[Anything significant — gaps in presence, unusual patterns, discrepancies]
-
-### Sources
-
-1. [Tool/Source](URL) — [what it contributed]
-```
+A single line: the absolute path to the written report.

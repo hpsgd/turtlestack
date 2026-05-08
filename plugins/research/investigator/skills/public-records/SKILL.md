@@ -1,17 +1,50 @@
 ---
 name: public-records
-description: "Search public records for a named individual: court records, business registrations, property (where public), professional licences, and electoral roll. Full AU/NZ/UK/US source coverage. Requires authorisation gate."
-argument-hint: "[person name, jurisdiction if known]"
+description: "Search public records for a named individual: court records, business registrations, property (where public), professional licences, and electoral roll. Writes a conforming report (per report-conventions) to <engagement_dir>/public-records/<lastname>-<firstname>.md. Full AU/NZ/UK/US source coverage. Requires authorisation gate."
+argument-hint: "<person name> [engagement_dir]"
 user-invocable: true
-allowed-tools: WebSearch, WebFetch
+allowed-tools: WebSearch, WebFetch, Read, Write, Bash
 ---
 
-Search public records for $ARGUMENTS.
+Search public records for the named individual and write a conforming report.
 
 > [!IMPORTANT]
-> This skill requires the investigator agent's full authorisation gate before invocation. Document the jurisdiction for every record found — public records laws vary significantly.
+> This skill requires the investigator agent's full authorisation gate before invocation. Document the jurisdiction for every record found — public records laws vary significantly. The gate stays in the session record — it is not embedded in the report file.
 
-## Step 1: Court records
+## Step 0: Resolve arguments
+
+Parse `$ARGUMENTS` as `<person name> [engagement_dir]`. Trailing path-shaped token is the engagement directory; otherwise default to `pwd`. Resolve to an absolute path.
+
+If the gate record specifies a jurisdiction focus, lift it for use in Step 3 — it's not a CLI argument here.
+
+## Step 1: Compute the output path
+
+Subject slug: `<lastname>-<firstname>`, kebab-case, lowercase, ASCII (per report-conventions).
+
+Output path: `$ENG/public-records/<slug>.md`
+
+If a file already exists at that path, ask before overwriting.
+
+## Step 2: Stage the report from the template
+
+```bash
+mkdir -p "$ENG/public-records"
+cp "${CLAUDE_PLUGIN_ROOT}/templates/public-records.md" "$ENG/public-records/<slug>.md"
+```
+
+Replace placeholders in frontmatter:
+
+| Placeholder | Replace with |
+|---|---|
+| `{SUBJECT}` | The personal name |
+| `{SUBTITLE}` | Engagement directory basename, title-cased; drop the line if no useful inference |
+| `{DATE}` | Today's ISO date |
+
+## Step 3: Investigation
+
+Write findings into the staged file as you go. Document jurisdiction for every record.
+
+### Court records
 
 Search court records for filings involving the subject as plaintiff, defendant, or party.
 
@@ -19,13 +52,13 @@ Search court records for filings involving the subject as plaintiff, defendant, 
 
 - [AustLII](https://www.austlii.edu.au) — published court decisions and tribunal decisions (free, comprehensive coverage of published judgments)
 - eCourts (NSW), VCAT (VIC) — state portals for specific jurisdictions
-- Note: not all court records are published online in AU — many first-instance decisions are not publicly accessible
+- Not all court records are published online in AU — many first-instance decisions are not publicly accessible
 
 **New Zealand:**
 
 - [NZLII](https://www.nzlii.org) — published court decisions
 - [NZ Courts](https://www.courtsofnz.govt.nz) — Supreme Court, Court of Appeal, High Court judgments
-- Note: District Court decisions are less consistently published
+- District Court decisions are less consistently published
 
 **United States:**
 
@@ -38,13 +71,13 @@ Search court records for filings involving the subject as plaintiff, defendant, 
 - [The Gazette](https://www.thegazette.co.uk) — insolvency, bankruptcy, company winding-up notices
 - BAILII for published judgments
 
-## Step 2: Business registrations
+### Business registrations
 
 Has the subject been registered as a director or officer of any company?
 
 **Australia:**
 
-- [ASIC Connect](https://connect.asic.gov.au) — director search across all Australian registered companies; includes current and historical appointments, insolvency notices
+- [ASIC Connect](https://connect.asic.gov.au) — director search; current and historical appointments, insolvency notices
 - [ABN Lookup](https://abn.business.gov.au) — ABN/ACN cross-reference, business name registration
 
 **New Zealand:**
@@ -60,7 +93,7 @@ Has the subject been registered as a director or officer of any company?
 - State secretary of state portals — coverage varies
 - [OpenCorporates](https://opencorporates.com) — global cross-jurisdiction search
 
-## Step 3: Property records
+### Property records
 
 Check within the scope defined by the gate record only. Property records reveal addresses — handle carefully.
 
@@ -81,14 +114,14 @@ Check within the scope defined by the gate record only. Property records reveal 
 
 - County assessor public search — coverage and access vary significantly by county
 
-## Step 4: Professional licences
+### Professional licences
 
 If the gate record covers professional background:
 
 **Australia:**
 
-- [AHPRA](https://www.ahpra.gov.au) — all registered health practitioners (doctors, nurses, pharmacists, dentists, physios, psychologists, optometrists, osteopaths, etc.)
-- [ASIC Financial Advisers Register](https://moneysmart.gov.au/financial-advice/financial-advisers-register) — licensed financial advisers
+- [AHPRA](https://www.ahpra.gov.au) — all registered health practitioners
+- [ASIC Financial Advisers Register](https://moneysmart.gov.au/financial-advice/financial-advisers-register)
 - State law societies for lawyers
 
 **New Zealand:**
@@ -102,7 +135,7 @@ If the gate record covers professional background:
 
 - State licensing boards for medicine, law, finance, real estate, engineering — check state-level
 
-## Step 5: Electoral roll
+### Electoral roll
 
 **United Kingdom:**
 
@@ -120,11 +153,20 @@ If the gate record covers professional background:
 
 - NZ Electoral Commission has limited public search capability. Note what's accessible.
 
+## Step 4: Finalise the report
+
+- Distinguish "no records found" (searched, nothing returned) from "not checked" (didn't search this source) in the Source log table.
+- Note paid/restricted sources as requiring manual follow-up.
+- Replace placeholder source rows with actual sources, tagged with tier per source-quality.
+- Set `status: Final` once complete; optionally set `confidence: 0-4`.
+
 ## Follow-on skills
 
 This skill covers formal records (court, licences, registrations). For professional history, social presence, and people-search aggregators, run `/investigator:people-lookup` alongside this skill — together they constitute a complete background check.
 
 If company records surface a complex ownership structure worth mapping, hand off to `/investigator:corporate-ownership`.
+
+When the dossier plugin is in use, suggest `/dossier:consolidate <engagement_dir>` once the campaign is complete.
 
 ## Rules
 
@@ -133,45 +175,8 @@ If company records surface a complex ownership structure worth mapping, hand off
 - AU property records are largely paid/restricted — don't attempt paid searches. Note as requiring manual follow-up.
 - AU electoral rolls cannot be searched online — note clearly, don't skip without explanation.
 - Distinguish between "no records found" (searched, nothing returned) and "not checked" (didn't search this source).
+- One file per invocation.
 
-## Output format
+## Output
 
-```markdown
-### Public records: [Name]
-
-**Gate record:** [link or copy]
-**Jurisdiction focus:** [AU / NZ / UK / US / other]
-**Date:** [today]
-
-#### Court records
-
-[Findings or "no published decisions found" per jurisdiction searched]
-
-#### Business registrations
-
-[Director/officer appointments found — or "none found"]
-
-#### Property records
-
-[Within scope: findings or "requires manual follow-up (paid/restricted)"]
-
-#### Professional licences
-
-[Licences found — or "none found in checked registries"]
-
-#### Electoral roll
-
-[Result or "not publicly searchable online in [jurisdiction]"]
-
-#### Source log
-
-| Source | Searched | Result |
-|---|---|---|
-| AustLII | Yes | [result] |
-| ASIC Connect | Yes | [result] |
-| [etc.] | — | — |
-
-#### Gaps and limitations
-
-[What couldn't be accessed, what would require non-public access or manual follow-up]
-```
+A single line: the absolute path to the written report.

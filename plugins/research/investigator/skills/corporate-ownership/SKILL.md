@@ -1,20 +1,56 @@
 ---
 name: corporate-ownership
-description: "Map a company's ownership chain, related entities, and director networks. Use for beneficial ownership investigation, M&A research, or understanding complex corporate structures. Full AU/NZ/UK/US registry coverage."
-argument-hint: "[company name or registration number]"
+description: "Map a company's ownership chain, related entities, and director networks. Writes a conforming report (per report-conventions) to <engagement_dir>/corporate-ownership/<entity-slug>.md. Use for beneficial ownership investigation, M&A research, or understanding complex corporate structures. Full AU/NZ/UK/US registry coverage."
+argument-hint: "<company name or registration number> [engagement_dir]"
 user-invocable: true
-allowed-tools: WebSearch, WebFetch
+allowed-tools: WebSearch, WebFetch, Read, Write, Bash
 ---
 
-Map the corporate ownership structure for $ARGUMENTS.
+Map the corporate ownership structure for the named entity and write a conforming report.
 
-## Step 1: Primary registration
+## Step 0: Resolve arguments
+
+Parse `$ARGUMENTS` as `<company name or registration number> [engagement_dir]`. Trailing path-shaped token is the engagement directory; otherwise default to `pwd`. Resolve to an absolute path.
+
+## Step 1: Compute the output path
+
+Subject slug: full company name, kebab-case, lowercase, ASCII (per report-conventions). Strip apostrophes and other punctuation; keep legal suffixes lower-cased (`pty-ltd`, `inc`, `gmbh`).
+
+Examples:
+
+- `Acme Corp Pty Ltd` → `acme-corp-pty-ltd`
+- `O'Brien Holdings Inc` → `obrien-holdings-inc`
+
+If the input is a registration number rather than a name, look up the legal name first and use that for the slug.
+
+Output path: `$ENG/corporate-ownership/<slug>.md`
+
+If a file already exists at that path, ask before overwriting.
+
+## Step 2: Stage the report from the template
+
+```bash
+mkdir -p "$ENG/corporate-ownership"
+cp "${CLAUDE_PLUGIN_ROOT}/templates/corporate-ownership.md" "$ENG/corporate-ownership/<slug>.md"
+```
+
+Replace placeholders in frontmatter:
+
+| Placeholder | Replace with |
+|---|---|
+| `{SUBJECT}` | The legal company name |
+| `{SUBTITLE}` | Engagement directory basename, title-cased; drop the line if no useful inference |
+| `{DATE}` | Today's ISO date |
+
+## Step 3: Investigation
+
+### Primary registration
 
 Look up the company's official registration record. This establishes the legal entity, jurisdiction, and current status.
 
 **Australia:**
 
-- [ASIC Connect](https://connect.asic.gov.au) — company extract includes current and historical directors, shareholders for proprietary companies, registered office, date of registration, and current status
+- [ASIC Connect](https://connect.asic.gov.au) — company extract: directors (current + historical), shareholders for proprietary companies, registered office, registration date, status
 - [ABN Lookup](https://abn.business.gov.au) — ABN/ACN cross-reference, business name registration, GST registration status
 
 **New Zealand:**
@@ -34,7 +70,7 @@ Look up the company's official registration record. This establishes the legal e
 
 - [OpenCorporates](https://opencorporates.com) — cross-jurisdiction search, links entities across registries
 
-## Step 2: Beneficial ownership
+### Beneficial ownership
 
 Identify who ultimately controls or owns the company beyond the registered directors.
 
@@ -45,9 +81,9 @@ Sources:
 - [ABN Lookup](https://abn.business.gov.au) for AU — parent entity relationships sometimes disclosed
 - SEC 13D/13G filings for US public companies — major shareholder disclosures
 
-Note: beneficial ownership disclosure requirements vary by jurisdiction. Absence of disclosed owners doesn't mean there aren't any.
+Beneficial ownership disclosure requirements vary by jurisdiction. Absence of disclosed owners doesn't mean there aren't any — note this distinction.
 
-## Step 3: Director networks
+### Director networks
 
 Map all director appointments across the entity:
 
@@ -60,7 +96,7 @@ Map all director appointments across the entity:
 
 Director networks often reveal undisclosed relationships between apparently separate entities.
 
-## Step 4: Subsidiary mapping
+### Subsidiary mapping
 
 For the target company, identify subsidiaries and related entities:
 
@@ -69,16 +105,24 @@ For the target company, identify subsidiaries and related entities:
 - ASX/NZX annual report subsidiaries note (AU/NZ public companies)
 - ASIC Connect — corporate group searches
 
-## Step 5: Related entities
+### Related entities
 
 Look for entities that share:
 
 - The same registered address
-- The same directors (cross-reference Step 3 results)
+- The same directors (cross-reference Director networks above)
 - The same registered agent
 - Similar naming patterns
 
 OpenCorporates "related companies" and ViewDNS.info reverse WHOIS (for digital footprint overlap) can help here.
+
+## Step 4: Finalise the report
+
+- Document the jurisdiction for every entity in the ownership chain.
+- Distinguish between registered ownership (what the registry shows) and beneficial ownership (who actually controls the entity).
+- Note when an ownership chain terminates in a jurisdiction with limited disclosure requirements (offshore structures, certain US states) — this is a significant finding, not a gap.
+- Replace placeholder source rows with actual sources, tagged with tier per source-quality.
+- Set `status: Final` once complete; optionally set `confidence: 0-4`.
 
 ## Rules
 
@@ -86,57 +130,8 @@ OpenCorporates "related companies" and ViewDNS.info reverse WHOIS (for digital f
 - Distinguish between registered ownership (what the registry shows) and beneficial ownership (who actually controls the entity). These often differ.
 - Note when an ownership chain terminates in a jurisdiction with limited disclosure requirements (offshore structures, certain US states) — this is a significant finding, not a gap.
 - ICIJ data covers specific leaked datasets — it's a signal, not a comprehensive offshore registry. Absence from ICIJ doesn't mean no offshore structure.
+- One file per invocation.
 
-## Output format
+## Output
 
-```markdown
-## Corporate ownership: [Company name]
-
-**Date:** [today]
-**Primary jurisdiction:** [AU / NZ / UK / US / other]
-**Registration number:** [if known]
-
-### Primary registration
-
-| Attribute | Value |
-|---|---|
-| Legal name | — |
-| Registration number | — |
-| Jurisdiction | — |
-| Status | Active / Deregistered / other |
-| Registered office | — |
-| Date registered | — |
-
-### Directors (current)
-
-| Name | Role | Appointed | Other appointments |
-|---|---|---|---|
-
-### Directors (historical)
-
-[Notable past directors and tenure periods]
-
-### Ownership structure
-
-[Shareholders / beneficial owners disclosed in registries — with jurisdiction of disclosure]
-
-### Subsidiaries
-
-[Known subsidiaries with jurisdiction]
-
-### Related entities
-
-[Entities sharing directors, address, or registered agent]
-
-### Offshore/complex structure notes
-
-[Any indications of offshore holding structures or jurisdictions with limited disclosure]
-
-### Director network map
-
-[Cross-appointments that link this entity to others]
-
-### Sources
-
-1. [Registry](URL) — [what it contributed]
-```
+A single line: the absolute path to the written report.
