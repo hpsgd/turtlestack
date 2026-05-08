@@ -5,6 +5,7 @@ TODO.md
 .claude/settings.local.json
 .claude/rules/
 .claude/scheduled_tasks.lock
+.claude/plugin-updates-*.md
 
 # Learnings: sessions, signals, and patterns contain user prompt text
 .claude/learnings/sessions/
