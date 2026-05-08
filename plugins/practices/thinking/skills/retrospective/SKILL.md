@@ -25,8 +25,8 @@ This skill is also triggered automatically by the SessionStart hook, which runs 
 All learnings and rules paths are overridable via environment variables. Test harnesses set these to redirect writes outside permission-gated `.claude/` paths. Users will almost never set them.
 
 ```bash
-LEARNINGS_DIR="${LEARNINGS_DIR:-.claude/learnings}"
-GLOBAL_LEARNINGS_DIR="${GLOBAL_LEARNINGS_DIR:-$HOME/.claude/learnings}"
+LEARNINGS_DIR="${LEARNINGS_DIR:-.claude/turtlestack/learnings}"
+GLOBAL_LEARNINGS_DIR="${GLOBAL_LEARNINGS_DIR:-$HOME/.claude/turtlestack/learnings}"
 RULES_DIR="${RULES_DIR:-.claude/rules}"
 GLOBAL_RULES_DIR="${GLOBAL_RULES_DIR:-$HOME/.claude/rules}"
 ```
@@ -83,8 +83,8 @@ For `summary` or `patterns`: skip to Step 3 or Step 4.
 Run the analysis script:
 
 ```bash
-LEARNINGS_DIR="${LEARNINGS_DIR:-.claude/learnings}"
-GLOBAL_LEARNINGS_DIR="${GLOBAL_LEARNINGS_DIR:-$HOME/.claude/learnings}"
+LEARNINGS_DIR="${LEARNINGS_DIR:-.claude/turtlestack/learnings}"
+GLOBAL_LEARNINGS_DIR="${GLOBAL_LEARNINGS_DIR:-$HOME/.claude/turtlestack/learnings}"
 python3 ${CLAUDE_PLUGIN_ROOT}/scripts/analyse-session.py <transcript.jsonl> \
     --project-dir "$LEARNINGS_DIR" \
     --global-dir "$GLOBAL_LEARNINGS_DIR" \
@@ -107,7 +107,7 @@ The `UserPromptSubmit` hook captures every user message and classifies obvious c
 Read the pending signals file:
 
 ```bash
-LEARNINGS_DIR="${LEARNINGS_DIR:-.claude/learnings}"
+LEARNINGS_DIR="${LEARNINGS_DIR:-.claude/turtlestack/learnings}"
 cat "$LEARNINGS_DIR/signals/pending.jsonl"
 ```
 
@@ -242,8 +242,8 @@ Examples (project-specific defaults shown):
 Read all session analysis files from `$LEARNINGS_DIR/sessions/` and `$GLOBAL_LEARNINGS_DIR/sessions/`.
 
 ```bash
-LEARNINGS_DIR="${LEARNINGS_DIR:-.claude/learnings}"
-GLOBAL_LEARNINGS_DIR="${GLOBAL_LEARNINGS_DIR:-$HOME/.claude/learnings}"
+LEARNINGS_DIR="${LEARNINGS_DIR:-.claude/turtlestack/learnings}"
+GLOBAL_LEARNINGS_DIR="${GLOBAL_LEARNINGS_DIR:-$HOME/.claude/turtlestack/learnings}"
 
 # Count learnings by type across all sessions
 find "$LEARNINGS_DIR/sessions" "$GLOBAL_LEARNINGS_DIR/sessions" -name '*.json' 2>/dev/null
@@ -363,7 +363,7 @@ If approved:
 - **The script does extraction, you do interpretation.** The Python script (`analyse-session.py`) handles JSONL parsing and pattern matching. This skill reads the structured output and applies judgment — classifying scope, filtering noise, detecting patterns.
 - **Not every reversal is a mistake.** Files touched 3+ times during a planned multi-pass operation are normal iterative refinement. Check the context before flagging.
 - **Not every correction is a learning.** "No, use tabs not spaces" in a project with a `.editorconfig` is a config issue, not a learning. Only record corrections that reveal a gap in understanding or process.
-- **Universal vs project-specific.** "Don't declare completion without running the audit" is universal. "The config file is at `src/config.ts` not `config/index.ts`" is project-specific. Classify correctly — universal learnings go to `$GLOBAL_LEARNINGS_DIR` (default `~/.claude/learnings/`), project-specific to `$LEARNINGS_DIR` (default `.claude/learnings/`).
+- **Universal vs project-specific.** "Don't declare completion without running the audit" is universal. "The config file is at `src/config.ts` not `config/index.ts`" is project-specific. Classify correctly — universal learnings go to `$GLOBAL_LEARNINGS_DIR` (default `~/.claude/turtlestack/learnings/`), project-specific to `$LEARNINGS_DIR` (default `.claude/turtlestack/learnings/`).
 - **Patterns are more valuable than incidents.** One correction is an event. Three corrections about the same thing are a pattern. Patterns become rules.
 - **Never record user-specific information.** Learnings capture what went wrong and how to fix it, not personal details about the user.
 - **The 1-hour rule.** The SessionStart hook analyses the previous session, which gives at least a session-gap delay. This is intentional — it allows delayed corrections (where the user realises later something was wrong) to be captured in the same transcript.

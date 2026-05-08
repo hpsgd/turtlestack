@@ -12,6 +12,19 @@ PROJECT_DIR="${2:-$(pwd)}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ANALYSE_SCRIPT="$SCRIPT_DIR/analyse-session.py"
 
+# Derive marketplace name from PLUGIN_ROOT
+# (e.g. ~/.claude/plugins/cache/turtlestack/thinking/1.16.0 -> turtlestack).
+# Used to namespace learning state under .claude/<marketplace>/learnings.
+MARKETPLACE=""
+if [ -n "$PLUGIN_ROOT" ]; then
+    cache_path="${PLUGIN_ROOT%/}"
+    cache_path=$(dirname "$cache_path")  # strip version
+    cache_path=$(dirname "$cache_path")  # strip plugin name
+    MARKETPLACE=$(basename "$cache_path")
+    [ "$MARKETPLACE" = "cache" ] && MARKETPLACE=""
+fi
+MARKETPLACE="${MARKETPLACE:-turtlestack}"
+
 # Determine transcript directories for this project and its worktrees.
 # Claude stores transcripts at ~/.claude/projects/-{PATH_HASH}/ where
 # PATH_HASH replaces all non-alphanumeric chars with -.
@@ -100,8 +113,8 @@ fi
 SESSION_ID=$(basename "$LATEST_JSONL" .jsonl)
 # LEARNINGS_DIR / GLOBAL_LEARNINGS_DIR can be overridden via env var (used by
 # test harnesses to redirect outside permission-gated .claude/ paths).
-PROJECT_LEARNINGS="${LEARNINGS_DIR:-$PROJECT_DIR/.claude/learnings}"
-GLOBAL_LEARNINGS="${GLOBAL_LEARNINGS_DIR:-$HOME/.claude/learnings}"
+PROJECT_LEARNINGS="${LEARNINGS_DIR:-$PROJECT_DIR/.claude/$MARKETPLACE/learnings}"
+GLOBAL_LEARNINGS="${GLOBAL_LEARNINGS_DIR:-$HOME/.claude/$MARKETPLACE/learnings}"
 
 if [ -f "$PROJECT_LEARNINGS/sessions/$SESSION_ID.json" ] || \
    [ -f "$GLOBAL_LEARNINGS/sessions/$SESSION_ID.json" ]; then

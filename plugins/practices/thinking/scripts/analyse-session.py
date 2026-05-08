@@ -20,7 +20,7 @@ from pathlib import Path
 
 # --- Seed patterns (hardcoded baseline) ---
 # The retrospective skill adds learned patterns to
-# .claude/learnings/signals/patterns.json at runtime.
+# .claude/<marketplace>/learnings/signals/patterns.json at runtime.
 
 SEED_CORRECTION = [
     # Explicit rejection
@@ -476,10 +476,10 @@ def main():
     parser.add_argument("jsonl_path", help="Path to the session JSONL file")
     parser.add_argument("--project-dir",
                         default=os.environ.get("LEARNINGS_DIR"),
-                        help="Project learnings directory (default: $LEARNINGS_DIR or .claude/learnings/)")
+                        help="Project learnings directory (default: $LEARNINGS_DIR or .claude/turtlestack/learnings/)")
     parser.add_argument("--global-dir",
                         default=os.environ.get("GLOBAL_LEARNINGS_DIR"),
-                        help="Global learnings directory (default: $GLOBAL_LEARNINGS_DIR or ~/.claude/learnings/)")
+                        help="Global learnings directory (default: $GLOBAL_LEARNINGS_DIR or ~/.claude/turtlestack/learnings/)")
     parser.add_argument("--json", action="store_true", help="Output raw JSON to stdout")
     args = parser.parse_args()
 

@@ -29,9 +29,9 @@ MARKETPLACE_JSON="$CONFIG_DIR/plugins/marketplaces/$MARKETPLACE/.claude-plugin/m
 # Drift file lives with the project so project-scoped drift travels with the
 # project. Fall back to global config dir for sessions with no project.
 if [[ -n "$PROJECT_DIR" ]]; then
-    DRIFT_FILE="${PROJECT_DIR}/.claude/plugin-updates-${MARKETPLACE}.md"
+    DRIFT_FILE="${PROJECT_DIR}/.claude/${MARKETPLACE}/plugin-updates.md"
 else
-    DRIFT_FILE="${CONFIG_DIR}/plugin-updates-${MARKETPLACE}.md"
+    DRIFT_FILE="${CONFIG_DIR}/${MARKETPLACE}/plugin-updates.md"
 fi
 
 if [[ ! -f "$INSTALLED" || ! -f "$MARKETPLACE_JSON" ]]; then

@@ -229,11 +229,11 @@ def save_patterns(patterns: list[dict], dirs: list[str]):
 def main():
     parser = argparse.ArgumentParser(description="Detect recurring patterns in session learnings")
     parser.add_argument("--project-dir",
-                        default=os.environ.get("LEARNINGS_DIR", ".claude/learnings"),
-                        help="Project learnings directory (default: $LEARNINGS_DIR or .claude/learnings)")
+                        default=os.environ.get("LEARNINGS_DIR", ".claude/turtlestack/learnings"),
+                        help="Project learnings directory (default: $LEARNINGS_DIR or .claude/turtlestack/learnings)")
     parser.add_argument("--global-dir",
-                        default=os.environ.get("GLOBAL_LEARNINGS_DIR", os.path.expanduser("~/.claude/learnings")),
-                        help="Global learnings directory (default: $GLOBAL_LEARNINGS_DIR or ~/.claude/learnings)")
+                        default=os.environ.get("GLOBAL_LEARNINGS_DIR", os.path.expanduser("~/.claude/turtlestack/learnings")),
+                        help="Global learnings directory (default: $GLOBAL_LEARNINGS_DIR or ~/.claude/turtlestack/learnings)")
     parser.add_argument("--threshold", type=int, default=3,
                         help="Minimum instances to qualify as a pattern")
     parser.add_argument("--json", action="store_true",

@@ -1,18 +1,17 @@
 docs/
 TODO.md
 
-# Runtime data (per-project, not marketplace content)
+# Claude Code's own runtime data
 .claude/settings.local.json
 .claude/rules/
+
+# Marketplace-managed transient state (one line per enabled marketplace)
+.claude/turtlestack/
+
+# Pre-namespace paths (kept until all consumers have migrated; safe to delete later)
 .claude/scheduled_tasks.lock
 .claude/plugin-updates-*.md
-
-# Learnings: sessions, signals, and patterns contain user prompt text
-.claude/learnings/sessions/
-.claude/learnings/signals/
-.claude/learnings/patterns/
-.claude/learnings/metrics/
-.claude/learnings/manifest.json
+.claude/learnings/
 .claude/handoff/
 
 tmp/

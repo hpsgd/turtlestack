@@ -17,8 +17,8 @@ All rules and learnings paths are overridable via environment variables. Test ha
 ```bash
 RULES_DIR="${RULES_DIR:-.claude/rules}"
 GLOBAL_RULES_DIR="${GLOBAL_RULES_DIR:-$HOME/.claude/rules}"
-LEARNINGS_DIR="${LEARNINGS_DIR:-.claude/learnings}"
-GLOBAL_LEARNINGS_DIR="${GLOBAL_LEARNINGS_DIR:-$HOME/.claude/learnings}"
+LEARNINGS_DIR="${LEARNINGS_DIR:-.claude/turtlestack/learnings}"
+GLOBAL_LEARNINGS_DIR="${GLOBAL_LEARNINGS_DIR:-$HOME/.claude/turtlestack/learnings}"
 ```
 
 Run those four lines first in each shell invocation, then use the variables everywhere that follows.
@@ -117,7 +117,7 @@ After cleanup, update the reconciliation snapshot so the SessionStart hook won't
 ```bash
 RULES_DIR="${RULES_DIR:-.claude/rules}"
 GLOBAL_RULES_DIR="${GLOBAL_RULES_DIR:-$HOME/.claude/rules}"
-GLOBAL_LEARNINGS_DIR="${GLOBAL_LEARNINGS_DIR:-$HOME/.claude/learnings}"
+GLOBAL_LEARNINGS_DIR="${GLOBAL_LEARNINGS_DIR:-$HOME/.claude/turtlestack/learnings}"
 
 RULES_DIR="$RULES_DIR" GLOBAL_RULES_DIR="$GLOBAL_RULES_DIR" GLOBAL_LEARNINGS_DIR="$GLOBAL_LEARNINGS_DIR" \
 python3 -c "

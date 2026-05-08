@@ -199,11 +199,11 @@ def save_metrics(metrics: dict, dirs: list[str]):
 def main():
     parser = argparse.ArgumentParser(description="Generate learning metrics and trends")
     parser.add_argument("--project-dir",
-                        default=os.environ.get("LEARNINGS_DIR", ".claude/learnings"),
-                        help="Project learnings directory (default: $LEARNINGS_DIR or .claude/learnings)")
+                        default=os.environ.get("LEARNINGS_DIR", ".claude/turtlestack/learnings"),
+                        help="Project learnings directory (default: $LEARNINGS_DIR or .claude/turtlestack/learnings)")
     parser.add_argument("--global-dir",
-                        default=os.environ.get("GLOBAL_LEARNINGS_DIR", os.path.expanduser("~/.claude/learnings")),
-                        help="Global learnings directory (default: $GLOBAL_LEARNINGS_DIR or ~/.claude/learnings)")
+                        default=os.environ.get("GLOBAL_LEARNINGS_DIR", os.path.expanduser("~/.claude/turtlestack/learnings")),
+                        help="Global learnings directory (default: $GLOBAL_LEARNINGS_DIR or ~/.claude/turtlestack/learnings)")
     parser.add_argument("--json", action="store_true",
                         help="Output raw JSON to stdout")
     args = parser.parse_args()

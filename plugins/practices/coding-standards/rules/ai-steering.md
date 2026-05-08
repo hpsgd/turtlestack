@@ -128,7 +128,7 @@ Use first person ("I") when speaking. Refer to the user by name when known, neve
 
 Claude Code files split between global (`~/.claude/`) and project-local (`./.claude/`). Learnings, settings, rules, and signals can exist in either location depending on their scope. Don't assume everything is in one place — check both paths before making assertions about what exists or where things are saved.
 
-Bad: "All learnings are in `~/.claude/learnings`." Assume config is only in `./.claude/settings.json`.
+Bad: "All learnings are in `~/.claude/turtlestack/learnings`." Assume config is only in `./.claude/settings.json`.
 Correct: Check both `~/.claude/` and `./.claude/` for the file type. State which location you found it in.
 
 ## Error recovery

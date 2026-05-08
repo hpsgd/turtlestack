@@ -12,12 +12,12 @@ Filename: `<YYYY-MM-DD-HHMM>-<slug>.md`. Slug is a short kebab-case description 
 
 ## Path resolution
 
-The handoff directory is `.claude/handoff/` by default. Test harnesses and other tooling may override it via the `HANDOFF_DIR` environment variable.
+The handoff directory is `.claude/turtlestack/handoff/` by default. Test harnesses and other tooling may override it via the `HANDOFF_DIR` environment variable.
 
 Every bash command in this skill uses the resolved path:
 
 ```bash
-HANDOFF_DIR="${HANDOFF_DIR:-.claude/handoff}"
+HANDOFF_DIR="${HANDOFF_DIR:-.claude/turtlestack/handoff}"
 ```
 
 Run that line first in each shell invocation, then use `"$HANDOFF_DIR"` everywhere that follows. Users will almost never set the override — it exists so automated tests can redirect writes outside `.claude/`, which is permission-gated.
@@ -41,7 +41,7 @@ Goal: capture enough state that a fresh session can continue without scrollback.
 ### Step 1: Ensure the handoff directory exists
 
 ```bash
-HANDOFF_DIR="${HANDOFF_DIR:-.claude/handoff}"
+HANDOFF_DIR="${HANDOFF_DIR:-.claude/turtlestack/handoff}"
 mkdir -p "$HANDOFF_DIR"
 ```
 
@@ -112,7 +112,7 @@ Output the absolute path to the new handoff doc. Don't summarise the contents �
 ### Step 1: Locate the handoff
 
 ```bash
-HANDOFF_DIR="${HANDOFF_DIR:-.claude/handoff}"
+HANDOFF_DIR="${HANDOFF_DIR:-.claude/turtlestack/handoff}"
 find "$HANDOFF_DIR" -maxdepth 1 -name '*.md' -type f 2>/dev/null | sort -r
 ```
 
@@ -136,7 +136,7 @@ Read the chosen handoff doc. Then:
 Once the handoff work is complete and verified, move the doc to the `resumed/` subdirectory:
 
 ```bash
-HANDOFF_DIR="${HANDOFF_DIR:-.claude/handoff}"
+HANDOFF_DIR="${HANDOFF_DIR:-.claude/turtlestack/handoff}"
 mkdir -p "$HANDOFF_DIR/resumed"
 mv "$HANDOFF_DIR/<file>.md" "$HANDOFF_DIR/resumed/"
 ```
@@ -146,7 +146,7 @@ This keeps the handoff directory as the live queue. Resumed docs persist for aud
 ## Mode: list
 
 ```bash
-HANDOFF_DIR="${HANDOFF_DIR:-.claude/handoff}"
+HANDOFF_DIR="${HANDOFF_DIR:-.claude/turtlestack/handoff}"
 find "$HANDOFF_DIR" -maxdepth 1 -name '*.md' -type f 2>/dev/null | sort -r
 ```
 
@@ -174,7 +174,7 @@ If nothing exists, say so plainly.
 ```markdown
 ## Handoff written
 
-**Path:** `.claude/handoff/<file>.md`
+**Path:** `.claude/turtlestack/handoff/<file>.md`
 **Topic:** <topic>
 **Branch at handoff:** <branch>
 **Resume with:** `/handoff resume`
@@ -185,7 +185,7 @@ If nothing exists, say so plainly.
 ```markdown
 ## Resuming: <topic>
 
-**Source:** `.claude/handoff/<file>.md`
+**Source:** `.claude/turtlestack/handoff/<file>.md`
 **State drift:** <none / list of differences>
 **Verify results:**
 1. <step> — <pass/fail/result>
@@ -201,7 +201,7 @@ If nothing exists, say so plainly.
 
 | # | Date | Topic | File |
 |---|---|---|---|
-| 1 | 2026-04-30 14:23 | rule-install-fix | .claude/handoff/2026-04-30-1423-rule-install-fix.md |
+| 1 | 2026-04-30 14:23 | rule-install-fix | .claude/turtlestack/handoff/2026-04-30-1423-rule-install-fix.md |
 ```
 
 ## Related skills

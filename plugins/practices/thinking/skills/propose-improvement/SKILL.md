@@ -15,8 +15,8 @@ Stage a change to a marketplace repo based on $ARGUMENTS. This skill handles the
 All learnings and rules paths are overridable via environment variables. Test harnesses set these to redirect writes outside permission-gated `.claude/` paths. Users will almost never set them.
 
 ```bash
-LEARNINGS_DIR="${LEARNINGS_DIR:-.claude/learnings}"
-GLOBAL_LEARNINGS_DIR="${GLOBAL_LEARNINGS_DIR:-$HOME/.claude/learnings}"
+LEARNINGS_DIR="${LEARNINGS_DIR:-.claude/turtlestack/learnings}"
+GLOBAL_LEARNINGS_DIR="${GLOBAL_LEARNINGS_DIR:-$HOME/.claude/turtlestack/learnings}"
 RULES_DIR="${RULES_DIR:-.claude/rules}"
 GLOBAL_RULES_DIR="${GLOBAL_RULES_DIR:-$HOME/.claude/rules}"
 ```

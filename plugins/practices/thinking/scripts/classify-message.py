@@ -7,7 +7,7 @@ Queues ambiguous messages for later classification by Claude
 during the retrospective analysis (which runs inside Claude
 and doesn't need an external API).
 
-Writes to .claude/learnings/signals/pending.jsonl
+Writes to .claude/<marketplace>/learnings/signals/pending.jsonl
 """
 
 import json
@@ -19,7 +19,7 @@ from pathlib import Path
 
 # --- Seed patterns (hardcoded baseline) ---
 # These are the starting set. The retrospective skill adds learned
-# patterns to .claude/learnings/signals/patterns.json at runtime.
+# patterns to .claude/<marketplace>/learnings/signals/patterns.json at runtime.
 
 SEED_NOT_CORRECTION = [
     r"^(ok|okay|yes|y|yep|yeah|sure|go ahead|lgtm|ship it|commit|push|done|thanks|good|great|perfect|nice)\b",
@@ -70,7 +70,7 @@ SEED_APPROACH_CHANGE = [
 def load_patterns(project_dir: str) -> dict[str, list[re.Pattern]]:
     """Load seed patterns + any learned patterns from the project.
 
-    Learned patterns live in .claude/learnings/signals/patterns.json:
+    Learned patterns live in .claude/<marketplace>/learnings/signals/patterns.json:
     {
         "correction": ["\\bfeels (arbitrary|wrong)\\b", ...],
         "praise": [...],
@@ -125,12 +125,23 @@ def classify(prompt: str, patterns: dict[str, list[re.Pattern]]) -> dict | None:
     return None
 
 
+def _marketplace_name() -> str:
+    """Derive marketplace name from CLAUDE_PLUGIN_ROOT, fall back to turtlestack."""
+    plugin_root = os.environ.get("CLAUDE_PLUGIN_ROOT", "").rstrip("/")
+    if plugin_root:
+        # ~/.claude/plugins/cache/<marketplace>/<plugin>/<version>
+        parts = plugin_root.split(os.sep)
+        if len(parts) >= 3 and parts[-3] != "cache":
+            return parts[-3]
+    return "turtlestack"
+
+
 def _learnings_dir(project_dir: str) -> Path:
     """Resolve the learnings directory, honouring LEARNINGS_DIR env override."""
     override = os.environ.get("LEARNINGS_DIR")
     if override:
         return Path(override)
-    return Path(project_dir) / ".claude" / "learnings"
+    return Path(project_dir) / ".claude" / _marketplace_name() / "learnings"
 
 
 def write_signal(signal: dict, project_dir: str):

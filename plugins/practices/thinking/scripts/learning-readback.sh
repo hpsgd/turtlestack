@@ -8,10 +8,23 @@
 set -euo pipefail
 
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(pwd)}"
+
+# Derive marketplace name from CLAUDE_PLUGIN_ROOT to namespace learning state.
+# Falls back to "turtlestack" if not running as a hook.
+MARKETPLACE=""
+if [ -n "${CLAUDE_PLUGIN_ROOT:-}" ]; then
+    cache_path="${CLAUDE_PLUGIN_ROOT%/}"
+    cache_path=$(dirname "$cache_path")  # strip version
+    cache_path=$(dirname "$cache_path")  # strip plugin name
+    MARKETPLACE=$(basename "$cache_path")
+    [ "$MARKETPLACE" = "cache" ] && MARKETPLACE=""
+fi
+MARKETPLACE="${MARKETPLACE:-turtlestack}"
+
 # LEARNINGS_DIR / GLOBAL_LEARNINGS_DIR can be overridden via env var (used by
 # test harnesses to redirect outside permission-gated .claude/ paths).
-PROJECT_LEARNINGS="${LEARNINGS_DIR:-$PROJECT_DIR/.claude/learnings}"
-GLOBAL_LEARNINGS="${GLOBAL_LEARNINGS_DIR:-$HOME/.claude/learnings}"
+PROJECT_LEARNINGS="${LEARNINGS_DIR:-$PROJECT_DIR/.claude/$MARKETPLACE/learnings}"
+GLOBAL_LEARNINGS="${GLOBAL_LEARNINGS_DIR:-$HOME/.claude/$MARKETPLACE/learnings}"
 
 output=""
 
@@ -101,7 +114,7 @@ done
 
 # --- Plugin version change detection ---
 # Check if any installed plugin versions have changed since last reconciliation
-RECONCILE_SNAPSHOT="$HOME/.claude/learnings/reconcile-snapshot.json"
+RECONCILE_SNAPSHOT="$GLOBAL_LEARNINGS/reconcile-snapshot.json"
 LEARNED_RULES_EXIST=false
 for dir in "$HOME/.claude/rules" "$PROJECT_DIR/.claude/rules"; do
     if ls "$dir"/learned--*.md >/dev/null 2>&1; then
