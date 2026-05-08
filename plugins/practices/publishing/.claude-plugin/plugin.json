@@ -1,7 +1,7 @@
 {
   "name": "publishing",
   "description": "Brand-styled markdown-to-PDF rendering — A4 documents with hps.gd typography and palette, optional cover page from frontmatter, swappable stylesheets",
-  "version": "1.15.0",
+  "version": "1.16.0",
   "author": {
     "name": "hps.gd"
   },
