@@ -1,7 +1,7 @@
 {
   "name": "engineering-conventions",
   "description": "Shared rules for engineering plugins: spec-first implementation, definition of ready. Installed automatically as a dependency of ai-engineer, data-engineer, devops, python-developer, qa-engineer, react-developer, and security-engineer — declare it as a dependency in any new engineering plugin.",
-  "version": "1.16.0",
+  "version": "1.17.0",
   "author": {
     "name": "hps.gd"
   },
