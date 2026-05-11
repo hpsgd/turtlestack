@@ -1,26 +1,56 @@
 ---
 name: due-diligence
-description: "Assess a company from public sources for a specific decision: partnership, investment consideration, or acquisition. Produces a structured signal summary with green/red indicators. Public data only."
-argument-hint: "[company name] for [partnership | investment | acquisition]"
+description: "Assess a company from public sources for a specific decision: partnership, investment consideration, or acquisition. Writes a conforming report (per report-conventions) to <engagement_dir>/due-diligence/<company-slug>.md with a structured signal summary. Public data only."
+argument-hint: "<company name> for <partnership | investment | acquisition> [engagement_dir]"
 user-invocable: true
-allowed-tools: WebSearch, WebFetch
+allowed-tools: WebSearch, WebFetch, Read, Write, Bash
 ---
 
-Produce a public-data due diligence report on $ARGUMENTS.
+Produce a public-data due diligence report on the named company and write a conforming report.
 
 This skill covers public-data diligence only. Legal, financial, and technical diligence requires direct access to private information — flag this clearly in the output.
 
-## Step 1: Establish scope
+## Step 0: Resolve arguments
 
-Before researching, confirm what decision this diligence is for:
+Parse `$ARGUMENTS` as `<company name> for <scope> [engagement_dir]`. Scope is one of: `partnership`, `investment`, `acquisition`. The trailing path-shaped token, if present, is the engagement directory; otherwise default to `pwd`. Resolve to an absolute path.
+
+## Step 1: Compute the output path
+
+Subject slug: company name, kebab-case, lowercase, ASCII (per report-conventions). Strip apostrophes and other punctuation; keep legal suffixes lower-cased (`pty-ltd`, `inc`).
+
+Output path: `$ENG/due-diligence/<slug>.md`
+
+If a file already exists at that path, ask before overwriting (overwrite / write a `-2` sibling / abort).
+
+## Step 2: Stage the report from the template
+
+```bash
+mkdir -p "$ENG/due-diligence"
+cp "${CLAUDE_PLUGIN_ROOT}/templates/due-diligence.md" "$ENG/due-diligence/<slug>.md"
+```
+
+Replace placeholders in frontmatter:
+
+| Placeholder | Replace with |
+|---|---|
+| `{SUBJECT}` | The company name as provided |
+| `{SUBTITLE}` | Engagement directory basename, title-cased; drop the line if no useful inference |
+| `{DATE}` | Today's ISO date |
+| `{SCOPE}` | `partnership` / `investment` / `acquisition` |
+
+Set the Scope section in the body to a one-sentence framing of what decision this report supports. The scope determines how deep to go on each section:
 
 - **Commercial partnership** — focus on product-market fit, team stability, and reputational risk
 - **Investment consideration** — focus on growth trajectory, unit economics signals, and competitive moat
 - **Acquisition consideration** — full picture: fundamentals + product + team + market position + risk
 
-The scope determines how deep to go on each section. Misclassified scope produces an incomplete report.
+Misclassified scope produces an incomplete report.
 
-## Step 2: Business fundamentals
+## Step 3: Research and write into the staged file
+
+Work through the sections in the staged file. Write findings into the appropriate section as you go. Cite sources inline using the source-citations rule (deep links, access dates) and tag tier per source-quality.
+
+### Business fundamentals
 
 For public companies: pull latest annual report/filing for revenue, growth rate, gross margin, key operational metrics.
 
@@ -28,7 +58,7 @@ For private companies: Crunchbase for funding history; press for disclosed reven
 
 Each figure needs a source and date. Label revenue estimates for private companies explicitly.
 
-## Step 3: Product signals
+### Product signals
 
 Customer sentiment from public reviews:
 
@@ -40,7 +70,7 @@ Look for: score trend over 6+ months (not just current score), review velocity (
 
 Also note: notable customer wins mentioned in press, reference customers on their website, case studies.
 
-## Step 4: Team
+### Team
 
 From company website, LinkedIn, and press:
 
@@ -49,16 +79,16 @@ From company website, LinkedIn, and press:
 - Notable hires in last 12 months (signal of growth direction)
 - Notable departures in last 12 months (potential instability flag)
 
-Note: executive churn without a clear succession announcement is a red signal.
+Executive churn without a clear succession announcement is a red signal.
 
-## Step 5: Market position
+### Market position
 
 - Analyst market share estimates (cite report and year)
 - Growth rate vs market growth rate (is the company growing faster or slower than the market?)
 - Any identifiable competitive moat (network effects, switching costs, data advantage, regulatory barriers)
 - Customer concentration signals (are case studies all from one segment?)
 
-## Step 6: Risk factors
+### Risk factors
 
 - Regulatory exposure: active proceedings, compliance actions — search ASIC Connect (AU), Companies House (UK), SEC EDGAR (US)
 - Litigation: court filings, press coverage of legal disputes
@@ -66,7 +96,7 @@ Note: executive churn without a clear succession announcement is a red signal.
 - Financial red flags: down rounds, flat rounds, long gaps between funding with no milestone announced
 - Operational red flags: hiring freeze with no explanation, mass layoffs, major customer losses
 
-## Step 7: Signal summary
+### Signal summary
 
 Classify every major finding against the signal taxonomy before writing the verdict.
 
@@ -90,7 +120,9 @@ Classify every major finding against the signal taxonomy before writing the verd
 - Long gap between funding rounds, no revenue milestone announced
 - Heavy reliance on a single customer segment
 
-## Red flag escalation
+Fill the Signal summary table in the file with status (🟢/🟡/🔴) and a one-line evidence cell for each row.
+
+### Red flag escalation
 
 When the signal summary contains two or more red signals, don't stop at the verdict. Route deeper:
 
@@ -101,61 +133,23 @@ When the signal summary contains two or more red signals, don't stop at the verd
 | Reputational concern or data breach history | `/investigator:entity-footprint` for digital footprint and press timeline |
 | Customer concentration or market position concern | `/analyst:competitive-analysis` to understand alternatives |
 
-One red signal warrants noting. Two or more warrants investigation.
+One red signal warrants noting. Two or more warrants investigation. Record dispatched or recommended follow-ons in the Red flag escalation section of the report.
+
+## Step 4: Finalise the report
+
+- Write the verdict as one sentence with the 1-2 factors that most influence it.
+- Replace placeholder source rows with actual sources, tagged with tier per source-quality.
+- Set `status: Final` once complete; optionally set `confidence: 0-4`.
 
 ## Rules
 
-- State the scope explicitly at the top. Diligence for a partnership is narrower than for an acquisition.
+- State the scope explicitly in the report frontmatter and the Scope section. Diligence for a partnership is narrower than for an acquisition.
 - Every revenue figure needs a source and date.
 - Revenue ≠ valuation. Distinguish them — the confusion causes real decisions to go wrong.
 - The signal summary must precede the verdict. Don't write conclusions without showing the signals.
 - Flag clearly that this is public-data diligence only. Private diligence (financials, legal, technical) requires direct access.
+- One file per invocation. Don't write findings inline into chat.
 
-## Output format
+## Output
 
-```markdown
-## Due diligence: [Company name]
-
-**As of:** [date]
-**Scope:** [partnership | investment consideration | acquisition consideration]
-**Data type:** Public sources only
-
-### Business fundamentals
-
-[Revenue, growth rate, funding history — each figure with source and date]
-
-### Product signals
-
-[Customer review summary — score, trend, review count, key themes]
-
-### Team
-
-[Founding team backgrounds, key executive tenures, notable hires and departures]
-
-### Market position
-
-[Share estimate, growth vs market, moat assessment]
-
-### Risk factors
-
-[Regulatory, litigation, reputational, financial, operational flags]
-
-### Signal summary
-
-| Signal | Status | Evidence |
-|---|---|---|
-| Team stability | 🟢 / 🟡 / 🔴 | [evidence] |
-| Funding trajectory | 🟢 / 🟡 / 🔴 | [evidence] |
-| Customer sentiment trend | 🟢 / 🟡 / 🔴 | [evidence] |
-| Hiring velocity | 🟢 / 🟡 / 🔴 | [evidence] |
-| Regulatory/legal exposure | 🟢 / 🟡 / 🔴 | [evidence] |
-| Strategic fit | 🟢 / 🟡 / 🔴 | [evidence] |
-
-**Verdict:** [one sentence — the 1-2 factors that most influence it]
-
-**Note:** This is public-data diligence only. Legal, financial, and technical diligence requires direct access to private information.
-
-### Sources
-
-1. [Title](URL) — [what it contributed]
-```
+A single line: the absolute path to the written report.
