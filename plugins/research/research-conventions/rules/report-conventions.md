@@ -13,7 +13,7 @@ A file missing any of these is not a conforming report. Downstream consumers (e.
 | `title` | string | Renders as the section heading when the file is consumed elsewhere |
 | `date` | ISO date (`YYYY-MM-DD`) | Used to order entries chronologically |
 | `author` | string | Who or what produced the report — assessor name or skill name |
-| `category` | string | Free text but consistent within an engagement. Suggested values: `People`, `Technical`, `Corporate`, `Commercial`, `OSINT` |
+| `category` | string | Free text but consistent within an engagement. Suggested values: `People`, `Technical`, `Corporate`, `Commercial`, `OSINT`. Optional when `appendix: true` (see below). |
 
 ## Frontmatter — optional but recommended
 
@@ -24,8 +24,15 @@ A file missing any of these is not a conforming report. Downstream consumers (e.
 | `status` | enum | `Draft` or `Final` |
 | `confidence` | int 0-4 | Overall confidence rating per the source quality rubric |
 | `tags` | list of strings | Free-form, for future filtering |
+| `appendix` | bool | If true, file renders as an appendix at the end of the dossier, after all category sections. Use for sources registers, questions logs, or other reference material that supports the main content. When set, `category` may be omitted. |
 
 Other keys are permitted. Skill-specific frontmatter is fine — the rule defines the shared minimum, not a closed schema.
+
+## Appendix files
+
+A file with `appendix: true` is reference material that supports the main report content — sources registers, open-questions logs, glossaries, methodology notes. Downstream consumers (dossier builders) render appendices after all category sections, in their own dedicated Appendices section.
+
+Appendix files still need `title`, `date`, and `author`. `category` is optional for appendices since they don't belong to a People/Corporate/Commercial/Technical/OSINT slice.
 
 ## File-naming pattern
 
