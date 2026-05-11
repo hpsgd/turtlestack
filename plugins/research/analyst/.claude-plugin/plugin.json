@@ -1,7 +1,7 @@
 {
   "name": "analyst",
   "description": "Research and business intelligence agents — web research with source attribution, and company/market analysis from public sources.",
-  "version": "1.18.1",
+  "version": "1.19.0",
   "author": {
     "name": "hps.gd"
   },

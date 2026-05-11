@@ -1,7 +1,7 @@
 {
   "name": "performance-engineer",
   "description": "Performance engineer — load testing, profiling, capacity planning, performance budgets, and optimisation.",
-  "version": "1.18.1",
+  "version": "1.19.0",
   "author": {
     "name": "hps.gd"
   },
