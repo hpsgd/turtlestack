@@ -1,7 +1,7 @@
 {
   "name": "developer-docs-writer",
   "description": "Developer documentation writer — API references, SDK guides, integration tutorials, code examples. Writes for developers who are competent but unfamiliar with your codebase.",
-  "version": "1.19.0",
+  "version": "1.20.0",
   "author": {
     "name": "hps.gd"
   },
