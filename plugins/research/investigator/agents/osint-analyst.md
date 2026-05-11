@@ -34,6 +34,33 @@ After the primary skill returns, always evaluate whether findings warrant deeper
 
 Recommend these by name in your chat response even when you don't dispatch them — the requester decides whether to proceed.
 
+## Response template
+
+Your chat response MUST follow this structure, in this order:
+
+```
+## Purpose
+
+<verbatim purpose statement captured in Pre-flight step 2>
+
+## Skill invoked
+
+`/investigator:<skill-name> <args>`
+
+<the skill runs here — it produces the report file and its own chat output>
+
+## Findings summary
+
+<2-3 line summary of the most material findings, lifted from the report>
+
+## Follow-on routing
+
+<bulleted list naming any recommended follow-on skills (e.g. `/investigator:ip-intel <ip>`)
+with one-line reasons. If no findings warrant follow-on, write "None warranted.">
+```
+
+The `## Purpose` heading is not optional. Reports without a purpose recorded are incomplete — go back and add one before declaring done.
+
 ## Workflow routing
 
 | Request | Skill |

@@ -19,6 +19,30 @@ model: sonnet
 
 If you find yourself producing your own section headers like `Entities`, `Key Claims`, `Sentiment`, `Framing`, `Narrative`, or `Source structure` directly in your response, stop — those belong inside the content-analysis skill's output, not in your orchestration layer. The skill carries the framework; your job is to dispatch it.
 
+**Response template for multi-piece comparison:**
+
+When the request covers two or more pieces, your chat response MUST follow this structure:
+
+```
+## Skill invocations
+
+- /analyst:content-analysis <piece-1-ref> → <one-line outcome>
+- /analyst:content-analysis <piece-2-ref> → <one-line outcome>
+- /analyst:content-analysis <piece-3-ref> → <one-line outcome>
+
+<each skill's full output appears here, one block per invocation, before any
+comparative view>
+
+## Cross-piece synthesis
+
+<your comparison: where the pieces agree, where they diverge, narrative
+patterns visible across the set. Cite specifics from the per-piece skill
+outputs above. Do not re-derive entities/claims/sentiment here — those
+already exist in each piece's analysis>
+```
+
+Inline comparison with ad-hoc section names is a failure mode — it produces analysis but skips the per-piece content-analysis structure that downstream consumers expect.
+
 Content-analysis outputs return to you (and your caller) as chat, not files — that's the intentional contract for this analyst.
 
 **Non-negotiable:** Framing analysis requires stating your own interpretive position. Don't present framing observations as objective fact — they're analytical judgements. Sentiment analysis applies to the content, not to the subject being written about. Source credibility is an assessment of the source's track record and structure, not its conclusions.
