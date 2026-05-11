@@ -29,7 +29,7 @@ A few specifics for the response:
 
 - [ ] PASS: Skill writes a file to disk at `<pwd>/due-diligence/<company-slug>.md` (see ARTIFACTS WRITTEN — at least one .md file under `due-diligence/` exists)
 - [ ] PASS: The written file opens with YAML frontmatter (title, date, author=due-diligence, category=Commercial, subject, scope) per report-conventions
-- [ ] PASS: Chat response ends with a single line giving the absolute path to the written report
+- [ ] PASS: Chat response includes the absolute path to the written report (verbatim, copyable)
 - [ ] PASS: Skill states the scope explicitly at the top — commercial partnership scope, public data only
 - [ ] PASS: Business fundamentals section includes a source and date for every revenue or funding figure — no unsourced numbers
 - [ ] PASS: Product signals section covers review score trend over time, not just the current score

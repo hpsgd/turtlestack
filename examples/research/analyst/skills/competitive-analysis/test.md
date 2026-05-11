@@ -18,7 +18,7 @@ A few specifics for the response:
 
 - [ ] PASS: Skill writes a file to disk at `<pwd>/competitive-analysis/<market-slug>.md` (see ARTIFACTS WRITTEN — at least one .md file under `competitive-analysis/` exists)
 - [ ] PASS: The written file opens with YAML frontmatter (title, date, author=competitive-analysis, category=Commercial, subject) per report-conventions
-- [ ] PASS: Chat response ends with a single line giving the absolute path to the written report
+- [ ] PASS: Chat response includes the absolute path to the written report (verbatim, copyable)
 - [ ] PASS: Skill defines the market before listing competitors — states buyer type (SMB), purchase unit, geography (AU), and any timing assumptions
 - [ ] PASS: Competitors are classified into direct, indirect, and substitute categories
 - [ ] PASS: Skill uses AU-specific sources (IBISWorld AU, Seek job postings, G2 AU category) alongside global sources — not US-only competitive intelligence

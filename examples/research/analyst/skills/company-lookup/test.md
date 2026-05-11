@@ -18,7 +18,7 @@ A few specifics for the response:
 
 - [ ] PASS: Skill writes a file to disk at `<pwd>/company-lookup/<company-slug>.md` (see ARTIFACTS WRITTEN — at least one .md file under `company-lookup/` exists)
 - [ ] PASS: The written file opens with YAML frontmatter (title, date, author=company-lookup, category=Corporate, subject) per report-conventions
-- [ ] PASS: Chat response ends with a single line giving the absolute path to the written report
+- [ ] PASS: Chat response includes the absolute path to the written report (verbatim, copyable)
 - [ ] PASS: Skill defines a clear trigger or usage context (when to invoke this skill)
 - [ ] PASS: Skill specifies what sources to check (e.g. company website, LinkedIn, Crunchbase, news)
 - [ ] PASS: Skill defines an output structure with named sections (not freeform)
