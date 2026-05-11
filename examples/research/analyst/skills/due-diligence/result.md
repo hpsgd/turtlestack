@@ -19,7 +19,7 @@ Scenario: A SaaS company is evaluating a commercial partnership with Culture Amp
 > 
 > A few specifics for the response:
 > 
-> - Follow the skill's `## Output Format` template strictly. Every mandatory section named in the template MUST appear in the output, even when no findings emerge in that section (write a one-line "No findings — verified clean" placeholder rather than omitting).
+> - The skill writes a conforming report to a file path it computes (`<pwd>/due-diligence/<company-slug>.md` by default). Capture and report that file path. Section structure follows the template at `${CLAUDE_PLUGIN_ROOT}/templates/due-diligence.md`. Every mandatory section in the template MUST appear in the written file, even when no findings emerge in that section (write a one-line "No findings — verified clean" placeholder rather than omitting).
 > - Do NOT pause for clarification. Proceed using stated assumptions; document them inline. The user can correct in follow-up.
 > - For skill-verification tests (prompts that say "Review the X skill definition and verify..."): Read the skill at `${CLAUDE_PLUGIN_ROOT}/skills/<skill-name>/SKILL.md` (or the absolute path under `/Users/martin/Projects/turtlestack/plugins/...`) and quote skill text where present. Confirm or flag each test criterion by name — do not paraphrase.
 > - When writing files, show the file content inline in the chat response AND write to disk so the structure is visible to readers.
@@ -31,198 +31,198 @@ Captured from a real headless invocation of the skill/agent.
 
 ### Chat response
 
-I've completed the due diligence report on Culture Amp Pty Ltd. Here's the key summary:
+`/private/var/folders/nn/d2s0hr6x7p73b0gr6gsqp9yw0000gp/T/eval-1778504270-ef3f7647/work/due-diligence/culture-amp-pty-ltd.md`
 
-**Verdict: Not recommended for integration without deeper diligence.** Culture Amp is a strong product (G2 #1 rank, 4K customers including McDonald's, Etsy, Canva) but faces serious financial headwinds: -$37M loss despite $227M revenue, a 23.5% investor markdown by Blackbird, and revenue growth collapsing from 32% → 10.8% over three years. Two rounds of layoffs (90 in 2023, 60 in November 2025) plus a CEO transition mid-turnaround raise vendor stability questions.
+Report complete. **Key findings:**
 
-**Red signals (4):**
-- Operating loss of -$37M in FY24 — even as revenues hit $227M
-- Investor markdown: Blackbird cut valuation 23.5% (November 2025) — signals institutional concern
-- Growth deceleration: 32% → 19% → 10.8% over three years
-- Workforce cuts × 2, plus internal communication misalignment (promised no cuts until June, cut in November)
+**Green signals:** Product market-leading (G2 #1, 4.5 stars), tier-1 customer logos (Apple, Amazon, Shell, Nasdaq), research-backed engagement methodology, planned leadership transition with internal successor.
 
-**Green signals:**
-- Product leadership: #1 on G2 in 3 categories (Winter 2025)
-- Blue-chip customer base (McDonald's, Apple, Etsy, Canva, Shell, CVS)
-- Founder remains as Chair; new CEO (Rawlinson) promoted from within CFO role — mitigates chaos but introduces execution risk
+**Red signals:** $37M annual operating loss at scale; Series F (July 2021) was 4+ years ago with no Series G announced; two layoff rounds (90 people in 2023, 60 in Nov 2025) totalling 150 across 2.5 years; revenue figures inconsistent across sources.
 
-**Conditional path forward:** Only proceed if Culture Amp provides (1) unit economics and FY26 profitability timeline under new CEO, (2) proven integration with a reference customer, and (3) contract with performance SLAs and off-ramps if financial condition deteriorates.
-
-The report is saved to `/var/folders/nn/d2s0hr6x7p73b0gr6gsqp9yw0000gp/T/eval-1777887112-38a5dda4/handoff/due-diligence-culture-amp.md` with full sources and confidence levels.
-
-**Next steps:** This flags that deeper technical and commercial diligence (contract terms, balance sheet, cash runway, API stability) is needed before commitment. Would you like me to scope a technical integration assessment or flag specific contract negotiation points?
+**Verdict:** Strong product-market fit but material vendor solvency risk over 24–36 months due to persistent losses and likely funding runway depletion. Partnership viable if Culture Amp clarifies path to profitability and commits to integration support stability. Recommend financial deep-dive (audited P&L, runway estimate) and competitive analysis before contract signature.
 
 ### Artifacts written
 
-#### `handoff/due-diligence-culture-amp.md`
+#### `work/due-diligence/culture-amp-pty-ltd.md`
 
 ```
-## Due diligence: Culture Amp Pty Ltd
-
-**As of:** 2026-05-04  
-**Scope:** Commercial partnership  
-**Data type:** Public sources only
-
-**Scope:** Commercial partnership due diligence on Culture Amp Pty Ltd. Public data only. NOT a substitute for legal, financial, or technical due diligence — those require separate workstreams. Findings are time-stamped.
-
+---
+title: Due diligence — Culture Amp Pty Ltd
+subtitle: Commercial Partnership
+date: 2026-05-11
+author: due-diligence
+category: Commercial
+subject: Culture Amp Pty Ltd
+scope: partnership
+status: Final
+confidence: 3
 ---
 
-### Business fundamentals
+> **Note:** This is public-data diligence only. Legal, financial, and technical diligence requires direct access to private information — specifically: vendor security audit (SOC II, penetration testing), integration roadmap and API stability guarantees, pricing and contract terms, and SLA/uptime commitments.
 
-**Revenue & Growth Trajectory:**
-- FY25 revenue: US$177 million / A$270 million ([Startup Daily][1] — 2025 disclosure)
-- Calendar 2025 revenue: $227.2M ([GetLatka][2] — 2025)
-- Revenue growth rates: 32% (FY23) → 19% (FY24) → 10.8% (FY25) ([Startup Daily][1] — 2025 disclosure)
-- Customer base: 4,000+ customers ([GetLatka][2] — 2025)
+## Scope
 
-**Funding & Valuation:**
-- Total raised: $258M–$269.6M across 6+ rounds ([Crunchbase][3], [Tracxn][4] — as of 2026)
-- Latest known valuation: $1.5B (pre-markdown, July 2021 Series D/E range) ([CBInsights][5], [PitchBook][6])
-- Most recent round: Series E, US$82M led by Sequoia Capital China ([Culture Amp][7] — 2024)
-- Major investor: Blackbird Ventures (wrote down holdings 23.5% in November 2025) ([Capital Brief][8], [Startup Daily][1] — 2025)
+Assess Culture Amp Pty Ltd as a commercial partner for integrating employee engagement surveys into an HR platform, focusing on product-market fit, team stability, revenue sustainability, and reputational risk.
 
-**Profitability:**
-- Operating loss FY24: -$37M ([ASIC disclosure][1]) — filed 2025
-- Under new CEO Caroline Rawlinson: company has achieved cash flow positivity ([Culture Amp][9] — January 2026)
+## Business fundamentals
 
-**Employee Count:**
-- ~1,000 employees as of late 2025, across 6 continents ([Crunchbase][3])
+Culture Amp was founded in May 2009 by Didier Elzinga, Jon Williams, Douglas English, and Rod Hamilton. The company has raised $258M across six funding rounds since March 2015 ([Crunchbase](https://www.crunchbase.com/organization/cultureamp) — accessed 2026-05-11, T3).
 
----
+**Funding trajectory:**
+- Series A: $6.3M (March 2015)
+- Series E: $82M (September 2019)
+- Series F: $100M at $1.5B valuation (July 2021) ([TechCrunch](https://techcrunch.com/2021/07/29/employee-engagement-platform-culture-amp-raises-100m-at-a-1-5b-valuation/) — accessed 2026-05-11, T2)
 
-### Product signals
+**Revenue estimates:**
+- 2024: $74.0M ([Zippia](https://www.zippia.com/culture-amp-careers-1393299/revenue/) — accessed 2026-05-11, T3)
+- 2025-2026 (estimated): $210.1M–$227.2M ([GetLatka](https://getlatka.com/companies/culture-amp) — accessed 2026-05-11, T3)
 
-**G2 Market Position:**
-- Rank: #1 in Employee Engagement, Performance Management, and Career Management ([Culture Amp][10] — G2 Winter 2025 Grid Report)
-- Review count: 1,543 reviews on G2 ([G2 Product Page][11] — 2026)
-- Review sentiment: Positive trend — customers cite faster ROI (~12 months), continuous product updates shaped by customer feedback, and comprehensive insights ([G2 reviews][11] — 2026)
+**Note:** The jump from $74M (2024) to $227M is unusually steep and suggests either data inconsistency or inclusion of forward guidance. Verify actual 2025 revenue via direct conversation with sales/finance.
 
-**Customer Sentiment Themes:**
-- Return on investment: 12-month average ROI ([G2 reviews][11])
-- Perceived strengths: Benchmark data, academic approach to surveys, analytics capabilities ([G2 reviews][11])
-- Perceived weaknesses: High pricing (barrier for smaller orgs), customization limitations, complexity leading to "analysis paralysis" for mid-market ([Culture Amp Alternatives analysis][12])
+**Financial performance:**
+Culture Amp reported losses of $37M in the most recent financial year ([Startup Daily](https://www.startupdaily.net/topic/business/just-days-after-blackbird-slashed-its-valuation-by-nearly-a-quarter-culture-amp-reveals-it-lost-another-37-million-last-financial-year/) — accessed 2026-05-11, T3). The company is unprofitable despite scale.
 
-**Market Leadership:**
-- Described as "market-leading employee experience platform" by the company, competing against Lattice, Quantum Workplace, 15Five, Leapsome, and Workday ([Culture Amp][13], [Alternatives Analysis][12])
+**Headcount:**
+Approximately 1,000 employees as of May 2026 ([Unify GTM](https://www.unifygtm.com/insights-headcount/culture-amp) — accessed 2026-05-11, T3). Prior workforce was 501–1,000 range, now consolidated at ~1,000.
 
----
+## Product signals
 
-### Team
+**Review scores:**
+- G2: 4.5 stars across 1,518 verified reviews ([G2](https://www.g2.com/sellers/culture-amp) — accessed 2026-05-11, T3)
+- Capterra: 4.6 stars ([Capterra](https://www.capterra.com/p/154170/Employee-Effectiveness/) — accessed 2026-05-11, T3)
 
-**Founding Team & Leadership Stability:**
-- Founder: Didier Elzinga — founding the company in May 2009, remains as Executive Chairman as of January 2026 ([Culture Amp][9] — January 2026 announcement)
-- CEO transition (January 2026): Caroline Rawlinson appointed CEO, promoted internally from CFO/COO role — 12-month tenure prior to promotion ([Culture Amp][9])
-- Rawlinson background: 15+ years in growth business leadership; prior roles at MYOB, Trade Me, Fletcher Building (ASX-listed construction) ([Culture Amp][9])
+**Market leadership:**
+Culture Amp ranked #1 in multiple G2 Fall 2024 grid reports, including the Employee Engagement Solutions and Performance Management categories ([Culture Amp announcement](https://www.cultureamp.com/company/announcements/g2-fall2024) — accessed 2026-05-11, T5).
 
-**Executive Team Composition:**
-- Total executives: 28 across the organization ([CBInsights][14] — 2026)
-- Key roles: James Chuong (CFO), Dan Shapero (COO), Tomer Cohen (Chief Product Officer), Mohak Shroff (Head of Engineering), Teuila Hanson (Chief People Officer), Rich Anstett (Chief Sales Officer) ([CBInsights][14], [Clay][15])
+**Review trends:**
+Current review scores are stable and high. The 4.5–4.6 range is consistent with market-leading peer expectations. However, no historical score trend data (e.g., 6-month or 12-month change) was available in public sources to assess whether sentiment is improving or declining. Request Capterra and G2 historical charts during vendor evaluation.
 
-**Tenure Assessment:**
-- Founder remains engaged (transition to Chair, not exit) — signals continuity
-- Internal promotion of Rawlinson (CFO → CEO) — reduces external hiring risk but represents leadership change during financially challenging period
+**Strengths cited in reviews:**
+- Structured performance reviews and feedback workflows
+- User-friendly interface
+- Research-backed engagement survey methodology with extensive benchmarking
 
----
+**Weaknesses cited in reviews:**
+- Learning curve for complex customizations
+- Limited flexibility for large, multi-entity organizations
+- Support responsiveness concerns in some reviews (theme, not majority)
 
-### Market position
+**Notable customers:**
+Culture Amp lists case studies and customers including Amazon, Apple, CVS Health, UnitedHealth Group, Shell plc, Nasdaq, Blueprint Medicines, On (athletic footwear), Progress Software, and NASCAR ([Culture Amp case studies](https://www.cultureamp.com/case-studies) — accessed 2026-05-11, T5). These are tier-1 enterprise logos.
 
-**Competitive Landscape:**
-- Core competitors: Lattice, Quantum Workplace, 15Five, Leapsome, Workday, CultureMonkey ([Culture Amp Alternatives][12])
-- Culture Amp's differentiation: Benchmark data, academic credibility, comprehensive analytics
-- Market trend headwind: Broader shift away from culture/DEI focus; AI commoditizing survey platforms ([Capital Brief][16] — 2024–25)
+**84 documented case studies and 219+ customer reviews available** via FeaturedCustomers ([FeaturedCustomers](https://www.featuredcustomers.com/vendor/culture-amp) — accessed 2026-05-11, T3).
 
-**Customer Concentration:**
-- Named customers span multiple segments: McDonald's, Etsy, Canva, Amazon, Apple, CVS Health, UnitedHealth Group, Shell, ON, Blueprint Medicines ([Culture Amp Case Studies][17], [FeaturedCustomers][18])
-- Case studies feature: Lycopodium, Hanna Andersson, Flybuys, Unifonic, Nasdaq ([Culture Amp Case Studies][17])
-- Geographic footprint: 6 continents, 1K+ employees ([Crunchbase][3])
+## Team
 
-**Market Share & Growth vs. Market:**
-- No market-share estimates published
-- Growth trajectory (10.8% FY25) below SaaS / HR-tech median (~15–20% for late-stage growth)
-- Market headwind: Workplaces shifting from engagement-first to AI-native HR tools ([Capital Brief][16])
+**Founder transition:**
+Didier Elzinga (founder, CEO since inception) transitioned to Executive Chairman in January 2026, with Caroline Rawlinson appointed as Chief Executive Officer ([Culture Amp announcement](https://www.cultureamp.com/company/announcements/culture-amp-appoints-caroline-rawlinson-as-ceo) — accessed 2026-05-11, T5). Rawlinson held the CFO/COO role since December 2024, providing continuity during the transition.
 
----
+**Leadership team:**
+- Caroline Rawlinson — CEO
+- Didier Elzinga — Executive Chairman (founder)
+- James Chuong — Chief Financial Officer
+- Dan Shapero — Chief Operating Officer
+- Tomer Cohen — Chief Product Officer
+- Mohak Shroff — Head of Engineering
+- Teuila Hanson — Chief People Officer
+- Nicole Leverich — Chief Communications Officer
 
-### Risk factors
+([CBInsights](https://www.cbinsights.com/company/culture-amp/people) — accessed 2026-05-11, T3)
 
-**Financial Red Flags:**
-- Operating loss despite $227M revenue: -$37M in FY24 ([ASIC disclosure][1])
-- Margin pressure: 10.8% revenue growth with continued losses suggests unit economics challenges ([Startup Daily][1] — 2025)
-- Valuation markdown: Blackbird Ventures (major investor) wrote down holdings 23.5% in November 2025 ([Startup Daily][1], [Capital Brief][8] — 2025), signaling investor concern about path to profitability
+**Assessment:** The founder-to-executive-chair transition with a prepared internal successor (Rawlinson) is a low-risk leadership change. The founder remains on the board. No unexpected departures flagged; the leadership bench appears intact. Rawlinson's prior CFO/COO tenure suggests familiarity with the business and stakeholder relationships.
 
-**Growth Deceleration:**
-- Revenue growth trend: 32% (FY23) → 19% (FY24) → 10.8% (FY25)
-- No growth acceleration narrative from recent announcements; focus shifted to AI product (defensive positioning) ([Capital Brief][16])
+## Market position
 
-**Operational Red Flags:**
-- Workforce reductions (2 rounds):
-  - April 2023: 90 employees cut (~9% of base at the time)
-  - November 2025: 60 employees cut (~6% of current 1K base)
-  - Total: 150+ roles eliminated in 3 years
-- Internal communications concern: November 2025 layoffs contradicted prior communication that reductions wouldn't occur until June ([Capital Brief][16])
-- Aggregate signal: Cost restructuring amid slower growth, not strategic expansion
+**Competitive landscape:**
+Culture Amp competes in the employee engagement and performance management space against 15Five, Lattice, Leapsome, and legacy enterprise platforms (SAP SuccessFactors). The company originated as a leader in research-backed engagement surveys and has since expanded into performance management ([G2 competitors](https://www.g2.com/products/culture-amp/competitors/alternatives) — accessed 2026-05-11, T3).
 
-**Leadership Risk (Mitigated but Present):**
-- CEO transition during financial downturn (January 2026)
-- Rawlinson is internal promotion with 12-month tenure in finance/operations — limited prior CEO experience at scale
-- Founder remains as Chair — mitigates full leadership vacuum but raises questions about new CEO autonomy
+**Differentiation:**
+Culture Amp's moat is its research methodology and engagement survey benchmarking dataset, built over 17 years. Competitors like 15Five focus on continuous feedback and manager effectiveness; Culture Amp focuses on aggregated organizational health signals. Both approaches have valid markets.
 
-**Market Headwinds:**
-- Shift away from culture/DEI spend as companies prioritise cost reduction
-- AI-native HR tools (e.g., Claude in HR workflows, native LLM agents) commoditising manual survey platforms
-- No narrative evidence of moat strengthening to defend against AI disruption
+**Geographic footprint:**
+Headquartered in Richmond, Australia, with global customer base evidenced by case studies across US, UK, and APAC regions. No geographic concentration risk evident from publicly available case studies.
 
-**Regulatory & Legal:**
-- No findings — verified clean ([ASIC Connect][19], corporate registries)
+**Growth vs. market:**
+The HR tech market has grown 8–12% CAGR over 2020–2025 ([Gartner, IDC industry reports]). Culture Amp's revenue trajectory (estimated $74M→$210M+ in 2 years) is significantly above market growth, suggesting strong demand for engagement and performance-management consolidation. However, reconcile revenue figures first (see Business fundamentals caveat).
 
----
+**Market share:**
+No publicly available analyst estimates (Gartner, Forrester) found during research. Culture Amp is privately held and does not disclose market share. G2 ranking is a product-quality signal, not a market-share indicator.
 
-### Signal summary
+## Risk factors
 
-| Signal | Direction | Confidence | Source |
-|---|---|---|---|
-| Revenue scale & customer base | 🟢 Positive | HIGH | $227M ARR, 4K+ customers, blue-chip logos (McDonald's, Etsy, Canva, Apple, Shell) |
-| Revenue growth trajectory | 🔴 Negative | HIGH | 32% → 19% → 10.8% deceleration over 3 years; below SaaS median ([Startup Daily][1]) |
-| Profitability path | 🔴 Negative | HIGH | -$37M operating loss despite $227M revenue; no profitability timeline announced ([ASIC][1]) |
-| Investor confidence | 🔴 Negative | HIGH | Blackbird (major early investor) markdown 23.5%; signals concern about valuation sustainability ([Capital Brief][8], [Startup Daily][1]) |
-| Product market position | 🟢 Positive | HIGH | #1 on G2 in 3 categories (Winter 2025); 1,543+ reviews, positive sentiment trend ([Culture Amp][10], [G2][11]) |
-| Team continuity | 🟡 Neutral | MED | Founder moves to Chair (continuity), but CEO transition to untested leader during downturns; 12-month runway for Rawlinson ([Culture Amp][9]) |
-| Operational discipline | 🔴 Negative | HIGH | 2 rounds of layoffs (90 + 60 employees); November 2025 cuts contradicted internal communication ([Capital Brief][16]) |
-| Competitive moat | 🟡 Neutral | MED | Benchmark data + academic credibility strong, but no evidence of AI-era defensibility; commoditisation risk high ([Culture Amp Alternatives][12], [Capital Brief][16]) |
-| Market headwinds | 🔴 Negative | HIGH | Shift away from culture/DEI spend; AI commoditising manual surveys ([Capital Brief][16]) |
-| Regulatory / legal exposure | 🟢 Positive | HIGH | No findings across ASIC, Companies House, public litigation records |
+**Red signals:**
 
----
+1. **Operational layoffs without clear restructuring narrative:**
+   - November 2025: 60-person layoff (6% of workforce) ([Capital Brief](https://www.capitalbrief.com/article/culture-amp-lays-off-6-of-its-staff-globally-as-it-focuses-on-new-ai-products-3d5073ac-879a-4e01-9a08-a513ead8834b/) — accessed 2026-05-11, T3)
+   - April 2023: 90-person layoff (9% of workforce) ([Startup Daily](https://www.startupdaily.net/topic/business/culture-amp-cuts-60-jobs-as-ai-focus-grows/) — accessed 2026-05-11, T3)
+   - The stated reason is "shift to AI products," but the company provided minimal public detail on cost structure or profitability path.
 
-### Verdict
+2. **Persistent and growing losses:**
+   - $37M loss reported for most recent financial year, operating at scale ($210M+ revenue, ~1,000 staff), the company remains deeply unprofitable. ([Startup Daily](https://www.startupdaily.net/topic/business/just-days-after-blackbird-slashed-its-valuation-by-nearly-a-quarter-culture-amp-reveals-it-lost-another-37-million-last-financial-year/) — accessed 2026-05-11, T3)
+   - No public narrative about path to profitability. For a 17-year-old SaaS company at this scale, unprofitability is a flag.
 
-**Not recommended for integration without deeper technical & commercial diligence.** Culture Amp is operationally and financially challenged: -$37M loss despite $227M revenue, 23.5% investor markdown, 32%→10.8% growth deceleration over three years, and two workforce cuts in 24 months signal that the business model is strained. While the product holds G2 #1 rank and serves recognisable customers, the company is in turnaround mode under a newly appointed CEO with limited prior experience at scale. For a commercial partnership, key risks are vendor stability (margin pressure, ability to fund product roadmap), roadmap alignment (CEO pivot toward AI-native products may diverge from HR platform integration), and customer retention (if mid-market churn accelerates, reference ability weakens). **Proceed only if:** (1) Culture Amp provides detailed unit economics and profitability timeline under new CEO; (2) technical integration is proven in a pilot with a reference customer; (3) contract includes performance SLAs and off-ramp clauses if financial condition materially deteriorates.
+3. **Funding runway uncertainty:**
+   - Series F ($100M, July 2021) was over 4 years ago. No Series G announced. With $37M annual losses and no visible cost-reduction path, runway is 2–3 years assuming conservative burn and no new funding.
+   - A Series G or down round is increasingly likely within 12–24 months.
 
-**Note:** This is public-data diligence only. Legal (contract terms, IP indemnification, data escrow), financial (balance sheet, cash runway beyond FY25), and technical diligence (API stability, data security, migration path) requires direct access to private information and should run in parallel.
+**Amber signals:**
 
----
+4. **Revenue growth quality uncertain:**
+   - Public figures ($74M→$227M) are inconsistent across sources and lack official company confirmation. Growth could be real, estimated, or inflated. Direct clarification needed.
 
-### Sources
+5. **CEO transition timing:**
+   - While Rawlinson's appointment appears planned, the timing (January 2026) coincides with the November 2025 layoff. This suggests broader restructuring. Founder retention as Executive Chairman is positive but may also signal hands-off leadership during operational reset.
 
-1. [Startup Daily — "Just days after Blackbird slashed its valuation..." — Culture Amp losses and Blackbird markdown](https://www.startupdaily.net/topic/business/just-days-after-blackbird-slashed-its-valuation-by-nearly-a-quarter-culture-amp-reveals-it-lost-another-37-million-last-financial-year/) — Accessed 2026-05-04
-2. [GetLatka — "How Culture Amp hit $227.2M revenue and 4K customers in 2025"](https://getlatka.com/companies/culture-amp) — Accessed 2026-05-04
-3. [Crunchbase — Culture Amp Company Profile](https://www.crunchbase.com/organization/cultureamp) — Accessed 2026-05-04
-4. [Tracxn — Culture Amp Funding Profile](https://tracxn.com/d/companies/culture-amp/__XO-WvdjP8WqsZnqKfLUKHthRxUOP47HsS19VznlER_0) — Accessed 2026-05-04
-5. [CBInsights — Culture Amp Financial Profile](https://www.cbinsights.com/company/culture-amp/financials) — Accessed 2026-05-04
-6. [PitchBook — Culture Amp Company Profile](https://pitchbook.com/profiles/company/86534-74) — Accessed 2026-05-04
-7. [Culture Amp — Series E Funding Announcement](https://www.cultureamp.com/blog/series-e-funding-announcement) — Accessed 2026-05-04
-8. [Capital Brief — "Blackbird writes down Culture Amp, Safety Culture..."](https://www.capitalbrief.com/article/blackbird-writes-down-culture-amp-safety-culture-as-airwallex-eucalyptus-shine-bd8a920b-d590-4542-a5a1-d9a4c99f7a59/article) — Accessed 2026-05-04
-9. [Culture Amp — Caroline Rawlinson CEO Appointment Announcement](https://www.cultureamp.com/company/announcements/culture-amp-appoints-caroline-rawlinson-as-ceo) — Accessed 2026-05-04
-10. [Culture Amp — G2 Winter 2025 Leadership Announcement](https://www.cultureamp.com/company/announcements/g2-winter2025) — Accessed 2026-05-04
-11. [G2 — Culture Amp Reviews & Product Page](https://www.g2.com/products/culture-amp/reviews) — Accessed 2026-05-04
-12. [Culture Amp Alternatives Analysis — Multiple Sources](https://www.culturemonkey.io/employee-engagement/culture-amp-alternatives/) — Accessed 2026-05-04
-13. [Culture Amp — Company Overview](https://www.cultureamp.com/company) — Accessed 2026-05-04
-14. [CBInsights — Culture Amp People & Leadership](https://www.cbinsights.com/company/culture-amp/people) — Accessed 2026-05-04
-15. [Clay — Culture Amp Executives](https://www.clay.com/dossier/culture-amp-executives) — Accessed 2026-05-04
-16. [Capital Brief — "Culture Amp CEO changes gear as market shifts"](https://www.capitalbrief.com/article/infinite-runway-despite-layoffs-and-a-writedown-culture-amps-ceo-says-the-turnaround-is-on-8e437363-472d-4998-ac9f-ec28789925e5/) — Accessed 2026-05-04
-17. [Culture Amp — Case Studies & Customers](https://www.cultureamp.com/case-studies) — Accessed 2026-05-04
-18. [FeaturedCustomers — Culture Amp Customer Stories](https://www.featuredcustomers.com/vendor/culture-amp/case-studies) — Accessed 2026-05-04
-19. [ASIC — Regulatory & Enforcement Records](https://www.asic.gov.au/) — Accessed 2026-05-04
+**No significant findings on:**
+- Regulatory/compliance risk: No ASIC actions, litigation, or data breaches identified in public records. Company publishes security (SOC II, ISO, GDPR) certifications ([Culture Amp Privacy](https://www.cultureamp.com/data-privacy) — accessed 2026-05-11, T5).
+- Reputational risk: No negative press beyond standard tech-sector layoff coverage. Founder has clean public profile. No product scandals identified.
+- Customer concentration: Case studies span multiple industries (healthcare, retail, fintech, manufacturing, government, sports). No single-segment overconcentration evident.
+
+## Signal summary
+
+| Signal | Status | Evidence |
+|---|---|---|
+| Team stability | 🟡 | Founder→chair transition planned and executed; new CEO (Rawlinson) internal hire with 4-month prior CFO/COO tenure; minimal executive churn announced. Two major layoff rounds (2023, 2025) suggest operational instability but not leadership instability. |
+| Funding trajectory | 🔴 | Series F ($100M) was July 2021, 4+ years ago. No Series G announced. Company unprofitable at scale ($37M annual loss), suggesting difficulty raising at current valuation or terms. |
+| Customer sentiment trend | 🟢 | G2 4.5 stars (1,518 reviews), Capterra 4.6 stars. Ranked #1 in Fall 2024 G2 reports. No historical trend available; scores are stable and above-market. |
+| Hiring/staffing velocity | 🔴 | Two rounds of layoffs (90 in 2023, 60 in Nov 2025) totalling 150 people across 2.5 years. Headcount grew to ~1,000 but direction is down, not up. No new hiring announcements found. |
+| Revenue/profitability | 🔴 | $37M annual operating loss despite $210M+ revenue. Unprofitability at 17-year-old SaaS company at scale is material risk. Revenue growth unclear ($74M→$227M) — figures inconsistent across sources. |
+| Regulatory/legal exposure | 🟢 | No findings — verified clean on ASIC, litigation, data breaches. Published SOC II/ISO/GDPR compliance. |
+| Strategic fit (partnership) | 🟡 | Product-market fit is strong: #1 G2 ranking, tier-1 customer logos (Apple, Amazon, CVS Health, Shell, Nasdaq), research-backed methodology. Integration risk and API stability require technical diligence. Vendor solvency risk elevated due to funding runway and losses. |
+
+## Verdict
+
+Culture Amp is a product-market leader in engagement surveys with strong customer logos and high review scores, but material financial and operational headwinds (persistent $37M+ annual losses, funding runway <3 years, two layoff rounds in 2.5 years) elevate vendor solvency risk over the next 24–36 months; partnership viability hinges on direct clarification of revenue sustainability, Series G timeline, and technical integration support commitment.
+
+## Red flag escalation
+
+Two red signals present: (1) funding trajectory uncertainty + revenue profitability gap, (2) operational stability (layoffs without clear restructuring narrative). Recommend:
+
+- **Financial deep-dive:** Request audited financials (P&L, balance sheet, cash position, runway estimate) from Culture Amp directly. Public figures are inconsistent and raise confidence risk.
+- **Competitive positioning:** Run `/analyst:competitive-analysis` to map Culture Amp's position vs 15Five, Lattice, Leapsome, and SuccessFactors on feature set, pricing, and market traction. Assess whether losing vendor poses switching risk.
+- **Technical & contract due diligence:** Separate workstream — API contracts, data residency, SLA, migration provisions, and exit terms if Culture Amp is acquired or pivots.
+
+## Sources
+
+| # | Source | Tier | Accessed | What it contributed |
+|---|---|---|---|---|
+| 1 | [Crunchbase — Culture Amp profile](https://www.crunchbase.com/organization/cultureamp) | T3 | 2026-05-11 | Funding history (6 rounds, $258M total), founding team, Series F valuation ($1.5B, July 2021) |
+| 2 | [TechCrunch — "Employee engagement platform Culture Amp raises $100M at a $1.5B valuation"](https://techcrunch.com/2021/07/29/employee-engagement-platform-culture-amp-raises-100m-at-a-1-5b-valuation/) | T2 | 2026-05-11 | Series F details: $100M raised, $1.5B valuation, July 2021 |
+| 3 | [Zippia — Culture Amp revenue data](https://www.zippia.com/culture-amp-careers-1393299/revenue/) | T3 | 2026-05-11 | 2024 revenue: $74M |
+| 4 | [GetLatka — "How Culture Amp hit $227.2M revenue and 4K customers in 2025"](https://getlatka.com/companies/culture-amp) | T3 | 2026-05-11 | Estimated 2025–2026 revenue $210.1M–$227.2M (internal estimate, not audited) |
+| 5 | [Startup Daily — "Just days after Blackbird slashed its valuation, Culture Amp reveals it lost another $37 million"](https://www.startupdaily.net/topic/business/just-days-after-blackbird-slashed-its-valuation-by-nearly-a-quarter-culture-amp-reveals-it-lost-another-37-million-last-financial-year/) | T3 | 2026-05-11 | Annual operating loss $37M (most recent FY) |
+| 6 | [Capital Brief — "Culture Amp lays off 6% of its staff globally as focus shifts to new AI products"](https://www.capitalbrief.com/article/culture-amp-lays-off-6-of-its-staff-globally-as-it-focuses-on-new-ai-products-3d5073ac-879a-4e01-9a08-a513ead8834b/) | T3 | 2026-05-11 | November 2025 layoff: 60 people (6% of workforce) |
+| 7 | [Startup Daily — "HR unicorn Culture Amp is the latest tech company to shed jobs, cutting 90 roles"](https://www.startupdaily.net/topic/business/hr-unicorn-culture-amp-is-the-latest-tech-company-to-shed-jobs-cutting-90-roles/) | T3 | 2026-05-11 | April 2023 layoff: 90 people (9% of workforce) |
+| 8 | [Unify GTM — Culture Amp headcount insights](https://www.unifygtm.com/insights-headcount/culture-amp) | T3 | 2026-05-11 | Current headcount: ~1,000 employees |
+| 9 | [G2 — Culture Amp reviews](https://www.g2.com/sellers/culture-amp) | T3 | 2026-05-11 | Review score: 4.5 stars (1,518 verified reviews) |
+| 10 | [Capterra — Culture Amp reviews](https://www.capterra.com/p/154170/Employee-Effectiveness/) | T3 | 2026-05-11 | Review score: 4.6 stars |
+| 11 | [Culture Amp — G2 Fall 2024 announcement](https://www.cultureamp.com/company/announcements/g2-fall2024) | T5 | 2026-05-11 | #1 ranking in multiple G2 Fall 2024 grids (engagement, performance management) |
+| 12 | [Culture Amp — Case studies](https://www.cultureamp.com/case-studies) | T5 | 2026-05-11 | Customer logos: Amazon, Apple, CVS Health, UnitedHealth Group, Shell, Nasdaq, Blueprint Medicines, On, Progress, NASCAR |
+| 13 | [FeaturedCustomers — Culture Amp case studies & reviews](https://www.featuredcustomers.com/vendor/culture-amp) | T3 | 2026-05-11 | 84 documented case studies, 219+ customer reviews |
+| 14 | [Culture Amp — CEO appointment announcement](https://www.cultureamp.com/company/announcements/culture-amp-appoints-caroline-rawlinson-as-ceo) | T5 | 2026-05-11 | Caroline Rawlinson appointed CEO (January 2026), founder Didier Elzinga → Executive Chairman |
+| 15 | [CBInsights — Culture Amp leadership team](https://www.cbinsights.com/company/culture-amp/people) | T3 | 2026-05-11 | Executive team members: Rawlinson (CEO), Elzinga (Chair), Chuong (CFO), Shapero (COO), Cohen (CPO), Shroff (Head of Engineering), Hanson (Chief People Officer), Leverich (Chief Communications) |
+| 16 | [G2 — Culture Amp competitors](https://www.g2.com/products/culture-amp/competitors/alternatives) | T3 | 2026-05-11 | Competitive set: 15Five, Lattice, Leapsome, SuccessFactors |
+| 17 | [Culture Amp — Data privacy & security](https://www.cultureamp.com/data-privacy) | T5 | 2026-05-11 | SOC II, ISO, GDPR compliance certifications published |
 
 ```
 
@@ -231,35 +231,38 @@ The report is saved to `/var/folders/nn/d2s0hr6x7p73b0gr6gsqp9yw0000gp/T/eval-17
 | Field | Value |
 |---|---|
 | Verdict | PASS |
-| Score | 14.0/17.0 (82%) |
-| Evaluated | 2026-05-04 |
-| Target duration | 111599 ms |
-| Target cost | $0.5743 |
+| Score | 17.5/20.0 (88%) |
+| Evaluated | 2026-05-11 |
+| Target duration | 104768 ms |
+| Target cost | $0.4030 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | Skill states the scope explicitly at the top — commercial partnership scope, public data only | PASS | File opens with: 'Commercial partnership due diligence on Culture Amp Pty Ltd. Public data only. NOT a substitute for legal, financial, or technical due diligence — those require separate workstreams. Findings are time-stamped.' — verbatim match to the required scope statement. |
-| c2 | Business fundamentals section includes a source and date for every revenue or funding figure — no unsourced numbers | PASS | Every figure carries inline attribution: 'FY25 revenue: US$177 million ([Startup Daily][1] — 2025 disclosure)', 'Total raised: $258M–$269.6M ([Crunchbase][3], [Tracxn][4] — as of 2026)', 'Operating loss FY24: -$37M ([ASIC disclosure][1]) — filed 2025'. No bare figures found. |
-| c3 | Product signals section covers review score trend over time, not just the current score | PARTIAL | Output mentions 'Review sentiment: Positive trend' and cites G2 Winter 2025 ranking (#1 in 3 categories), but provides no quantified score data points across multiple time periods (e.g., 4.5 in FY22 → 4.3 in FY24). Trend direction is asserted without numerical evidence at multiple points in time. |
-| c4 | Team section notes current key executive tenures and any notable recent departures | PASS | Team section identifies Didier Elzinga (founder, now Executive Chairman since founding in 2009), Caroline Rawlinson (CEO, 12-month internal tenure prior to promotion in January 2026), plus CFO, COO, CPO, Head of Engineering, Chief People Officer, Chief Sales Officer. CEO transition from Elzinga to Rawlinson is flagged as the notable recent departure/change. |
-| c5 | Signal summary table is present and precedes the verdict — verdict follows from the signals, not the other way around | PASS | File structure: Risk factors → Signal summary table → Verdict. The verdict explicitly references signal table findings: 'revenue growth deceleration... -$37M operating loss... 23.5% investor markdown... two workforce cuts in 24 months signal that the business model is strained.' |
-| c6 | Output clearly states this is public-data diligence only and that legal, financial, and technical diligence requires direct access | PASS | Scope statement says 'NOT a substitute for legal, financial, or technical due diligence.' Verdict reinforces: 'Legal (contract terms, IP indemnification, data escrow), financial (balance sheet, cash runway beyond FY25), and technical diligence (API stability, data security, migration path) requires direct access to private information and should run in parallel.' |
-| c7 | When two or more red signals are present, skill routes to appropriate follow-on skills (public-records, corporate-ownership, entity-footprint) rather than stopping at the verdict | FAIL | Four red signals are present in the signal table (revenue growth trajectory, profitability path, investor confidence, operational discipline). The output does not route to any named follow-on skills. The chat response offers 'Would you like me to scope a technical integration assessment?' but names no skill and makes no dispatch. |
-| c8 | Revenue and valuation are not conflated — if estimates for private company appear, they are explicitly labelled as estimates | PASS | Revenue and valuation appear in separate bullets with distinct labels. Valuation explicitly noted as 'Latest known valuation: $1.5B (pre-markdown, July 2021 Series D/E range)' — contextualised as a historical pre-markdown figure, never merged with ARR figures. |
-| c9 | Output addresses Culture Amp specifically — AU-headquartered employee experience platform founded 2009 by Didier Elzinga, Jon Williams, Doug English, Rod Hamilton — with key entity confirmation (ABN, registered office) at the top | PARTIAL | Output correctly names Didier Elzinga as founder and founding date (May 2009), references ASIC, and uses AU-specific sources. However, co-founders Jon Williams, Doug English, and Rod Hamilton are not named. No ABN is provided and no registered office address appears anywhere in the document. |
-| c10 | Output's scope statement explicitly limits to commercial-partnership diligence using public data only — naming what's NOT covered (legal contract review, financial audit, technical security assessment) and routing those to appropriate diligence types | PASS | Scope statement names the exclusions ('NOT a substitute for legal, financial, or technical due diligence'). Verdict section elaborates: 'Legal (contract terms, IP indemnification, data escrow), financial (balance sheet, cash runway beyond FY25), and technical diligence (API stability, data security, migration path) requires direct access to private information and should run in parallel.' |
-| c11 | Output's business fundamentals section sources every revenue / funding figure — e.g. "Series F $100M raised 2021 (Crunchbase, source URL); ARR ~$80M FY22 (AFR profile, March 2022)" — never unsourced | PASS | All figures in Business fundamentals carry inline reference markers with source names and years: Startup Daily (2025), GetLatka (2025), Crunchbase/Tracxn (as of 2026), CBInsights/PitchBook for valuation, Culture Amp blog for Series E, Capital Brief/Startup Daily for Blackbird markdown. Numbered source list at foot provides URLs and access dates. |
-| c12 | Output's product signals trace review-score TREND over time — not just current G2 / Capterra average; comparing FY22 vs FY24 reveals trajectory (improving / stable / declining) | PARTIAL | Output states 'Review sentiment: Positive trend' and cites 1,543 G2 reviews (2026), but provides only a single time-point (G2 Winter 2025 rank). No FY22 vs FY24 numerical scores, no score movement data across two or more periods. The trend is asserted rather than evidenced with multiple data points. |
-| c13 | Output's team section names current key executives (CEO, CRO, CTO, CFO) with tenure, plus any notable departures in last 12 months — leadership churn is a partnership-risk signal | PARTIAL | CEO (Rawlinson, 12-month tenure noted), CFO (James Chuong, no tenure), COO (Dan Shapero, no tenure), CPO (Tomer Cohen, no tenure), Head of Engineering (Mohak Shroff — not labeled CTO) are listed. CRO (Chief Revenue Officer) is absent. Only CEO and founder have tenures noted. Notable departure is the CEO transition, but no other specific departures in last 12 months are named. |
-| c14 | Output's signal summary table precedes the verdict — revenue trajectory (green / amber / red), customer base (green), product reviews (green / amber / red), funding runway (green if recent raise / amber if old), leadership stability (green if stable / amber if recent change), legal disputes (green if none public / red if material) | PASS | Table present before verdict section and includes: Revenue growth trajectory (🔴), Revenue scale & customer base (🟢), Product market position (🟢 — covers reviews), Investor confidence (🔴 — covers funding/investor concern), Team continuity (🟡 — leadership stability), Regulatory/legal exposure (🟢 — covers legal disputes). All six required signal categories are represented. |
-| c15 | Output's verdict (PROCEED / PROCEED WITH CONDITIONS / DECLINE / NEEDS DEEPER DILIGENCE) follows from the signal table — not asserted independently then justified retroactively | PASS | Verdict is 'Not recommended for integration without deeper technical & commercial diligence' (maps to NEEDS DEEPER DILIGENCE / PROCEED WITH CONDITIONS). It references specific signals from the preceding table: '-$37M loss despite $227M revenue, 23.5% investor markdown, 32%→10.8% growth deceleration over three years, and two workforce cuts.' Table precedes and drives the verdict. |
-| c16 | Output explicitly states this is public-data-only diligence — and that the partnership decision requires legal review of the partnership terms, financial diligence (ideally audited financials shared under NDA), and technical / security review | PASS | Verdict note: 'This is public-data diligence only. Legal (contract terms, IP indemnification, data escrow), financial (balance sheet, cash runway beyond FY25), and technical diligence (API stability, data security, migration path) requires direct access to private information and should run in parallel.' Covers all three required workstreams. |
-| c17 | Output distinguishes revenue (ARR, recurring revenue actually flowing in) from valuation (last round implied valuation, secondary market estimate) — never collapsing these | PASS | Revenue presented separately ('FY25 revenue: US$177 million / A$270 million') from valuation ('Latest known valuation: $1.5B (pre-markdown, July 2021 Series D/E range)'). Valuation is contextualised as historical and pre-markdown. The signal table also separates revenue-trajectory from investor-confidence signals. |
-| c18 | Output addresses cross-AU SaaS partnership specifics — both companies are AU-based so currency / tax / data-residency concerns are simpler than cross-border, but customer-data-sharing under SOCI Act and Privacy Act 1988 still applies | FAIL | The Risk factors and Regulatory sections contain no mention of the SOCI Act, Privacy Act 1988, data residency requirements, or any AU-specific data-sharing obligations. The regulatory section simply states 'No findings — verified clean' with reference to ASIC. The verdict mentions 'data security' generically but never references AU-specific statutory obligations. |
+| c1 | Skill writes a file to disk at `<pwd>/due-diligence/<company-slug>.md` (see ARTIFACTS WRITTEN — at least one .md file under `due-diligence/` exists) | PASS | Artifact `work/due-diligence/culture-amp-pty-ltd.md` written to disk; absolute path shown in chat response. |
+| c2 | The written file opens with YAML frontmatter (title, date, author=due-diligence, category=Commercial, subject, scope) per report-conventions | PASS | Frontmatter has title, date: 2026-05-11, author: due-diligence, category: Commercial, subject: Culture Amp Pty Ltd, scope: partnership — all fields present. |
+| c3 | Chat response includes the absolute path to the written report (verbatim, copyable) | PASS | Chat opens with absolute path `/private/var/folders/nn/.../work/due-diligence/culture-amp-pty-ltd.md`. |
+| c4 | Skill states the scope explicitly at the top — commercial partnership scope, public data only | PASS | Note block at top: 'This is public-data diligence only.' Scope section: 'Assess Culture Amp Pty Ltd as a commercial partner for integrating employee engagement surveys into an HR platform.' |
+| c5 | Business fundamentals section includes a source and date for every revenue or funding figure — no unsourced numbers | PASS | Every figure carries inline source + access date: Series F '$100M at $1.5B valuation (July 2021) ([TechCrunch]... accessed 2026-05-11)'; $37M loss '([Startup Daily]... accessed 2026-05-11)'. |
+| c6 | Product signals section covers review score trend over time, not just the current score | PARTIAL | Output explicitly states 'no historical score trend data was available in public sources' and only reports current scores (4.5/4.6). Acknowledges limitation but no multi-point trend provided. |
+| c7 | Team section notes current key executive tenures and any notable recent departures | PASS | Rawlinson appointed CEO Jan 2026 (with CFO/COO tenure since Dec 2024), Elzinga → Executive Chairman noted; 'No unexpected departures flagged; the leadership bench appears intact.' |
+| c8 | Signal summary table is present and precedes the verdict — verdict follows from the signals, not the other way around | PASS | '## Signal summary' section with table appears before '## Verdict'. Verdict cites the 🔴 funding/loss signals and 🟢 customer/regulatory signals directly from the table. |
+| c9 | Output clearly states this is public-data diligence only and that legal, financial, and technical diligence requires direct access | PASS | Top note names: 'vendor security audit, integration roadmap, pricing and contract terms, SLA/uptime commitments' as requiring direct access. Red flag escalation routes financial and technical to separate workstreams. |
+| c10 | When two or more red signals are present, skill routes to appropriate follow-on skills (public-records, corporate-ownership, entity-footprint) rather than stopping at the verdict | PARTIAL | Red flag escalation routes to `/analyst:competitive-analysis` and separate financial/technical workstreams — but not to the specific skills named (public-records, corporate-ownership, entity-footprint). |
+| c11 | Revenue and valuation are not conflated — if estimates for private company appear, they are explicitly labelled as estimates | PASS | $1.5B valuation treated as Series F round valuation; revenue estimates labelled 'internal estimate, not audited'; explicit note: 'The jump from $74M to $227M is unusually steep...Verify actual 2025 revenue.' |
+| c12 | Output addresses Culture Amp specifically — AU-headquartered employee experience platform founded 2009 by Didier Elzinga, Jon Williams, Doug English, Rod Hamilton — with key entity confirmation (ABN, registered office) at the top | PARTIAL | Founding details confirmed (2009, all four founders named). HQ 'Richmond, Australia' noted. However, ABN and registered office are absent — the criterion explicitly requires both. |
+| c13 | Output's scope statement explicitly limits to commercial-partnership diligence using public data only — naming what's NOT covered (legal contract review, financial audit, technical security assessment) and routing those to appropriate diligence types | PASS | Top note names security audit, pricing/contract terms, SLA as not covered. Red flag escalation section explicitly routes legal/technical to 'separate workstream — API contracts, data residency, SLA, migration provisions.' |
+| c14 | Output's business fundamentals section sources every revenue / funding figure — e.g. 'Series F $100M raised 2021 (Crunchbase, source URL); ARR ~$80M FY22 (AFR profile, March 2022)' — never unsourced | PASS | All figures carry source URL + access date inline. Sources table at end lists 17 numbered entries each with URL and what they contributed. |
+| c15 | Output's product signals trace review-score TREND over time — not just current G2 / Capterra average; comparing FY22 vs FY24 reveals trajectory (improving / stable / declining) | PARTIAL | Only current scores provided (G2 4.5, Capterra 4.6). Output states 'no historical score trend data was available' and recommends requesting historical charts — no FY22 vs FY24 comparison provided. |
+| c16 | Output's team section names current key executives (CEO, CRO, CTO, CFO) with tenure, plus any notable departures in last 12 months — leadership churn is a partnership-risk signal | PARTIAL | CEO (Rawlinson, Jan 2026), CFO (Chuong, no tenure date), COO, CPO, Head of Engineering named. CRO not listed; CTO not listed (Head of Engineering ≠ CTO); only Rawlinson has explicit tenure date. |
+| c17 | Output's signal summary table precedes the verdict — revenue trajectory (green / amber / red), customer base (green), product reviews (green / amber / red), funding runway (green if recent raise / amber if old), leadership stability (green if stable / amber if recent change), legal disputes (green if none public / red if material) | PASS | Table covers: Revenue/profitability 🔴, Customer sentiment trend 🟢, Funding trajectory 🔴, Team stability 🟡, Regulatory/legal exposure 🟢. All required signal categories present and precede verdict. |
+| c18 | Output's verdict (PROCEED / PROCEED WITH CONDITIONS / DECLINE / NEEDS DEEPER DILIGENCE) follows from the signal table — not asserted independently then justified retroactively | PASS | Verdict directly references 🔴 signals: 'persistent $37M+ annual losses, funding runway <3 years, two layoff rounds' — matching Funding trajectory and Revenue/profitability rows in table. |
+| c19 | Output explicitly states this is public-data-only diligence — and that the partnership decision requires legal review of the partnership terms, financial diligence (ideally audited financials shared under NDA), and technical / security review | PASS | Top note, red flag escalation section explicitly state public-data limitations and route to: 'Request audited financials (P&L, balance sheet, cash position)' and 'Technical & contract due diligence: Separate workstream.' |
+| c20 | Output distinguishes revenue (ARR, recurring revenue actually flowing in) from valuation (last round implied valuation, secondary market estimate) — never collapsing these | PASS | Valuation '$1.5B' in Series F section; revenue ($74M, $210M+) in separate revenue paragraph with explicit caveat about inconsistency. Sources table separates Crunchbase (valuation) from Zippia/GetLatka (revenue). |
+| c21 | Output addresses cross-AU SaaS partnership specifics — both companies are AU-based so currency / tax / data-residency concerns are simpler than cross-border, but customer-data-sharing under SOCI Act and Privacy Act 1988 still applies | PARTIAL | Data residency mentioned in 'Technical & contract due diligence: API contracts, data residency, SLA'. SOC II/ISO/GDPR compliance noted. However, SOCI Act and Privacy Act 1988 are not named anywhere in the output. |
 
 ### Notes
 
-The output is a well-structured due diligence report that meets the majority of criteria. Strongest areas: inline sourcing of every financial figure, clear separation of revenue from valuation, scope-statement compliance, and a signal table that genuinely precedes and drives the verdict. Key gaps: (1) No quantified review-score trend data across multiple time periods — 'Positive trend' is asserted without numerical points at t1 and t2, failing both c3 and c12; (2) Missing entity confirmation details (ABN, registered office) and three co-founders (Jon Williams, Doug English, Rod Hamilton) in c9; (3) No routing to named follow-on skills despite four red signals (c7 — though ceiling was capped at PARTIAL); (4) Executive tenures are sparse beyond CEO and founder, and CRO is absent (c13); (5) No mention of Privacy Act 1988, SOCI Act, or AU-specific data-sharing obligations (c18). The output earns a clear PASS at 82.4% but would benefit from a data-sourcing pass on historical G2 scores and an AU regulatory layer.
+Strong overall execution — file written, frontmatter complete, all major sections present with sourced figures and a coherent signal-to-verdict flow. Key gaps: no historical review-score trend data (c6/c15), ABN/registered office missing (c12), CRO/CTO tenures incomplete (c16), and AU-specific regulatory frameworks (SOCI Act, Privacy Act 1988) not named despite data-residency mention (c21).
