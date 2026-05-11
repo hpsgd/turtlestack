@@ -19,7 +19,7 @@ Output structure (use these section names in this order):
 
 A few specifics for the response:
 
-- Follow the skill's `## Output Format` template strictly. Every mandatory section named in the template MUST appear in the output, even when no findings emerge in that section (write a one-line "No findings — verified clean" placeholder rather than omitting).
+- The skill writes a conforming report to a file path it computes (`<pwd>/due-diligence/<company-slug>.md` by default). Capture and report that file path. Section structure follows the template at `${CLAUDE_PLUGIN_ROOT}/templates/due-diligence.md`. Every mandatory section in the template MUST appear in the written file, even when no findings emerge in that section (write a one-line "No findings — verified clean" placeholder rather than omitting).
 - Do NOT pause for clarification. Proceed using stated assumptions; document them inline. The user can correct in follow-up.
 - For skill-verification tests (prompts that say "Review the X skill definition and verify..."): Read the skill at `${CLAUDE_PLUGIN_ROOT}/skills/<skill-name>/SKILL.md` (or the absolute path under `/Users/martin/Projects/turtlestack/plugins/...`) and quote skill text where present. Confirm or flag each test criterion by name — do not paraphrase.
 - When writing files, show the file content inline in the chat response AND write to disk so the structure is visible to readers.
@@ -27,6 +27,9 @@ A few specifics for the response:
 
 ## Criteria
 
+- [ ] PASS: Skill writes a file to disk at `<pwd>/due-diligence/<company-slug>.md` (see ARTIFACTS WRITTEN — at least one .md file under `due-diligence/` exists)
+- [ ] PASS: The written file opens with YAML frontmatter (title, date, author=due-diligence, category=Commercial, subject, scope) per report-conventions
+- [ ] PASS: Chat response ends with a single line giving the absolute path to the written report
 - [ ] PASS: Skill states the scope explicitly at the top — commercial partnership scope, public data only
 - [ ] PASS: Business fundamentals section includes a source and date for every revenue or funding figure — no unsourced numbers
 - [ ] PASS: Product signals section covers review score trend over time, not just the current score

@@ -8,7 +8,7 @@ Scenario: a business analyst needs to research an unfamiliar company before a cl
 
 A few specifics for the response:
 
-- Follow the skill's `## Output Format` template strictly. Every mandatory section named in the template MUST appear in the output, even when no findings emerge in that section (write a one-line "No findings — verified clean" placeholder rather than omitting).
+- The skill writes a conforming report to a file path it computes (`<pwd>/company-lookup/<company-slug>.md` by default). Capture and report that file path. Section structure follows the template at `${CLAUDE_PLUGIN_ROOT}/templates/company-lookup.md`. Every mandatory section in the template MUST appear in the written file, even when no findings emerge in that section (write a one-line "No findings — verified clean" placeholder rather than omitting).
 - Do NOT pause for clarification. Proceed using stated assumptions; document them inline. The user can correct in follow-up.
 - For skill-verification tests (prompts that say "Review the X skill definition and verify..."): Read the skill at `${CLAUDE_PLUGIN_ROOT}/skills/<skill-name>/SKILL.md` (or the absolute path under `/Users/martin/Projects/turtlestack/plugins/...`) and quote skill text where present. Confirm or flag each test criterion by name — do not paraphrase.
 - When writing files, show the file content inline in the chat response AND write to disk so the structure is visible to readers.
@@ -16,6 +16,9 @@ A few specifics for the response:
 
 ## Criteria
 
+- [ ] PASS: Skill writes a file to disk at `<pwd>/company-lookup/<company-slug>.md` (see ARTIFACTS WRITTEN — at least one .md file under `company-lookup/` exists)
+- [ ] PASS: The written file opens with YAML frontmatter (title, date, author=company-lookup, category=Corporate, subject) per report-conventions
+- [ ] PASS: Chat response ends with a single line giving the absolute path to the written report
 - [ ] PASS: Skill defines a clear trigger or usage context (when to invoke this skill)
 - [ ] PASS: Skill specifies what sources to check (e.g. company website, LinkedIn, Crunchbase, news)
 - [ ] PASS: Skill defines an output structure with named sections (not freeform)

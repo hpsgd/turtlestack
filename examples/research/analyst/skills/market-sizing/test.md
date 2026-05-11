@@ -8,6 +8,9 @@ Scenario: A startup founder needs a defensible TAM estimate for the Australian a
 
 ## Criteria
 
+- [ ] PASS: Skill writes a file to disk at `<pwd>/market-sizing/<market-slug>.md` (see ARTIFACTS WRITTEN — at least one .md file under `market-sizing/` exists)
+- [ ] PASS: The written file opens with YAML frontmatter (title, date, author=market-sizing, category=Commercial, subject) per report-conventions
+- [ ] PASS: Chat response ends with a single line giving the absolute path to the written report
 - [ ] PASS: Skill defines the market before producing any figures — buyer type, purchase unit, geography (AU), and time horizon are all stated
 - [ ] PASS: Both top-down and bottom-up estimates are attempted — if one genuinely can't be done, the reason is explained
 - [ ] PASS: Top-down estimate cites a specific report title, year, and figure — not a generic reference to "analysts"

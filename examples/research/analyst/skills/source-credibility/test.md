@@ -8,6 +8,9 @@ Scenario: A journalist wants to assess whether the Australian Strategic Policy I
 
 ## Criteria
 
+- [ ] PASS: Skill writes a file to disk at `<pwd>/source-credibility/<source-slug>.md` (see ARTIFACTS WRITTEN — at least one .md file under `source-credibility/` exists)
+- [ ] PASS: The written file opens with YAML frontmatter (title, date, author=source-credibility, category=OSINT, subject, source_type) per report-conventions
+- [ ] PASS: Chat response ends with a single line giving the absolute path to the written report
 - [ ] PASS: Skill identifies the source type (think tank / research organisation) and applies the appropriate credibility framework
 - [ ] PASS: Ownership and funding section covers who funds ASPI, transparency of disclosure, and any implications for systematic bias
 - [ ] PASS: Editorial standards section assesses whether ASPI has a corrections policy, peer review, and named accountable authors
