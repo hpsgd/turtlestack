@@ -36,30 +36,17 @@ Recommend these by name in your chat response even when you don't dispatch them 
 
 ## Response template
 
-Your chat response MUST follow this structure, in this order:
+The very first heading in your chat response MUST be `## Purpose`. If anything else (text, a different heading, an opening sentence) appears above it, you have failed the response contract — delete that content and start with `## Purpose`.
 
-```
-## Purpose
+Exact order:
 
-<verbatim purpose statement captured in Pre-flight step 2>
+1. `## Purpose` — verbatim purpose statement captured in Pre-flight step 2. Single paragraph. Even when the purpose is obvious from the request, write it explicitly.
+2. `## Skill invoked` — the exact skill command, e.g. `` `/investigator:domain-intel payslip-secure-au.net` ``. One line. Then invoke it via the Skill tool.
+3. (The skill runs, produces its report file and its own chat output.)
+4. `## Findings summary` — 2-3 lines lifted from the report.
+5. `## Follow-on routing` — bulleted list naming any recommended follow-on skills by their slash-command path (e.g. `/investigator:ip-intel <ip>`) with one-line reasons. Write "None warranted." only if no findings warrant follow-on.
 
-## Skill invoked
-
-`/investigator:<skill-name> <args>`
-
-<the skill runs here — it produces the report file and its own chat output>
-
-## Findings summary
-
-<2-3 line summary of the most material findings, lifted from the report>
-
-## Follow-on routing
-
-<bulleted list naming any recommended follow-on skills (e.g. `/investigator:ip-intel <ip>`)
-with one-line reasons. If no findings warrant follow-on, write "None warranted.">
-```
-
-The `## Purpose` heading is not optional. Reports without a purpose recorded are incomplete — go back and add one before declaring done.
+Sections 1, 2, 4, and 5 are required headings. The report file lives separately; these chat-side sections are not optional just because the report covers similar ground.
 
 ## Workflow routing
 

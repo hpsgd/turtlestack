@@ -69,102 +69,112 @@ Captured from a real headless invocation of the skill/agent.
 
 ### Chat response
 
-I'll break down the framing and source quality so you can use these strategically in your brief.
+I'll break down each article's framing, then assess source quality using your tier framework.
 
 ## Framing Analysis
 
-The three articles are asking fundamentally different questions:
+**Article 1 — AFR: "Australia as Opportunity, Racing Against Time"**
 
-| | **AFR** | **Guardian** | **MCA** |
-|---|---|---|---|
-| **Central question** | How can Australia capture this economic opportunity given approval delays? | Who bears the costs of the energy transition? | How can government remove barriers to investment? |
-| **Frame** | Economic/geopolitical opportunity | Environmental & justice concern | Growth/national interest |
-| **Core rhetoric** | Urgency, first-mover advantage, time-bound window | "Energy transition as moral permission slip" masks costs | Regional jobs, strategic partnerships, competitive window |
-| **What's centered** | Speed of approvals, comparative timelines, processing capacity | Indigenous FPIC, lifecycle emissions, ecosystem damage | Investment capital, job creation, supply security |
-| **What's downplayed** | Indigenous rights, environmental costs, processing risks | Economic opportunity, job benefits, strategic position | Environmental costs (absent), Indigenous concerns (minimal), legitimate tradeoffs |
+- **Core narrative:** Australia has structural advantage (resources + stability) but regulatory bottlenecks will lose it to competitors
+- **Key tension:** Economic opportunity vs. policy speed — portrayed as solvable if government moves
+- **Actors:** China (threat), US/Japan/EU (allies scrambling to diversify supply), Australia (potential winner), government (enabler or blocker)
+- **Tone:** Optimistic but urgent. The word "superpower" is aspirational; "blink" in the headline implies consequences for hesitation
+- **Evidence type:** Forecasts (Benchmark Mineral Intelligence $514B, Macquarie's 5x growth) + comparative timelines (4.7 years vs Canada's 2.1 years)
+- **What's absent:** Environmental costs, Indigenous consultation timelines, processing risks
+
+**Article 2 — Guardian: "Mining Story, Not Clean-Energy Story"**
+
+- **Core narrative:** Critical minerals narrative has become moral cover for extractive practices; climate language obscures genuine ecosystem and social costs
+- **Key tension:** Energy transition necessity vs. the costs that transition pushes onto communities and ecosystems
+- **Actors:** Government/industry (pushing fast-track), Indigenous communities (losing consent frameworks), researchers (flagging true costs), conservation groups (raising structural EPBC concerns)
+- **Tone:** Critical but not dismissive — "None of this means Australia should not develop..." signals this is a reframing, not a rejection
+- **Evidence type:** Expert observation (Megan Davis quote), peer-reviewed research (Nature Sustainability 2023), regulatory history (EPBC Act 1999, 2020 review), named conservation groups
+- **What's absent:** Job creation figures, geopolitical security arguments, investment scale
+
+**Article 3 — MCA: "Removing Barriers to Inevitable Growth"**
+
+- **Core narrative:** Demand is structural and global; Australia just needs to remove regulatory friction to capture it
+- **Key tension:** None explicitly — framed as alignment problem (market wants it, government just needs to enable)
+- **Actors:** Australia (partner of choice), Five Eyes (validating demand), private sector (funding), government (bottleneck)
+- **Tone:** Action-oriented, solutions-focused. The framing is "if we do X, we win"; no discussion of trade-offs
+- **Evidence type:** Announced projects ($38B), job projections (85,000), geopolitical positioning (Five Eyes language)
+- **What's absent:** Risk, environmental complexity, Indigenous consultation, processing challenges, regulatory justifications for timelines
+
+---
 
 ## Source Quality Assessment
 
-**AFR (Tier 2 — Independent journalist)**
+| Article | Tier | Credibility | Caveats for Citation |
+|---|---|---|---|
+| **AFR** | T2 (independent analysis) | High — professional editorial standards, bylined correspondent | Forecasts are conditional ("if processing capacity is onshored"). Always cite the original forecast source (Benchmark, Macquarie) rather than AFR's interpretation. The 4.7 vs 2.1 year comparison is factual but needs baseline (what does "average" include?). |
+| **Guardian** | T2 (independent analysis) | High — professional editorial standards, cites peer-reviewed source + named experts | Megan Davis quote is a paraphrase/observation, not a direct quote — verify the exact claim if citing. The Nature Sustainability study is citable directly. EPBC Act history is factual. |
+| **MCA** | T5 (subject's own materials) | Low — advocacy piece representing industry members | Announced projects and job figures are claims, not independently verified. You cannot cite "$38B invested" or "85,000 jobs" from this source — you must source these from corporate filings, government data, or T1/T2 reporting. The Five Eyes framing is real policy positioning, but "strategic demand" is an interpreted claim. |
 
-- ✅ Professional journalist with editorial standards
-- ✅ Cites specific sources: Benchmark Mineral Intelligence, Macquarie Bank, bilateral agreements
-- ⚠️ **Citation gap:** No direct links to the studies or data cited. For your brief, you'd need to trace these independently (the 4.7-year vs 2.1-year approval figure is specific enough to be verifiable)
-- **Confidence:** Facts about economics/timelines can support moderate-to-high confidence claims if you verify the underlying sources yourself
+---
 
-**Guardian (Tier 2 — Independent journalist)**
+## What Each Source Actually Lets You Say
 
-- ✅ Professional journalist with editorial standards
-- ✅ Attributes claims to named expert: Professor Megan Davis is a real person (ANU, recognized Indigenous law scholar) — adds credibility
-- ✅ Cites specific study: "Nature Sustainability 2023" — verifiable
-- ⚠️ **Citation gap:** Doesn't link to the study or quote it directly. You need to verify the study exists and says what she claims it says
-- ⚠️ **Quote accuracy:** Megan Davis quote about "fastest erosion of FPIC" should be traced to original source (speech, publication, interview)
-- **Confidence:** Environmental and rights concerns can support moderate confidence if you verify the Nature study
+**For your policy brief, here's what you can reliably cite from each:**
 
-**MCA (Tier 5 — Subject's own materials)**
+**AFR** ✓ Cite:
+- Comparative approval timelines (4.7 vs 2.1 years) — but source the methodology
+- The existence of the US–Australia Critical Minerals Partnership
+- Macquarie Bank's forecast (label as forecast, not fact)
 
-- ❌ Self-published industry advocacy, not independent reporting
-- ❌ Cites no external data: "$38 billion in announced projects" and "85,000 jobs" are claims about member intentions, not independently verified figures
-- ❌ No acknowledgment of tradeoffs or legitimate concerns — this is pure advocacy
-- **Confidence:** Capped at 1 (confidence) unless corroborated by T1-T3 sources. You can cite it to show what industry is claiming, but not as factual support
-- **Use case:** "The Minerals Council of Australia has committed to $38 billion in investment" (what they say they'll do) — not "Australia will create 85,000 jobs" (unsupported claim)
+**Guardian** ✓ Cite:
+- The Nature Sustainability 2023 study on processing emissions (get the DOI and read it yourself)
+- EPBC Act history (no reform since 1999)
+- The existence of conservation group concerns (name the groups)
+- The observation that consultation timelines are being compressed
 
-## For Your Policy Brief
+**MCA** ✗ Do not cite directly for:
+- Investment figures or job projections
+- Use only for: understanding industry positioning, or as evidence that "the minerals industry argues X"
 
-**What to do:**
+---
 
-1. **Use AFR and Guardian together** — they're both T2, credible on their respective domains. AFR on economics, Guardian on environmental/Indigenous concerns. They're not contradictory; they're incomplete views of the same issue.
+## Confidence Rubric (your own framework applies)
 
-2. **Verify before citing specific numbers:**
-   - AFR's approval timeline figures (4.7 vs 2.1 years) — trace to source
-   - Guardian's Nature Sustainability study — read it directly and quote accurately
-   - MCA's $38B and 85k jobs — check whether these appear in press releases or annual reports with methodology
+- **AFR on opportunity economics:** Confidence 2-3 (forecasts are T2-sourced but conditional)
+- **Guardian on environmental/social costs:** Confidence 3 (peer-reviewed study + regulatory facts)
+- **MCA on investment commitment:** Confidence 1 (T5 only; verify the numbers elsewhere)
 
-3. **Cross-check the Indigenous claim** — Okafor attributes "fastest erosion of FPIC since 2000s boom" to Megan Davis. Find where Davis said this (published paper? speech? interview?) and cite the original, not the journalist's paraphrase.
-
-4. **For your brief's credibility:** If you cite only economics (AFR + MCA), policy readers will see you've ignored half the actual debate. If you cite both AFR and Guardian at T2, you show you've considered tradeoffs. That's more persuasive.
-
-5. **Flag the MCA claim gap** — If you use MCA's employment numbers, add a caveat: "Minerals Council of Australia claims 85,000 direct jobs, though these figures are not independently audited." This is honest and maintains credibility.
-
-**Single-source red flag:** 
-The specific claim "Australia's FPIC erosion is the fastest since the 2000s boom" appears only in the Guardian article attributed to one expert. Before using this as a primary claim, seek a second T2-T3 source (e.g., Indigenous legal organizations, regulatory bodies, news coverage of specific failed consultations).
-
-What's the intended audience for your brief, and how much space do you have for environmental/rights concerns vs. economic opportunity?
+**For your policy brief:** Use AFR and Guardian as your primary sources. Use MCA only to demonstrate industry advocacy, not as evidence of facts. If you need investment or jobs figures, find T1 sourcing (government reports, ASX filings, DFAT statements).
 
 ## Evaluation
 
 | Field | Value |
 |---|---|
-| Verdict | PARTIAL |
-| Score | 11.5/17.0 (68%) |
+| Verdict | PASS |
+| Score | 14.0/17.0 (82%) |
 | Evaluated | 2026-05-11 |
-| Target duration | 28093 ms |
-| Target cost | $0.0526 |
+| Target duration | 32547 ms |
+| Target cost | $0.0522 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | Agent routes each article to content-analysis skill separately, then produces a comparative view | FAIL | Output is a single unified chat response. No evidence of routing to a content-analysis skill per article — analysis is produced inline. |
-| c2 | Framing differences between the three sources are stated as interpretive observations, not facts | PASS | Framing Analysis table uses labels like 'Economic/geopolitical opportunity', 'Environmental & justice concern' — presented as characterizations, not factual claims. |
-| c3 | Source credibility differences are noted (industry body vs independent press) | PASS | MCA labeled 'Tier 5 — Subject's own materials' / 'Self-published industry advocacy'; AFR and Guardian labeled 'Tier 2 — Independent journalist'. |
-| c4 | Each article's source structure is assessed independently (named/anonymous/unattributed sources) | PASS | AFR: 'Cites Benchmark Mineral Intelligence, Macquarie Bank'; Guardian: 'Attributes to Prof Megan Davis, Nature Sustainability 2023'; MCA: 'Cites no external data'. |
-| c5 | The comparison identifies where the three articles agree and where they diverge on key claims | PARTIAL | Divergence is mapped clearly in the comparison table. Agreement is not explicitly stated; the brief note 'they're not contradictory; they're incomplete views' gestures at agreement without naming it. |
-| c6 | Agent recommends which source(s) are most appropriate for the policy brief context, with reasoning | PARTIAL | 'Use AFR and Guardian together... AFR on economics, Guardian on environmental/Indigenous concerns'; MCA: 'cite to show what industry is claiming, but not as factual support'. |
-| c7 | Agent does not produce a merged summary — each article is analysed independently before comparison | PASS | Each article has its own Source Quality Assessment block. No merged 'the truth is...' synthesis. Perspectives kept distinct throughout. |
-| c8 | Agent flags any claims that appear in only one source as requiring independent verification | PASS | 'Single-source red flag: The specific claim... appears only in the Guardian article attributed to one expert. Before using this as a primary claim, seek a second T2-T3 source.' |
-| c9 | Output runs content-analysis independently per article first — three separate analyses for AFR, The Guardian, MCA — before any comparative view | FAIL | Output leads with a comparative framing table, then per-article source quality assessments follow. Per-article analysis comes AFTER the comparative view, not before it. |
-| c10 | Output's per-article analyses each cover the standard dimensions — entities, key claims, sentiment, framing, narrative, source structure — at parity, not deeper analysis on one article | FAIL | Per-article sections cover source quality and credibility only. No explicit entities, sentiment, or narrative dimensions. Standard content-analysis dimensions are absent. |
-| c11 | Output's framing comparison states differences as interpretive observations — "AFR frames as economic opportunity / national competitiveness; The Guardian frames as environmental / Indigenous land rights tension; MCA frames as industrial development / employment story" — clearly tagged as interpretation | PASS | Framing Analysis table: 'Frame' row — 'Economic/geopolitical opportunity', 'Environmental & justice concern', 'Growth/national interest'. Presented as frame labels, not factual assertions. |
-| c12 | Output addresses source credibility differences — MCA is an industry advocacy body (advocacy bias toward industry positions), AFR is financial press (economic-frame bias), The Guardian is progressive-leaning (political-frame bias) — without dismissing any | PARTIAL | MCA's advocacy bias is explicit: 'pure advocacy'. AFR's economic bias and Guardian's progressive lean are implied by domain ('on economics', 'on environmental/Indigenous') but not named as systematic biases. |
-| c13 | Output's source-structure comparison shows attribution patterns per article — e.g. MCA cites named industry executives + own commissioned research, The Guardian cites independent academics + Indigenous-community sources, AFR cites government officials + corporate executives | PARTIAL | AFR: 'Benchmark Mineral Intelligence, Macquarie Bank, bilateral agreements'; Guardian: 'Prof Megan Davis, Nature Sustainability 2023'; MCA: 'no external data'. Patterns shown but not typed (e.g. 'corporate executives' vs 'academics'). |
-| c14 | Output identifies where the three articles AGREE (likely on the basic economic/strategic premise) and where they DIVERGE (impact assessment, Indigenous rights, environmental cost) on key claims | FAIL | Divergence is mapped in the table. No explicit identification of agreement points (e.g. all three accept Australia's geological endowment as strategically significant). |
-| c15 | Output flags claims appearing in only one source — e.g. "MCA claims X jobs; not corroborated in AFR or The Guardian; would need independent verification before citing in policy brief" | PASS | 'Flag the MCA claim gap — If you use MCA's employment numbers, add a caveat: Minerals Council claims 85,000 direct jobs, though these figures are not independently audited.' |
-| c16 | Output's recommendation for the policy brief context names which sources are appropriate for which kinds of claims — MCA for industry positions (cited as industry view, not as fact), The Guardian / academic-cited material for civil society perspective, AFR for market-impact claims | PASS | 'AFR on economics, Guardian on environmental/Indigenous concerns... MCA: cite to show what industry is claiming, but not as factual support.' Each source matched to appropriate claim type. |
-| c17 | Output does NOT produce a merged synthesis ("the truth is...") — comparison preserves the perspectives without collapsing them | PASS | All three perspectives are maintained separately throughout. No synthesis claim like 'the true picture is...'. 'They're not contradictory; they're incomplete views' explicitly refuses to merge them. |
-| c18 | Output recommends additional source types the policy brief should consider beyond these three — academic peer-reviewed journals, Senate inquiry submissions, Indigenous-community direct sources — for a balanced citation set | PARTIAL | 'Seek a second T2-T3 source (e.g., Indigenous legal organizations, regulatory bodies, news coverage).' Partial — names some additional source types but not Senate inquiry submissions or peer-reviewed journals broadly. |
+| c1 | Agent routes each article to content-analysis skill separately, then produces a comparative view | FAIL | Output is a single inline chat response with no evidence of routing to a content-analysis skill. No tool calls or skill invocations appear; analysis is performed directly. |
+| c2 | Framing differences between the three sources are stated as interpretive observations, not facts | PASS | Uses interpretive labels throughout: 'Core narrative:', 'Key tension:', 'Tone:' — e.g. 'The core narrative: Australia has structural advantage but regulatory bottlenecks will lose it.' |
+| c3 | Source credibility differences are noted (industry body vs independent press) | PASS | Source Quality Assessment table assigns T2 to AFR and Guardian ('independent analysis') and T5 to MCA ('subject's own materials'), with credibility rated High vs Low. |
+| c4 | Each article's source structure is assessed independently (named/anonymous/unattributed sources) | PASS | Per-article 'Evidence type' sections name specific sources: AFR cites Benchmark Mineral Intelligence and Macquarie; Guardian cites Megan Davis, Nature Sustainability 2023, named groups; MCA uses own figures. |
+| c5 | The comparison identifies where the three articles agree and where they diverge on key claims | PARTIAL | Divergence is clearly shown (environmental costs absent in AFR/MCA; jobs/investment absent in Guardian). However, explicit agreement ('all three agree on X') is never stated. |
+| c6 | Agent recommends which source(s) are most appropriate for the policy brief context, with reasoning | PARTIAL | 'What Each Source Actually Lets You Say' gives specific cite/don't-cite guidance with reasoning: AFR for timelines/forecasts, Guardian for EPBC/academic, MCA only for industry positioning. |
+| c7 | Agent does not produce a merged summary — each article is analysed independently before comparison | PASS | Three separate per-article sections under 'Framing Analysis' precede the Source Quality Assessment table. No merged summary at the outset. |
+| c8 | Agent flags any claims that appear in only one source as requiring independent verification | PASS | 'You cannot cite $38B invested or 85,000 jobs from this source — you must source these from corporate filings, government data, or T1/T2 reporting.' MCA figures flagged as unverified single-source. |
+| c9 | Output runs content-analysis independently per article first — three separate analyses for AFR, The Guardian, MCA — before any comparative view | PASS | Output has 'Article 1 — AFR', 'Article 2 — Guardian', 'Article 3 — MCA' sub-sections in Framing Analysis before the comparative Source Quality Assessment table appears. |
+| c10 | Output's per-article analyses each cover the standard dimensions — entities, key claims, sentiment, framing, narrative, source structure — at parity, not deeper analysis on one article | PASS | All three articles receive identical structural treatment: Core narrative, Key tension, Actors, Tone, Evidence type, What's absent — equal depth across all. |
+| c11 | Output's framing comparison states differences as interpretive observations — 'AFR frames as economic opportunity / national competitiveness; The Guardian frames as environmental / Indigenous land rights tension; MCA frames as industrial development / employment story' — clearly tagged as interpretation | PASS | AFR: 'Australia as Opportunity, Racing Against Time'; Guardian: 'Mining Story, Not Clean-Energy Story'; MCA: 'Removing Barriers to Inevitable Growth' — all tagged interpretively with explanatory labels. |
+| c12 | Output addresses source credibility differences — MCA is an industry advocacy body (advocacy bias toward industry positions), AFR is financial press (economic-frame bias), The Guardian is progressive-leaning (political-frame bias) — without dismissing any | PARTIAL | MCA advocacy bias explicitly stated. AFR economic bias implicit (forecasts-only evidence noted). Guardian's progressive lean not explicitly labelled, though civil-society framing is described. No source dismissed. |
+| c13 | Output's source-structure comparison shows attribution patterns per article — e.g. MCA cites named industry executives + own commissioned research, The Guardian cites independent academics + Indigenous-community sources, AFR cites government officials + corporate executives | PARTIAL | Attribution patterns noted per article in 'Evidence type' sections. But no side-by-side comparison table and 'Indigenous-community sources' vs 'named industry executives' distinction is not made. |
+| c14 | Output identifies where the three articles AGREE (likely on the basic economic/strategic premise) and where they DIVERGE (impact assessment, Indigenous rights, environmental cost) on key claims | PARTIAL | Divergence clearly shown via 'What's absent' sections. No explicit statement of shared agreement (e.g. all three accept the strategic premise). Agreement only inferrable, not stated. |
+| c15 | Output flags claims appearing in only one source — e.g. 'MCA claims X jobs; not corroborated in AFR or The Guardian; would need independent verification before citing in policy brief' | PASS | 'MCA on investment commitment: Confidence 1 (T5 only; verify the numbers elsewhere)' and explicit 'you cannot cite $38B or 85,000 jobs from this source' flags single-source claims. |
+| c16 | Output's recommendation for the policy brief context names which sources are appropriate for which kinds of claims — MCA for industry positions (cited as industry view, not as fact), The Guardian / academic-cited material for civil society perspective, AFR for market-impact claims | PASS | 'What Each Source Actually Lets You Say' maps each source to specific claim types with ✓/✗ markers and explicit guidance on how to attribute MCA ('only to demonstrate industry advocacy, not as evidence of facts'). |
+| c17 | Output does NOT produce a merged synthesis ('the truth is...') — comparison preserves the perspectives without collapsing them | PASS | Each perspective is preserved independently. Conclusion is a usage guide ('Use AFR and Guardian as primary sources'), not a synthesised truth claim. |
+| c18 | Output recommends additional source types the policy brief should consider beyond these three — academic peer-reviewed journals, Senate inquiry submissions, Indigenous-community direct sources — for a balanced citation set | PARTIAL | Recommends T1 sourcing: 'government reports, ASX filings, DFAT statements' and reading the Nature Sustainability DOI directly. Senate inquiry submissions and Indigenous-community direct sources not mentioned. |
 
 ### Notes
 
-The output demonstrates strong framing analysis, clear source tier differentiation, and useful policy-brief guidance, but fails on two structural criteria: it leads with the comparative table rather than per-article analyses first (c9), and the per-article sections cover source quality only — not the full standard content-analysis dimensions (c10). Agreement identification between articles is also missing (c14).
+The output is a strong per-article analysis with well-structured framing breakdowns and clear source-tier guidance, meeting most criteria at or above expectations. The main gap is c1 (no skill routing evidence) and partial gaps on explicit agreement identification (c14) and frame-bias labelling for AFR/Guardian (c12).
