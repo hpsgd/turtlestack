@@ -1,46 +1,80 @@
 ---
 name: company-lookup
-description: "Research a company from public sources: overview, products, team, financials, recent news, and strategic direction. Use for due diligence prep, competitive context, or general company research. Covers AU/NZ sources (ASIC, ABN, NZ Companies Office)."
-argument-hint: "[company name]"
+description: "Research a company from public sources: overview, products, team, financials, recent news, and strategic direction. Writes a conforming report (per report-conventions) to <engagement_dir>/company-lookup/<company-slug>.md. Covers AU/NZ sources (ASIC, ABN, NZ Companies Office)."
+argument-hint: "<company name> [engagement_dir]"
 user-invocable: true
-allowed-tools: WebSearch, WebFetch
+allowed-tools: WebSearch, WebFetch, Read, Write, Bash
 ---
 
-Produce a structured company snapshot for $ARGUMENTS from publicly available sources.
+Produce a structured company snapshot for the named company and write a conforming report.
 
-## Step 1: Identify source types
+## Step 0: Resolve arguments
+
+Parse `$ARGUMENTS` as `<company name> [engagement_dir]`. The trailing token, if it looks like a path (starts with `/` or `~`, or names a directory that exists), is the engagement directory. Otherwise default to `pwd`. Resolve to an absolute path.
+
+## Step 1: Compute the output path
+
+Subject slug: full company name, kebab-case, lowercase, ASCII (per report-conventions). Strip apostrophes and other punctuation; keep legal suffixes lower-cased (`pty-ltd`, `inc`, `gmbh`).
+
+Examples:
+
+- `Acme Corp Pty Ltd` → `acme-corp-pty-ltd`
+- `Canva` → `canva`
+
+Output path: `$ENG/company-lookup/<slug>.md`
+
+If a file already exists at that path, ask before overwriting (overwrite / write a `-2` sibling / abort).
+
+## Step 2: Stage the report from the template
+
+```bash
+mkdir -p "$ENG/company-lookup"
+cp "${CLAUDE_PLUGIN_ROOT}/templates/company-lookup.md" "$ENG/company-lookup/<slug>.md"
+```
+
+Replace placeholders in frontmatter:
+
+| Placeholder | Replace with |
+|---|---|
+| `{SUBJECT}` | The company name as provided |
+| `{SUBTITLE}` | Engagement directory basename, title-cased; drop the line if no useful inference |
+| `{DATE}` | Today's ISO date |
+
+## Step 3: Identify source types
 
 Before searching, determine which source types apply:
 
 - **Public company (ASX/NZX/NYSE/NASDAQ):** annual reports, exchange filings
-- **AU company:** ASIC Connect (`connect.asic.gov.au`) for company extract, director history, financials; ABN Lookup (`abn.business.gov.au`) for ABN/ACN cross-reference
-- **NZ company:** NZ Companies Office (`companies.govt.nz`) for director history, shareholding, annual returns
+- **AU company:** [ASIC Connect](https://connect.asic.gov.au) for company extract, director history, financials; [ABN Lookup](https://abn.business.gov.au) for ABN/ACN cross-reference
+- **NZ company:** [NZ Companies Office](https://companies.govt.nz) for director history, shareholding, annual returns
 - **US public company:** SEC EDGAR for 10-K/10-Q filings
 - **UK company:** Companies House for filings and structure
 - **Private company:** Crunchbase, LinkedIn, press
 
 If the company's jurisdiction or listing status is unclear, run a quick name search on ASIC Connect and Crunchbase first to establish it.
 
-## Step 2: Research overview and products
+## Step 4: Research and write into the staged file
+
+Work through the sections in the staged file. Write findings into the appropriate section as you go. Cite sources inline using the source-citations rule (deep links, access dates) and tag tier per source-quality.
+
+### Overview and products
 
 Search for: company name + "about", company website, LinkedIn company page.
 
-Capture:
+Capture in the Overview and Products sections:
 
 - What the company does and its business model
 - Core products/services with pricing if public
 - Target customer and market segment
-- Founding year, HQ, and approximate size (employee count or revenue band)
+- Founding year, HQ, and approximate size
 
-## Step 3: Research team
+### Team
 
 Search company website "team" or "leadership" page, LinkedIn.
 
-Capture founding team backgrounds and current key executives (name, role, tenure where visible).
+Capture founding team backgrounds and current key executives (name, role, tenure where visible). Note notable hires or departures in the last 12 months.
 
-Note notable hires or departures in the last 12 months.
-
-## Step 4: Research financials
+### Financials
 
 For public companies: pull latest annual report or filing for revenue, growth rate, and key metrics.
 
@@ -48,15 +82,15 @@ For private companies: check Crunchbase for funding rounds (amount, date, invest
 
 Never present a revenue figure without its source and date. Label estimates as estimates.
 
-## Step 5: Research recent news
+### Recent news
 
 Search: `[company name] site:news.google.com` or Google News for last 6 months.
 
 Prioritise: funding rounds, product launches, leadership changes, regulatory actions, acquisitions, layoffs.
 
-Flag known reputational issues — controversies, regulatory actions, public criticism, ethics concerns — that may surface in stakeholder conversations. A meeting-prep brief that hides this leaves the user blindsided.
+Flag known reputational issues — controversies, regulatory actions, public criticism, ethics concerns — that may surface in stakeholder conversations.
 
-## Step 6: Assess strategic direction
+### Strategic direction
 
 Signals for where the company is heading:
 
@@ -65,7 +99,13 @@ Signals for where the company is heading:
 - Product launches and roadmap announcements
 - Investor day or analyst day materials (public companies)
 
-For meeting-prep contexts, also note likely conversation topics: strategic shifts the user may want to ask about, executive statements that have generated discussion, and known sensitivities the other party may raise. Surface these as talking points, not just facts.
+For meeting-prep contexts, also note likely conversation topics: strategic shifts the user may want to ask about, executive statements that have generated discussion, and known sensitivities the other party may raise.
+
+## Step 5: Finalise the report
+
+- Replace placeholder source rows with actual sources, tagged with tier per source-quality.
+- Cross-reference at least two independent sources for any fact listed in the output.
+- Set `status: Final` once complete; optionally set `confidence: 0-4`.
 
 ## Rules
 
@@ -74,48 +114,8 @@ For meeting-prep contexts, also note likely conversation topics: strategic shift
 - If the company has no meaningful public web presence, flag before proceeding — may be too early-stage for useful intelligence.
 - Revenue ≠ valuation. Distinguish these clearly when both appear.
 - Recency matters on competitive data. Flag any source older than 12 months — for public companies that report quarterly, anything beyond the last few quarters is stale. Use a tighter threshold (6 months) for fast-moving sectors like AI, fintech, or anything where the previous quarter's narrative may already be obsolete.
+- One file per invocation. Don't write findings inline into chat.
 
-## Output format
+## Output
 
-```markdown
-## Company: [Name]
-
-**As of:** [date]
-**Sources:** [count] public sources
-
-### Overview
-
-[2-3 sentence summary]
-
-| Attribute | Detail |
-|---|---|
-| Founded | — |
-| HQ | — |
-| Size | — |
-| Business model | — |
-| Revenue model | — |
-
-### Products/services
-
-[Structured summary with pricing where public]
-
-### Team
-
-[Key executives — name, role, tenure — sourced from company site or LinkedIn]
-
-### Financials
-
-[Revenue or funding data — each figure with source and date]
-
-### Recent news
-
-[Bulleted list, dated, most recent first]
-
-### Strategic direction
-
-[Key themes from job postings, announcements, executive statements]
-
-### Sources
-
-1. [Title](URL) — [what it contributed]
-```
+A single line: the absolute path to the written report.
