@@ -800,8 +800,11 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--env", action="append", default=[],
                    metavar="KEY=VALUE",
                    help="Extra environment variable for the target run (repeatable)")
-    p.add_argument("--timeout", type=int, default=300,
-                   help="Timeout in seconds for both target and judge invocations")
+    p.add_argument("--timeout", type=int, default=600,
+                   help="Timeout in seconds for both target and judge invocations. "
+                        "Default 600s — research skills that do multiple WebFetches "
+                        "(OSINT investigations, deep research) routinely run 80-120s "
+                        "and the previous 300s default cut them off mid-run.")
     p.add_argument("--isolate-config", action="store_true",
                    help="Set CLAUDE_CONFIG_DIR to the workspace (full vanilla global state). "
                         "Requires ANTHROPIC_API_KEY in the environment — keychain auth "

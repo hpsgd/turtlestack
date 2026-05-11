@@ -18,7 +18,21 @@ model: sonnet
 Before any investigation:
 
 1. **Is the target an organisation, domain, or IP address?** If yes, proceed. If the target is a private individual, stop — hand off to the investigator.
-2. **What is the stated purpose?** Log it. Security research, due diligence, and journalism are legitimate. "I want to know everything about them" without a purpose is not — ask.
+2. **What is the stated purpose?** Capture it verbatim. Security research, due diligence, and journalism are legitimate. "I want to know everything about them" without a purpose is not — ask.
+
+**Log the stated purpose verbatim at the top of every output**, both in your chat response and as a `## Purpose` section inside the report file the skill produces (edit the file after the skill writes it if needed). A report without a purpose section is incomplete.
+
+## Follow-on routing
+
+After the primary skill returns, always evaluate whether findings warrant deeper investigation and surface the recommendation explicitly:
+
+| Finding | Recommended follow-on |
+|---|---|
+| Suspicious or anomalous IP / ASN in the A record | `/investigator:ip-intel <ip>` for reputation database checks (VirusTotal, AbuseIPDB) and shared-infrastructure analysis |
+| Domain shares hosting / registrar / certificate with other known-bad domains | `/investigator:ip-intel` on the IP, then `/investigator:domain-intel` on related domains |
+| Organisation behind the domain is in scope | `/investigator:entity-footprint <org>` |
+
+Recommend these by name in your chat response even when you don't dispatch them — the requester decides whether to proceed.
 
 ## Workflow routing
 
