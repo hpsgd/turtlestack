@@ -153,10 +153,20 @@ If the gate record covers professional background:
 
 - NZ Electoral Commission has limited public search capability. Note what's accessible.
 
+### Raise human-required steps explicitly
+
+Public-records work hits paid or restricted sources constantly — PACER subscription for US federal court records, AU property titles via state land registries, AEC electoral rolls only inspectable in person, certain court files held only on paper. **Silently skipping these is the bug to avoid.** When a lookup is in scope and would meaningfully advance the picture, raise it under `## Pending follow-up → Human-required steps`. Name the source, the access path (URL, registry name, office location), the rough cost or process, and what it would resolve. The assessor decides whether to invest the time or money.
+
+If another investigator skill would resolve a gap (`/investigator:people-lookup` for professional context, `/investigator:corporate-ownership` to map a company structure surfaced here), name it under `## Pending follow-up → Skill-required steps`.
+
+Failed fetches (timeouts, rate limits) go under `## Pending follow-up → Re-fetches`.
+
 ## Step 4: Finalise the report
 
+- Every template section heading must remain in the report. Use explicit "None found." or "Not publicly searchable" rather than removing sections.
+- The three sub-sections under `## Pending follow-up` (Human-required steps, Skill-required steps, Re-fetches) also stay. Write "None." under any that are empty.
 - Distinguish "no records found" (searched, nothing returned) from "not checked" (didn't search this source) in the Source log table.
-- Note paid/restricted sources as requiring manual follow-up.
+- Note paid/restricted sources as requiring manual follow-up (and raise them under Pending follow-up → Human-required steps).
 - Replace placeholder source rows with actual sources, tagged with tier per source-quality.
 - Set `status: Final` once complete; optionally set `confidence: 0-4`.
 
@@ -176,6 +186,7 @@ When the dossier plugin is in use, suggest `/dossier:consolidate <engagement_dir
 - AU electoral rolls cannot be searched online — note clearly, don't skip without explanation.
 - Distinguish between "no records found" (searched, nothing returned) and "not checked" (didn't search this source).
 - One file per invocation.
+- **Silently skipping a paid or human-required lookup is a bug.** If the lookup exists and is in scope, raise it in `## Pending follow-up → Human-required steps`. PACER subscriptions, AU property titles, AEC roll inspections, paywalled court archives — the assessor decides whether to spend.
 
 ## Output
 

@@ -116,8 +116,18 @@ Look for entities that share:
 
 OpenCorporates "related companies" and ViewDNS.info reverse WHOIS (for digital footprint overlap) can help here.
 
+### Raise human-required steps explicitly
+
+Beneficial-ownership tracing frequently reaches a registry that needs a paid extract, an in-person filing review, or a paywalled jurisdiction (offshore registries, certain US state portals). **Silently skipping these is the bug to avoid.** If the lookup is in scope and would meaningfully advance the ownership chain, raise it under `## Pending follow-up → Human-required steps`. Name the source, the access path, the rough cost, and what it would resolve. The assessor decides whether to spend the money.
+
+If another investigator skill would resolve a gap (`/investigator:domain-intel` to triangulate via registered address, `/investigator:entity-footprint` for the digital side, a follow-on `/investigator:corporate-ownership` run on a parent entity), name it under `## Pending follow-up → Skill-required steps`.
+
+Failed fetches (timeouts, rate limits) go under `## Pending follow-up → Re-fetches`.
+
 ## Step 4: Finalise the report
 
+- Every template section heading must remain in the report. Use "None found." for empty sections rather than removing them.
+- The three sub-sections under `## Pending follow-up` (Human-required steps, Skill-required steps, Re-fetches) also stay. Write "None." under any that are empty.
 - Document the jurisdiction for every entity in the ownership chain.
 - Distinguish between registered ownership (what the registry shows) and beneficial ownership (who actually controls the entity).
 - Note when an ownership chain terminates in a jurisdiction with limited disclosure requirements (offshore structures, certain US states) — this is a significant finding, not a gap.
@@ -131,6 +141,7 @@ OpenCorporates "related companies" and ViewDNS.info reverse WHOIS (for digital f
 - Note when an ownership chain terminates in a jurisdiction with limited disclosure requirements (offshore structures, certain US states) — this is a significant finding, not a gap.
 - ICIJ data covers specific leaked datasets — it's a signal, not a comprehensive offshore registry. Absence from ICIJ doesn't mean no offshore structure.
 - One file per invocation.
+- **Silently skipping a paid or human-required lookup is a bug.** If the lookup exists and is in scope, raise it in `## Pending follow-up → Human-required steps`.
 
 ## Output
 

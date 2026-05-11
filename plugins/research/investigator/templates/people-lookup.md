@@ -8,38 +8,42 @@ subject: {SUBJECT}
 status: Draft
 ---
 
-## Context anchors
+## Identity verification
 
-[Employer, location, field — what was used to disambiguate.]
+[Confirmed identifiers: name (with disambiguation context — employer, location, field), current role, employer. Note the confidence rating (0-4) per the source-quality rubric. If multiple people share the name, document the disambiguation method.]
 
 ## Professional history
 
-[Roles, employers, tenure — sourced.]
+[Current role and tenure first. Then prior roles, most recent first. Note tenure lengths and any notable transitions or gaps. If a role can't be confirmed, say so rather than omitting it. Use "none found" if there is no public professional history.]
 
-## Licensing and registrations
+## Public presence
 
-[Any professional registrations found — or "none found in checked registries".]
+[LinkedIn, personal site, GitHub, conference talks, published work, media mentions. Dated where available. Cite each source with tier. Use "no significant public presence" if nothing surfaces.]
 
-## News and press
+## Network and affiliations
 
-[Dated list, most recent first — or "no significant press coverage found".]
+[Directorships and company registrations (ASIC, NZ Companies Office, Companies House, etc.). Board positions, advisory roles. Co-author or co-founder relationships. Notable industry connections. Use "none found in checked registries" if registry searches returned nothing.]
 
-## Academic and published work
+## Relevance to engagement
 
-[Publication summary — or "no published work found".]
+[Why this person is in scope for the assessment. What signal their profile gives — positive, negative, neutral. Keep brief: 2-4 sentences.]
 
-## Company affiliations
+## Pending follow-up
 
-[Directorships or company registrations found — or "none found".]
+[Three buckets — keep the headings even if a bucket is empty, write "None." underneath.]
 
-## Source cross-reference
+### Human-required steps
 
-[Which key facts confirmed across two or more independent sources; which are single-source only.]
+[Steps the assessor must do — paid ASIC extracts, in-person record lookups, paywalled databases. Name the source, the cost or access path, and what the lookup would resolve. "None." if every reasonable lookup is automated.]
 
-## Gaps and limitations
+### Skill-required steps
 
-[What couldn't be confirmed; what is out of scope per gate.]
+[Other investigator skills that should be run next — e.g. `/investigator:social-media-footprint`, `/investigator:public-records`. State why each is relevant.]
+
+### Re-fetches
+
+[Sources that failed first time and should be retried — timeouts, rate limits, transient errors. Include the URL and what the source was meant to confirm.]
 
 ## Sources
 
-1. [Tool/Registry](URL) — [what it contributed]
+1. [Tool/Registry](URL) — [what it contributed] — [T1-T5] — accessed YYYY-MM-DD

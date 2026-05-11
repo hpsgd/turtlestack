@@ -47,13 +47,21 @@ Then use the Edit tool to replace placeholders in the staged file:
 
 ## Step 3: Investigation
 
-Run the investigation steps below and write findings into the staged file as you go. Each finding goes under its existing heading. Cite sources inline using the source-citations rule (deep links, access dates) and tag tier per source-quality.
+Run the investigation steps below and write findings into the staged file as you go. Every section heading in the template stays in the report — even if there is nothing to put under it. An empty section gets "None found." or "Out of scope per gate." A reader bundle-scanning multiple people-lookup reports needs to see the same structural shape every time. The headings are **mandatory**; the order is **fixed**.
+
+Cite sources inline using the source-citations rule (deep links, access dates) and tag tier per source-quality.
+
+### Identity verification — populate first
+
+Confirm the subject's identity before running other searches. If you can't confirm identity, stop and ask the user for more disambiguation before proceeding — running searches against the wrong person is worse than no answer.
+
+Record under `## Identity verification`: the confirmed identifiers (name, role, employer, location), the disambiguation method if the name is shared, and your confidence rating (0-4) per source-quality.
 
 ### Professional history
 
 Search LinkedIn public profile, company website bios, and professional registrations.
 
-For professionals in regulated fields, check licensing boards:
+For professionals in regulated fields, check licensing boards and record findings under `## Network and affiliations` (registrations) — but the role history itself lives under `## Professional history`.
 
 - AU health practitioners: [AHPRA](https://www.ahpra.gov.au) (doctors, nurses, pharmacists, physios, psychologists, allied health)
 - AU financial advisers: [ASIC Financial Advisers Register](https://moneysmart.gov.au/financial-advice/financial-advisers-register)
@@ -63,15 +71,9 @@ For professionals in regulated fields, check licensing boards:
 - NZ financial services: [FMA Financial Services Register](https://www.fma.govt.nz/compliance/registers-and-warnings/financial-service-providers/)
 - US professionals: relevant state licensing boards
 
-### News and press
+### Public presence — news, press, academic work, social
 
-Search Google News (`site:news.google.com "[name]"`) and relevant industry press for the subject's name combined with professional context.
-
-For older coverage: newspaper archives where accessible.
-
-For names with many homonyms, add qualifiers (employer, location, field) to all searches.
-
-### Academic and published work
+Search Google News (`site:news.google.com "[name]"`) and relevant industry press for the subject's name combined with professional context. Add qualifiers (employer, location, field) for names with many homonyms. For older coverage, check newspaper archives where accessible.
 
 For researchers, academics, or published professionals:
 
@@ -82,9 +84,7 @@ For researchers, academics, or published professionals:
 
 Note publication count, citation count (very rough proxy for influence in field), and institutional affiliations.
 
-### People search aggregators
-
-These aggregate public records — use for confirmation, not as primary source.
+People search aggregators — use for confirmation, not as primary source:
 
 **US-based subjects:**
 
@@ -103,7 +103,7 @@ AU/NZ have no equivalent of the comprehensive US people-search aggregators. Thes
 
 - [White Pages NZ](https://www.whitepages.co.nz)
 
-### Company affiliations
+### Network and affiliations — directorships and registrations
 
 Check for current and historical directorships or company registrations:
 
@@ -115,14 +115,23 @@ Check for current and historical directorships or company registrations:
 
 ### Cross-reference
 
-Before including any fact in the output, confirm it across at least two independent sources. A single people search result is a lead, not a finding. Flag single-source findings explicitly.
+Before including any fact in the output, confirm it across at least two independent sources. A single people search result is a lead, not a finding. Flag single-source findings explicitly in the relevant section using `[single source]`.
+
+### Raise human-required steps explicitly
+
+Some sources can't be retrieved automatically — paid ASIC director extracts, paywalled databases, certain Companies House documents, court records requiring a subscription. **Silently skipping them is the bug to avoid.** If a reasonable lookup exists but can't run from this session, raise it under `## Pending follow-up → Human-required steps`. Name the source, the access path (URL or registry name), the rough cost, and what the lookup would resolve. The assessor decides whether to do it; a "skip for now" answer is fine.
+
+If another investigator skill would resolve a gap (`/investigator:social-media-footprint`, `/investigator:public-records`, `/investigator:identity-verification`), name it under `## Pending follow-up → Skill-required steps` with a one-line rationale.
+
+If a source failed mid-investigation (timeout, rate limit, transient error), log it under `## Pending follow-up → Re-fetches` with the URL and what it was meant to confirm.
 
 ## Step 4: Finalise the report
 
 After populating the body sections:
 
-- Ensure every section has content or an explicit "none found" / "out of scope per gate" note.
-- Replace the placeholder rows in Sources with the actual sources used, with tier tags (T1-T5) per source-quality.
+- Every template section heading must remain in the report, even if empty. Use "None found." or "Out of scope per gate." rather than removing the section.
+- The three sub-sections under `## Pending follow-up` (Human-required steps, Skill-required steps, Re-fetches) also stay. Write "None." under any that are empty.
+- Replace the placeholder rows in Sources with the actual sources used, with tier tags (T1-T5) per source-quality and access dates.
 - Set `status: Final` once content is complete; leave `Draft` if any section is incomplete.
 - Optionally set `confidence: 0-4` based on coverage and source mix.
 
@@ -142,6 +151,8 @@ When the dossier plugin is in use, suggest `/dossier:consolidate <engagement_dir
 - Name disambiguation: if multiple people share the name, use context anchors (location, employer, field) to isolate the correct subject. Document the disambiguation method in the output.
 - Absence is a finding. No press, no academic work, minimal professional footprint is a result — not a failed investigation.
 - One file per invocation. Don't write findings inline into chat.
+- **Mandatory section structure.** Every report uses the same template headings in the same order. An empty section gets "None found." — never delete the heading. Reports get bundled into a dossier where structural parity matters more than terse omission.
+- **Silently skipping a paid or human-required lookup is a bug.** If the lookup exists and is in scope, raise it in `## Pending follow-up → Human-required steps`. Let the assessor decide whether to spend the money or the time.
 
 ## Output
 
