@@ -1,16 +1,48 @@
 ---
 name: market-sizing
-description: "Estimate the size of a market using top-down and bottom-up methods with explicit methodology. Use when you need a defensible TAM/SAM/SOM figure for a business plan, pitch, or investment decision."
-argument-hint: "[market to size, with geography and buyer type if known]"
+description: "Estimate the size of a market using top-down and bottom-up methods with explicit methodology. Writes a conforming report (per report-conventions) to <engagement_dir>/market-sizing/<market-slug>.md. Use when you need a defensible TAM/SAM/SOM figure for a business plan, pitch, or investment decision."
+argument-hint: "<market to size, with geography and buyer type if known> [engagement_dir]"
 user-invocable: true
-allowed-tools: WebSearch, WebFetch
+allowed-tools: WebSearch, WebFetch, Read, Write, Bash
 ---
 
-Produce a market sizing estimate for $ARGUMENTS with explicit methodology.
+Produce a market sizing estimate for the named market and write a conforming report with explicit methodology.
 
-## Step 1: Define the market
+## Step 0: Resolve arguments
 
-A market size without a definition is a number without meaning. Establish:
+Parse `$ARGUMENTS` as `<market description> [engagement_dir]`. Trailing path-shaped token is the engagement directory; otherwise default to `pwd`. Resolve to an absolute path.
+
+## Step 1: Compute the output path
+
+Subject slug: kebab-case, lowercase, ASCII (per report-conventions). Use the most specific phrase that identifies the market.
+
+Examples:
+
+- `Australian payroll software for SMBs` → `australian-payroll-software-smb`
+- `Global cloud security` → `global-cloud-security`
+
+Output path: `$ENG/market-sizing/<slug>.md`
+
+If a file already exists at that path, ask before overwriting (overwrite / write a `-2` sibling / abort).
+
+## Step 2: Stage the report from the template
+
+```bash
+mkdir -p "$ENG/market-sizing"
+cp "${CLAUDE_PLUGIN_ROOT}/templates/market-sizing.md" "$ENG/market-sizing/<slug>.md"
+```
+
+Replace placeholders in frontmatter:
+
+| Placeholder | Replace with |
+|---|---|
+| `{SUBJECT}` | The market description as provided |
+| `{SUBTITLE}` | Engagement directory basename, title-cased; drop the line if no useful inference |
+| `{DATE}` | Today's ISO date |
+
+## Step 3: Define the market
+
+Write into the Market definition section of the staged file. A market size without a definition is a number without meaning. Establish:
 
 - **Buyer:** who is paying? (individual, SMB, enterprise, government department)
 - **Purchase unit:** what are they buying? (subscription, one-time, services engagement)
@@ -19,7 +51,7 @@ A market size without a definition is a number without meaning. Establish:
 
 State these assumptions explicitly. Different assumptions produce wildly different numbers — the definition IS the methodology.
 
-## Step 2: Top-down estimate
+## Step 4: Top-down estimate
 
 Find analyst estimates from credible sources:
 
@@ -32,11 +64,13 @@ Find analyst estimates from credible sources:
 
 For each estimate: note the specific report title, year published, and the exact figure cited. Never round-trip a sourced figure without the original citation.
 
+Record findings in the Top-down estimate section and add the row to the Size estimates table.
+
 If no analyst report exists for this specific market, note it and proceed to bottom-up.
 
-## Step 3: Bottom-up estimate
+## Step 5: Bottom-up estimate
 
-Build independently from first principles:
+Build independently from first principles. Write into the Bottom-up estimate section:
 
 1. **Estimate addressable customer count** — how many potential buyers exist? (Use industry association data, government statistics, LinkedIn company size filters as proxies)
 2. **Estimate average annual spend** — what does a typical buyer spend? (Use public pricing, customer testimonials, analyst benchmarks)
@@ -44,14 +78,18 @@ Build independently from first principles:
 
 Show the calculation explicitly: `N customers × $X avg spend × Y% penetration = $Z`
 
-## Step 4: Reconcile
+Add the row to the Size estimates table.
+
+## Step 6: Reconcile
 
 Do the top-down and bottom-up figures agree within 2x?
 
-- **Yes:** report both, note the alignment as confidence signal
+- **Yes:** record both, note the alignment as confidence signal
 - **No:** explain the variance. Common reasons: different market definitions, different geographies, different buyer segmentation. Don't average them — resolve the discrepancy
 
-## Step 5: Growth rate
+Write the reconciliation into the Reconciliation section.
+
+## Step 7: Growth rate
 
 Find CAGR from:
 
@@ -59,7 +97,13 @@ Find CAGR from:
 - Public company revenue growth rates in the space (proxy — available from earnings reports)
 - VC/PE investment velocity as a leading signal
 
-Note the source and the period it covers.
+Note the source and the period it covers. Write into the Growth rate section.
+
+## Step 8: Finalise the report
+
+- Set the Confidence rating (High / Medium / Low) with reasoning.
+- Replace placeholder source rows with actual sources, tagged with tier per source-quality.
+- Set `status: Final` once complete; optionally set `confidence: 0-4`.
 
 ## Rules
 
@@ -68,35 +112,8 @@ Note the source and the period it covers.
 - Top-down and bottom-up must both be attempted. If one genuinely can't be done, explain why.
 - Don't average unreconciled top-down and bottom-up figures. Diagnose the gap instead.
 - Distinguish TAM (total addressable), SAM (serviceable addressable), and SOM (serviceable obtainable) if the question calls for it. If not asked, default to TAM and state what's included.
+- One file per invocation. Don't write findings inline into chat.
 
-## Output format
+## Output
 
-```markdown
-## Market sizing: [Market name]
-
-**As of:** [date]
-**Market definition:** [buyer, purchase unit, geography, time horizon]
-
-### Size estimates
-
-| Method | Estimate | Source | Methodology |
-|---|---|---|---|
-| Top-down | $Xbn | [Analyst report, year] | [Brief description] |
-| Bottom-up | $Xbn | Own calculation | [N customers × $X spend × Y% penetration] |
-
-### Reconciliation
-
-[Do the figures align? If not, why not?]
-
-### Growth rate
-
-[CAGR estimate with source and period]
-
-### Confidence: [High / Medium / Low]
-
-[Reasoning — do multiple sources agree? How recent is the data? How well-defined is the market?]
-
-### Sources
-
-1. [Title](URL) — [what it contributed]
-```
+A single line: the absolute path to the written report.
