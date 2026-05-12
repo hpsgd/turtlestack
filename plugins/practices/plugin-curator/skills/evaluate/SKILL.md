@@ -110,6 +110,24 @@ The runner captures everything written under the workspace and feeds it to the j
 
 The runner warns on stderr if a test prompt references absolute or home-relative paths that aren't `{workspace}`-rooted. Ignore the warning only if the path is genuinely required (Docker volume mount, system cache).
 
+### Fixture files
+
+When a test needs files on disk before the target runs (an engagement directory, a code sample, a config file), put them under `<test_dir>/fixtures/`. The runner copies the entire tree into `{workspace}/work/` before invoking the target. Test prompts can then reference `{workspace}/work/<subpath>` directly without asking the model to write the fixtures itself — embedding fixture content in the prompt is unreliable, especially for smaller target models that often misparse nested code blocks or heredocs.
+
+The fixture tree mirrors the layout you want under `work/`. For example:
+
+```
+examples/<cat>/<plug>/skills/<skill>/
+├── test.md
+└── fixtures/
+    └── visualcare/
+        ├── people-lookup/graves-michael.md
+        ├── domain-intel/visualcare-com-au.md
+        └── ip-intel/52-12-34-56.md
+```
+
+After the runner stages those, the target sees them at `{workspace}/work/visualcare/...`.
+
 ## Troubleshooting
 
 | Signal | Likely cause |

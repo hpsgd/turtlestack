@@ -359,6 +359,41 @@ def warn_external_paths_in_prompt(test: TestCase) -> None:
     )
 
 
+def stage_fixtures(test_dir: Path, workspace: Path) -> None:
+    """If `<test_dir>/fixtures/` exists, copy its tree into `<workspace>/work/`
+    before the target runs.
+
+    The runner's `_snapshot_artifacts` later captures everything under
+    `workspace/work/**`, so anything dropped here will be visible to the judge
+    as a starting condition. Use this for test scenarios that need real files
+    on disk (engagement directories, code samples, config files) — embedding
+    them in the prompt is unreliable for smaller target models.
+
+    The fixture tree is rooted at `workspace/work/` so test prompts can
+    reference paths like `{workspace}/work/<subpath>` consistently.
+    """
+    fixtures_dir = test_dir / "fixtures"
+    if not fixtures_dir.is_dir():
+        return
+    work_dir = workspace / "work"
+    work_dir.mkdir(exist_ok=True)
+    file_count = 0
+    for src in fixtures_dir.rglob("*"):
+        if not src.is_file():
+            continue
+        rel = src.relative_to(fixtures_dir)
+        dst = work_dir / rel
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, dst)
+        file_count += 1
+    if file_count:
+        print(
+            f"[run-test] staged {file_count} fixture file(s) from "
+            f"{fixtures_dir} into {work_dir}",
+            file=sys.stderr,
+        )
+
+
 def substitute_workspace_in_prompt(prompt: str, workspace: Path) -> str:
     """Replace `{workspace}` in a test prompt with the resolved workspace path.
 
@@ -967,6 +1002,7 @@ def main() -> int:
         setup_isolated_plugins(cfg, workspace)
         warn_unresolved_marketplace_deps(cfg)
         warn_external_paths_in_prompt(test)
+        stage_fixtures(cfg.test_dir, workspace)
 
         print("[run-test] invoking target...", file=sys.stderr)
         target = run_target(cfg, test, workspace)
