@@ -1,4 +1,5 @@
 docs/
+!examples/**/fixtures/**
 TODO.md
 
 # Claude Code's own runtime data
