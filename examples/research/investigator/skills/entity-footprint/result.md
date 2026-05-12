@@ -35,234 +35,229 @@ Captured from a real headless invocation of the skill/agent.
 
 ### Chat response
 
-## Entity Footprint Report: SafetyCulture Pty Ltd
+Report complete. Here's the output:
 
-I've completed a comprehensive map of SafetyCulture's public digital footprint. The full report has been saved to `safetyculture-entity-footprint.md`. Here's a summary of key findings:
+```
+/private/var/folders/nn/d2s0hr6x7p73b0gr6gsqp9yw0000gp/T/eval-1778589014-7ff5bb46/work/entity-footprint/safetyculture-pty-ltd.md
+```
 
-### Core footprint
+**Summary of findings:**
 
-- **Domains:** Primary `safetyculture.com` (global), `safetyculture.com.au` (SafetyDocs — AU/NZ compliance), developer portal, help center, integrations marketplace
-- **Company:** Sydney-headquartered (Level 8, 210 George Street, Surry Hills). ACN 089 180 049, ABN 16 089 180 049. Incorporated 1999. **Active, no regulatory flags.**
-- **Scale:** 672–833 employees, $197.6M revenue (FY 2025, +32% YoY), $384M+ raised across funding rounds
-- **Current valuation:** A$2.5B (Sept 2024 round, Airtree-led)
+SafetyCulture Pty Ltd (ABN 16089180049, founded 1999) operates as a mature, well-funded SaaS company headquartered in Sydney. The organisation maintains a comprehensive digital footprint across 7+ owned domains, active social presence (833 LinkedIn employees, 4.8k Twitter followers), mobile apps (1.6M Android downloads, 4.52★ rating), and open GitHub repositories. Recent leadership transition (Luke Anear→Executive Chairman; Kelly Vohs appointed CEO Jan 2025) reflects growth phase. Series D funding ($165M, Sep 2024) values the company at $2.5B with backing from tier-1 investors (Airtree, Blackbird, institutional super funds). The confidence level is **3** — sufficient for board-level assessment with triangulated T1/T2/T3 sources. 
 
-### Product & technology
+**Next steps recommended:**
+- `/investigator:domain-intel safetyculture.com` for DNS/hosting detail
+- `/investigator:corporate-ownership SafetyCulture Pty Ltd` for director/shareholder extract
+- `/investigator:people-lookup Luke Anear` for founder background
+- `/investigator:social-media-footprint Kelly Vohs` for new CEO profile
 
-- **Flagship app:** iAuditor (iOS 4.71★/30K ratings, Android 4.58★/19K ratings). 70,000+ organizations, 1B+ checks/year
-- **GitHub:** Active public org with 7+ repos (Python/Go/TypeScript SDKs, exporter tools, schema docs). Developer-friendly posture
-- **API:** Public REST API at developer.safetyculture.com (requires Premium/Enterprise)
-- **Acquisitions:** EdApp (training), Twine (April 2026, AI startup — signals agentic AI pivot)
-
-### Social & hiring
-
-- **LinkedIn:** 672 employees, 37,681 followers, active job postings
-- **X/Twitter:** @SafetyCultureHQ active
-- **YouTube:** Product demos, conference coverage (SafetyCulture Next 2024)
-- **Hiring:** Active across engineering (Python, TypeScript, iOS/Android), product, enterprise sales, data/analytics. Agentic AI roles emerging post-Twine
-
-### Leadership & press
-
-- **CEO:** Luke Anear (founder, returned Feb 2026 after Kelly Vohs stepped down)
-- **Recent:** Twine acquisition (April 2026) — AI acceleration signal. $165M funding (Sept 2024). Featured in AFR Most Innovative Companies 2024
-- **Press:** TechCrunch, SmartCompany, Startup Daily. Strong Australian media profile
-
-### Notable patterns
-
-- **HQ gravity:** Founder-led return to Sydney headquarters (Feb 2026) — signals re-commitment to local operations over distributed/US-led model
-- **AI inflection:** Twine acquisition + leadership restructure both point to 2026 pivot toward agentic operations platform
-- **No gaps:** Regulatory clean, active across social/GitHub/developer channels, transparent financials. No unusual absences
-
----
-
-### Follow-on investigations
-
-For deeper dives on specific assets:
-
-- `/investigator:domain-intel safetyculture.com` — DNS, cert transparency, subdomains, CDN/hosting
-- `/investigator:ip-intel` — after domain-intel resolves IPs, map hosting provider and geographic footprint
-- `/investigator:corporate-ownership SafetyCulture Pty Ltd` — ASIC director register, shareholder structure, UBO
-- `/investigator:people-lookup Luke Anear` — founder background, board roles, prior ventures
-- `/investigator:people-lookup Brian Swift` — Twine co-founder and new VP AI
-
-Full report with all 21 sources linked: **safetyculture-entity-footprint.md**
+Sources:
+- [SafetyCulture About page](https://safetyculture.com/about)
+- [SafetyCulture LinkedIn](https://www.linkedin.com/company/safetyculturehq)
+- [ABN Lookup Registry](https://abr.business.gov.au/)
+- [SmartCompany — $165M funding round](https://www.smartcompany.com.au/finance/new-165-million-round-safetyculture-tough-environment-fresh-funding/)
+- [TechCrunch — Historical funding](https://techcrunch.com/2020/04/07/australian-startup-safetyculture-nabs-800-million-valuation-on-35-5-million-round/)
+- [SafetyCulture GitHub org](https://github.com/SafetyCulture)
+- [App Store listing](https://apps.apple.com/us/app/safetyculture-iauditor/id499999532)
+- [Google Play listing](https://play.google.com/store/apps/details?id=com.safetyculture.iauditor)
 
 ### Artifacts written
 
-#### `work/safetyculture-entity-footprint.md`
+#### `work/entity-footprint/safetyculture-pty-ltd.md`
 
 ```
-## Entity footprint: SafetyCulture Pty Ltd
-
-**Date:** 2026-05-04  
-**Purpose logged:** Map public digital presence for Sydney-based workplace safety SaaS (iAuditor platform)  
-**Methods:** Passive open-source only
-
+---
+title: Entity footprint — SafetyCulture Pty Ltd
+subtitle: Sydney-based workplace safety SaaS, founded 2004
+date: 2026-05-12
+author: entity-footprint
+category: OSINT
+subject: SafetyCulture Pty Ltd
+status: Final
+confidence: 3
 ---
 
-### Domain inventory
+## Domain inventory
 
-| Domain | Status | Notes |
-|---|---|---|
-| `safetyculture.com` | [discovered] | Primary domain, global product presence. Registered to SafetyCulture Pty Ltd |
-| `safetyculture.com.au` | [discovered] | Regional domain for SafetyDocs (compliance documents for AU/NZ). Accessible via safetyculture.com.au |
-| `safetyculture.io` | [blocked-lookup, expected] | No evidence of active use; typical pattern for tech companies to reserve |
-| `iauditor.com` | [blocked-lookup, expected] | Product domain (iAuditor). Android app ID: `com.safetyculture.iauditor`. Primary product redirects to safetyculture.com/iauditor |
-| `developer.safetyculture.com` | [discovered] | Developer portal for API documentation at https://developer.safetyculture.com/ |
-| `help.safetyculture.com` | [discovered] | Support/help center for end-user documentation |
-| `integrations.safetyculture.com` | [discovered] | Public API and integrations marketplace |
-| `marketplace.safetyculture.com` | [discovered] | Safety equipment and PPE marketplace (regional variant: marketplace.safetyculture.com/au) |
-| `blog.safetyculture.com` | [discovered] | Content hub ("The Loop by SafetyCulture") |
+**Primary domains:**
+- `safetyculture.com` [discovered] — Main company website and product platform
+- `safetyculture.io` [discovered] — Used for notifications (notification@safetyculture.io)
+- `developer.safetyculture.com` [discovered] — Developer portal for API and integrations
+- `help.safetyculture.com` [discovered] — Customer support and documentation
+- `integrations.safetyculture.com` [discovered] — Integrations marketplace
+- `safetyculture.com.au` [discovered] — Regional variant for Australian app store
+- `iauditor.com` [expected, redirects to safetyculture.com] — Legacy product domain (company rebranded from iAuditor to SafetyCulture)
 
----
+## Web presence
 
-### Web presence
+SafetyCulture maintains a comprehensive web presence across multiple properties:
 
-| Property | URL | Purpose | Notes |
+**Primary site** (`safetyculture.com`):
+- Company overview and brand positioning
+- Product pages for iAuditor, operations management platform
+- Careers page with open positions
+- Blog and newsroom for press releases
+- Pricing, integrations, and customer case studies
+- Security and compliance documentation
+
+**Product-specific properties:**
+- `safetyculture.com/iauditor` — Legacy product documentation and overview
+- `safetyculture.com/jobs` — Dedicated careers/hiring portal
+- `safetyculture.com/careers/sydney` — Sydney office details and team culture
+- `safetyculture.com/newsroom` — Press releases and media resources
+
+**Developer and integration properties:**
+- `developer.safetyculture.com` — REST API documentation, webhooks, integration guides
+- `integrations.safetyculture.com` — Public marketplace for pre-built integrations
+- `help.safetyculture.com` — Extensive customer support knowledge base
+
+**Regional presence:**
+- Australian App Store listing available via `safetyculture.com.au`
+
+## Social profiles
+
+| Platform | Account | Followers / size | Activity |
 |---|---|---|---|
-| **Primary site** | https://safetyculture.com | Global product hub, pricing, about | Mobile-first operations platform positioning |
-| **Product page** | https://safetyculture.com/iauditor | iAuditor flagship product | Inspection and audit management |
-| **About** | https://safetyculture.com/about | Company history and mission | Founded 2004, Luke Anear (founder, now CEO again) |
-| **Careers** | https://safetyculture.com/careers | Hiring, company culture | Multiple career pathways: Grow, Empower |
-| **Developer portal** | https://developer.safetyculture.com | REST API docs, SDKs, integration guides | Requires Premium or Enterprise Plan |
-| **Help center** | https://help.safetyculture.com | End-user documentation and support | Comprehensive knowledge base |
-| **Blog** | https://blog.safetyculture.com | Company news and product updates | Branded as "The Loop by SafetyCulture" |
-| **Integrations** | https://integrations.safetyculture.com | Marketplace, Public API, partners | Ecosystem and third-party integrations |
-| **Regional variant** | https://safetyculture.com.au (SafetyDocs) | AU/NZ compliance documents | Separate product focus (compliance templates) |
-| **Status page** | [not found] | No evidence of public status page | [verified clean] |
+| LinkedIn | @safetyculturehq | 833 employees (as of 2026-05-12) | Active, company updates and job postings |
+| Twitter/X | @SafetyCultureHQ | 4,861 followers | Moderate activity, brand partnerships (e.g., NASCAR/TeamTrackhouse) |
+| Instagram | @safetyculturehq | [not quantified in search] | Present but limited public data |
+| YouTube | @SafetyCultureHQ | Channel active (UCX7nvIis1gTrwxPubhHN-VA) | Product demos, conference talks, company announcements |
+| Facebook | SafetyCulture | [limited data] | Maintained but lower activity than other platforms |
 
----
+## App store
 
-### Social profiles
+**iOS (Apple App Store)**
+- App: SafetyCulture (iAuditor)
+- ID: 499999532
+- Rating: Mixed reviews (positive on ease of use and collaboration; concerns on bug fixes and support responsiveness)
+- Downloads: Significant user base with regular updates
 
-| Platform | Account | Followers/Size | Activity | Link |
-|---|---|---|---|---|
-| **LinkedIn** | SafetyCultureHQ | 672–833 employees listed (variation due to timing); 37,681+ followers | Active company page, job postings, culture content | [https://www.linkedin.com/company/safetyculturehq](https://www.linkedin.com/company/safetyculturehq) |
-| **X/Twitter** | @SafetyCultureHQ | Active posting | Brand updates, culture, ShipIt conference coverage | [https://x.com/safetyculturehq](https://x.com/safetyculturehq) |
-| **YouTube** | SafetyCulture | Multiple videos, conference content | Product demos, CEO updates, annual SafetyCulture Next conference | [https://www.youtube.com/channel/UCX7nvIis1gTrwxPubhHN-VA](https://www.youtube.com/channel/UCX7nvIis1gTrwxPubhHN-VA) |
-| **GitHub** | SafetyCulture org | Active org account | Public SDKs, exporter tools, schema docs | [https://github.com/safetyculture](https://github.com/safetyculture) |
-| **Medium** | @SafetyCulture | Articles and insights | Occasional thought leadership posts | [https://medium.com/@SafetyCulture](https://medium.com/@SafetyCulture) |
-| **Facebook** | No findings — verified clean | — | Company focus is B2B; no B2C-facing Facebook presence detected |
+**Android (Google Play)**
+- App: SafetyCulture (iAuditor)
+- Package: com.safetyculture.iauditor
+- Rating: 4.52 / 5.0 stars (19,000+ user ratings)
+- Downloads: 1.6 million+
+- Update frequency: Regular releases (v4.x.x active development)
 
----
+**Market positioning:** Trusted by over 70,000 organizations worldwide with nearly 2 million users. 35,000 uses per day across 80+ countries with 20+ million audits conducted to date.
 
-### App store
+## Code repositories
 
-| App | Platform | Rating | Downloads | Update frequency | Notes |
-|---|---|---|---|---|---|
-| **SafetyCulture (iAuditor)** | iOS App Store | 4.71/5 | 30,000 ratings | Active (monthly+) | iOS app ID: 499999532. Trusted by 70,000+ organizations |
-| **SafetyCulture (iAuditor)** | Google Play | 4.58/5 | 19,000 ratings; 1.5M all-time; 22K in last 30 days | Active (monthly+) | Android package: com.safetyculture.iauditor |
+**GitHub organization:** `github.com/SafetyCulture` [discovered]
 
-**Observations:** High engagement metrics. iAuditor powers 1+ billion checks/year; 85,000+ lessons captured daily across the platform.
+**Key public repositories:**
+1. `safetyculture-exporter` — Data export tool for MSSQL, PowerBI integration (active, v4.20.0 released August 2025)
+2. `safetyculture-exporter-ui` — Web UI for exporter tool (built with Wails framework)
+3. `safetyculture-sdk-python` — Python SDK for SafetyCulture API
+4. `.github` — Organization-wide configuration and standards
+5. API JSON Schemas and OpenAPI specs — API contract documentation
 
----
+**Published packages:**
+- protoc tooling (protoc-go, protoc-node, protoc-web, protoc-java, protoc-swift)
+- jwt-authentication libraries
+- react-loadable
+- api-json-schemas
 
-### Code repositories
+**Activity signal:** Organization is actively maintained with regular releases, community contributions welcome. Evidence of modern tech stack (TypeScript, Python, Go, Wails).
 
-| Repo | Visibility | Language | Purpose | Stars/Activity |
-|---|---|---|---|---|
-| **safetyculture-sdk-python** | Public | Python | Official Python SDK for SafetyCulture API | Active — exporter, data tools included |
-| **safetyculture-exporter** | Public | Go/TypeScript | Export audits/data to BI tools (Power BI, Tableau) | Releases published regularly |
-| **safetyculture-exporter-ui** | Public | TypeScript/React | UI wrapper for exporter | Part of BI/analytics ecosystem |
-| **api-json-schemas** | Public | JSON/YAML | OpenAPI specs and JSON schemas for Public API | Integration standard |
-| **sc-android-pdf-view** | Public | Kotlin/Java | Android PDF rendering library | Core mobile infrastructure |
-| **protoc-gen-workato** | Public | Go | Protocol Buffer code generator (Workato integration) | Integration-specific tooling |
-| **s12-proto** | Public | Protocol Buffers | Cross-language type declarations and interface bindings | Infrastructure as code |
+## Hiring signals
 
-**Tech stack signals:** Python, Go, Kotlin, TypeScript/React. Distributed systems patterns (Protocol Buffers, gRPC references). Mobile-first development (iOS/Android focus). Data export and BI integration a core concern.
+**Company size trajectory:** 833 employees across 6 global offices (as of 2026-05-12); growth from ~750 employees reported in 2024 suggests ~15-20% annual headcount growth.
 
-**GitHub presence:** Yes — active org account with 7+ public repos. Healthy open-source contribution to developer ecosystem.
+**Current hiring focus (via careers.safetyculture.com and LinkedIn Jobs):**
+- Engineering (backend, frontend, mobile, DevOps, platform)
+- Product management and design
+- Sales and customer success
+- Marketing and communications
+- People and Culture roles
 
----
+**Hiring velocity:** SafetyCulture is an active recruiter with multiple open positions across SEEK Australia, LinkedIn Jobs, and dedicated careers page. Evidence of scaling phase: new functional areas (AI/ML features, enterprise sales) being built out.
 
-### Hiring signals
+**Sydney office culture:** Pet-friendly, premium fitout (customer-themed meeting rooms, gym, games room, three bars, rooftop, in-house culinary team). Ranked as Australia's 3rd Best Place to Work.
 
-| Discipline | Signals | Growth areas |
-|---|---|---|
-| **Engineering** | Multiple open roles (Python, TypeScript, iOS, Android, DevOps) | AI/LLM integration (post-Twine acquisition); agentic systems; backend services |
-| **Product & Design** | UI/UX, Product Management roles listed | Operations platform expansion; AI-powered features |
-| **Sales & GTM** | Enterprise sales, Sales Development, Solutions Engineering | Enterprise customer expansion; geographic expansion (US, APAC) |
-| **Quality Assurance** | QA Engineer roles | Test automation; quality gates for fast-growing platform |
-| **Data & Analytics** | Data Engineer, Analytics roles | Insights and observability; customer data platform |
+**Tech stack signals from job descriptions:** Python, Go, TypeScript/React, Kubernetes, AWS, PostgreSQL. Modern cloud-native architecture.
 
-**Hiring channels:**
-- [safetyculture.com/jobs](https://safetyculture.com/jobs) — primary careers portal
-- [jobs.lever.co/safetyculture-2](https://jobs.lever.co/safetyculture-2) — Lever ATS
-- LinkedIn Jobs — 97 global roles, 45+ in US at time of snapshot
-- Seek.com.au — Australian job listings
+## Regulatory and press
 
-**Velocity:** Active hiring across multiple disciplines. 2025 revenue $197.6M (32% YoY growth). Company size: 672–833 employees (variation reflects seasonal headcount and recent additions post-Twine).
+**ASIC Registration:**
+- Entity: SafetyCulture Pty Ltd
+- ABN: 16 089 180 049
+- ACN: 089 180 049
+- Registered office: Sydney NSW (postcode 2010, as of 2022-01-05)
+- Company type: Proprietary company limited by shares
+- Incorporation date: 20 August 1999
+- Status: Active [T1 — ASIC, accessed via ABN Lookup]
 
-**Notable:** Acquisition of Twine (April 2026) signaled a strategic push into agentic AI. Twine founder Brian Swift hired as VP, AI, alongside Chris Manouvrier and Bec Lourey (product and engineering). This indicates rapid development hiring in AI/ML functions.
+**Press coverage (12-month window):**
+- **SmartCompany** (2025): Luke Anear steps down as CEO, Kelly Vohs appointed (effective 2025-01-01); $165M funding round closed at $2.5B valuation; noted 30% revenue growth to $160.6M in recent FY with narrowing losses to $36M
+- **SmartCompany** (2024): $165M Series D funding round announced ($75M new capital + $90M secondary); Airtree-led; valuation down from $2.7B (prior round) to $2.5B
+- **TechCrunch** (historical): Series B ($23M, 2016); Series C ($35.5M, 2020, $800M valuation); Series D ($73M, $1.6B valuation, 2021)
+- **Innovation Australia** (2024): SafetyCulture banks $75M in secondary sales; valuation adjustment noted in market context
+- **LinkedIn** (2024): CEO commentary on startup fundraising and talent acquisition in tech downturn
 
----
+**Regulatory matters:** No adverse regulatory findings identified in search results. Standard corporate compliance as registered Pty Ltd.
 
-### Regulatory and press
+**Acquisitions:** $6M acquisition of SHEQSY (workforce safety products) noted in SmartCompany coverage (2024).
 
-| Category | Finding | Source | Notes |
-|---|---|---|---|
-| **ASIC filing** | ACN: 089 180 049<br>ABN: 16 089 180 049<br>Registered office: Level 8, 210 George Street, Sydney NSW 2000<br>Incorporated: 20 August 1999<br>Status: Active proprietary company limited by shares | [Creditorwatch](https://creditorwatch.com.au/credit/profile/16089180049/SAFETYCULTURE-PTY-LTD), [ASIC Connect](https://connectonline.asic.gov.au) | No regulatory actions or enforcement history found. Company in good standing. |
-| **Recent press** | **Twine acquisition (April 2026):** SafetyCulture acquired Sydney-based AI startup Twine to accelerate agentic AI roadmap. Founder Brian Swift joins as VP, AI. | [Marketing-Interactive](https://www.marketing-interactive.com/safetyculture-brings-in-twine-team-to-accelerate-agentic-ai-push), [HSF Kramer](https://www.hsfkramer.com/news/2026-04/hsf-kramer-advises-safetyculture-acquisition-twine) | Strategic signal: AI-first product strategy. |
-| **Funding (Sept 2024)** | $165M funding round (Airtree-led). $75M new capital + $90M secondary shares. Valuation: A$2.5B. Used to accelerate AI adoption, enterprise features, employee rewards. | [SafetyCulture blog](https://blog.safetyculture.com/media-release/safetyculture-closes-165-million-round), [SmartCompany](https://www.smartcompany.com.au/finance/new-165-million-round-safetyculture-tough-environment-fresh-funding/) | Record funding round in Australian startup ecosystem at the time. |
-| **Revenue (FY 2025)** | A$197.6M (32% YoY growth) | [IBISWorld](https://www.ibisworld.com/australia/company/safetyculture-pty-ltd/468822/) | Strong growth trajectory. Public-ready financials. |
-| **AFR coverage** | Featured in *Financial Review Most Innovative Companies List 2024*. CEO commentary on Australian startup culture. | AFR (via social), SafetyCulture blog | High media profile in AU business press. |
-| **Historical funding** | Series B (2016): $23M<br>Series C (2020): $35.5M at $800M valuation<br>Series D+ (2021): $73M at $1.6B valuation<br>Total raised: $384M+ | [TechCrunch](https://techcrunch.com/2020/04/07/australian-startup-safetyculture-nabs-800m-valuation-on-35-5-million-round/), [Crunchbase](https://www.crunchbase.com/organization/safetyculture) | One of Australia's highest-funded tech companies. Trajectory: $800M → $1.6B → A$2.5B. |
-| **Leadership change (Feb 2026)** | Luke Anear (founder) returned as CEO. Kelly Vohs stepped down after 11 months as interim CEO, citing difficulty leading platform rebuild from NYC. | [Startup Daily](https://www.startupdaily.net/topic/people/safetyculture-founder-luke-anear-returns-as-ceo-to-be-present-in-sydney-hq/), [SmartCompany](https://www.smartcompany.com.au/startupsmart/luke-anear-steps-down-as-safetyculture-ceo/) | Strategic signal: refocused on founder leadership and Sydney presence (not distributed/US-led). |
+## Notable observations
 
----
+1. **Market maturity signal:** Founded 2004 (22 years); consistent growth trajectory through multiple funding rounds ($23M → $35.5M → $60M+ → $165M). Valued at $2.5B as of Sep 2024, down from $2.7B YoY but described as "success in tough environment."
 
-### Notable observations
+2. **Leadership transition:** Founder Luke Anear (from Townsville garage origin story) transitioned to Executive Chairman; Kelly Vohs (ex-LivCor, ex-SafetyCulture customer) appointed CEO Jan 2025. Signals mature company moving beyond founder-led phase.
 
-1. **Headquarters gravity:** Founded and headquartered in Sydney (Level 8, 210 George Street, Surry Hills). Recent leadership shift (Anear's return as CEO) signals a re-commitment to the Sydney base rather than distributed/US-led operations.
+3. **Profitability timeline:** Company acknowledged long-term profitability goal still ahead (losses $36M in recent FY, revenue $160.6M, 30% growth). Typical late-stage SaaS investment pattern.
 
-2. **AI acceleration (2026 inflection):** Twine acquisition and Anear's return both signal a sharp pivot to agentic AI in the product roadmap. This is a material product shift from operations platform → AI-powered operations agent.
+4. **Investor quality:** Series D led by Airtree Ventures; anchored by Blackbird, Morpheus; participation from Super Funds (Hostplus, HESTA via Blackbird). Signals institutional confidence.
 
-3. **Global revenue, Australian heartland:** Despite $197.6M revenue and 672+ employees, the company remains Sydney-based with no evidence of a second major HQ. Growth is global (US, APAC expansion hiring evident) but engineering/leadership remains concentrated in Sydney.
+5. **Product evolution:** Clear rebranding from "iAuditor" (legacy app name, still prominent in app stores) to "SafetyCulture" (platform positioning). App still called "SafetyCulture (iAuditor)" in stores, reflecting brand transition in progress.
 
-4. **Developer-friendly posture:** Active GitHub org with 7+ public repos (SDKs, tools, schemas). Public API and integrations marketplace. Lever ATS for recruitment. Signals a developer-first, ecosystem-oriented product philosophy.
+6. **Geographic footprint:** 6 global offices; primary presence in Sydney; active hiring in ANZ and US markets.
 
-5. **Regulatory clean:** No ASIC enforcement, regulatory actions, or compliance flags detected. Company in good standing. Private company (no ASX listing) with strong financial trajectory ($384M+ raised).
+7. **Open-source contribution:** Public GitHub org with maintained SDKs and exporter tools signals developer-friendly platform positioning.
 
-6. **Platform consolidation:** SafetyDocs (safetyculture.com.au) is an acquisition (formerly independent). EdApp also acquired. Product portfolio is consolidated under SafetyCulture brand but maintains separate regional/functional identities.
+8. **Acquisition activity:** $6M purchase of SHEQSY (safety workflows product) indicates M&A as growth lever alongside organic development.
 
-7. **No observable gaps:** Company has active presence across all major channels (social, GitHub, developer portal, careers, press). Media-savvy (Crunchbase, TechCrunch, SmartCompany coverage). No unusual absences or dark patterns.
+## Pending follow-up
 
----
+### Human-required steps
 
-### Follow-on routing
+- **Crunchbase Pro** — Detailed cap table, secondary market activity, full investor list with entry/exit timing. Estimated cost: $99/month subscription. Would resolve: precise dilution tracking, secondary buyer identity.
+- **PitchBook** — Institutional investor information, fund performance, detailed round terms. Estimated cost: $500+/month institutional access. Would resolve: detailed round documentation, investor preferences.
+- **LinkedIn Sales Navigator** — Full org chart mapping, reporting structure, individual contributor profiles. Cost: ~$200/month. Would resolve: detailed team composition, key function leaders.
 
-For deeper investigation of findings above, recommended next steps:
+### Skill-required steps
 
-- **Domain DNS & certificates:** `/investigator:domain-intel safetyculture.com` — trace nameserver configuration, SSL cert chain, and subdomains via certificate transparency
-- **Hosting infrastructure:** `/investigator:ip-intel [resolving-ip]` — map CDN, origin servers, and geographic distribution (after domain-intel resolves IPs)
-- **Corporate ownership & directors:** `/investigator:corporate-ownership SafetyCulture Pty Ltd` — extract ASIC director register, shareholder structure, and UBO chain
-- **Founder & CEO background:** `/investigator:people-lookup Luke Anear` — professional history, board positions, prior ventures (SmartyCat or other entities)
-- **Twine founders:** `/investigator:people-lookup Brian Swift` — background on Twine co-founders post-acquisition
+- `/investigator:domain-intel safetyculture.com` — Full DNS/WHOIS analysis, certificate transparency, subdomain enumeration, hosting infrastructure detail
+- `/investigator:corporate-ownership SafetyCulture Pty Ltd` — Full ASIC director and shareholder extract, related entities, ownership chain
+- `/investigator:social-media-footprint Kelly Vohs` — Executive background, LinkedIn profile analysis, Twitter presence, industry connections
+- `/investigator:people-lookup Luke Anear` — Founder background, corporate board positions, prior ventures, media appearances
 
----
+### Re-fetches
 
-### Sources
+- None. All searches completed successfully with no rate-limit or timeout issues.
 
-1. [SafetyCulture – Main domain](https://safetyculture.com/) — product hub, company overview
-2. [SafetyCulture – About](https://safetyculture.com/about) — company history, founding 2004
-3. [SafetyCulture – LinkedIn company page](https://www.linkedin.com/company/safetyculturehq) — employee count, engagement
-4. [SafetyCulture – X/Twitter @SafetyCultureHQ](https://x.com/safetyculturehq) — social presence and updates
-5. [SafetyCulture – YouTube](https://www.youtube.com/channel/UCX7nvIis1gTrwxPubhHN-VA) — video content and conference coverage
-6. [SafetyCulture – GitHub org](https://github.com/safetyculture) — public repositories and SDKs
-7. [SafetyCulture – Developer Portal](https://developer.safetyculture.com/) — API documentation
-8. [SafetyCulture – iOS App Store](https://apps.apple.com/us/app/safetyculture-iauditor/id499999532) — app ratings and reviews
-9. [SafetyCulture – Google Play](https://play.google.com/store/apps/details?id=com.safetyculture.iauditor) — Android app metrics
-10. [SafetyCulture – Careers](https://safetyculture.com/careers) — hiring and company culture
-11. [SafetyCulture – Regional domain (SafetyDocs)](https://safetyculture.com.au/) — Australian compliance product
-12. [Creditorwatch – ABN/ACN lookup](https://creditorwatch.com.au/credit/profile/16089180049/SAFETYCULTURE-PTY-LTD) — ASIC registration
-13. [IBISWorld – Company profile](https://www.ibisworld.com/australia/company/safetyculture-pty-ltd/468822/) — revenue and industry classification
-14. [TechCrunch – Series C funding 2020](https://techcrunch.com/2020/04/07/australian-startup-safetyculture-nabs-800m-valuation-on-35-5-million-round/) — funding history
-15. [Crunchbase – Company profile](https://www.crunchbase.com/organization/safetyculture) — investor list, funding timeline
-16. [SafetyCulture blog – $165M funding round](https://blog.safetyculture.com/media-release/safetyculture-closes-165-million-round) — Sept 2024 funding announcement
-17. [SmartCompany – $165M funding](https://www.smartcompany.com.au/finance/new-165-million-round-safetyculture-tough-environment-fresh-funding/) — Australian press coverage
-18. [Marketing-Interactive – Twine acquisition](https://www.marketing-interactive.com/safetyculture-brings-in-twine-team-to-accelerate-agentic-ai-push) — April 2026 acquisition
-19. [HSF Kramer – Twine acquisition legal advisory](https://www.hsfkramer.com/news/2026-04/hsf-kramer-advises-safetyculture-acquisition-twine) — M&A confirmation
-20. [Startup Daily – Luke Anear returns as CEO](https://www.startupdaily.net/topic/people/safetyculture-founder-luke-anear-returns-as-ceo-to-be-present-in-sydney-hq/) — Feb 2026 leadership news
-21. [SmartCompany – Luke Anear step-down](https://www.smartcompany.com.au/startupsmart/luke-anear-steps-down-as-safetyculture-ceo/) — prior CEO transition coverage
+## Sources
+
+1. [SafetyCulture About page](https://safetyculture.com/about) — Company overview, mission statement [T5 — Company own materials, accessed 2026-05-12]
+2. [SafetyCulture LinkedIn company page](https://www.linkedin.com/company/safetyculturehq) — Employee count (833), company size, specialties [T3 — LinkedIn profile data, accessed 2026-05-12]
+3. [ABN Lookup — SafetyCulture Pty Ltd](https://abr.business.gov.au/) — ABN 16089180049, ACN 089180049, registration date, status [T1 — ASIC/ABR official registry, accessed 2026-05-12]
+4. [Creditorwatch profile — SafetyCulture Pty Ltd](https://creditorwatch.com.au/credit/profile/16089180049/SAFETYCULTURE-PTY-LTD) — Corporate registration details [T3 — Commercial credit reporting service, accessed 2026-05-12]
+5. [SafetyCulture closes $165 million funding round](https://blog.safetyculture.com/media-release/safetyculture-closes-165-million-round) — Recent funding, valuation, investor details [T5 — Company press release, accessed 2026-05-12]
+6. [$165 million round for SafetyCulture in "tough" funding environment](https://www.smartcompany.com.au/finance/new-165-million-round-safetyculture-tough-environment-fresh-funding/) — Airtree-led round, valuation context [T2 — SmartCompany business journalism, accessed 2026-05-12]
+7. [Luke Anear steps down as SafetyCulture CEO](https://www.smartcompany.com.au/startupsmart/luke-anear-steps-down-as-safetyculture-ceo/) — Leadership transition, Kelly Vohs appointment [T2 — SmartCompany business journalism, accessed 2026-05-12]
+8. [SafetyCulture (iAuditor) — App Store](https://apps.apple.com/us/app/safetyculture-iauditor/id499999532) — iOS app listing, reviews, metadata [T5 — Apple App Store official, accessed 2026-05-12]
+9. [SafetyCulture (iAuditor) — Google Play](https://play.google.com/store/apps/details?id=com.safetyculture.iauditor) — Android app listing, 4.52 stars, 19k+ ratings, 1.6M downloads [T5 — Google Play official, accessed 2026-05-12]
+10. [SafetyCulture · GitHub](https://github.com/SafetyCulture) — Public org, repositories, SDK projects [T5 — GitHub official, accessed 2026-05-12]
+11. [SafetyCulture Developer Portal](https://developer.safetyculture.com/) — API documentation, webhooks, integration guide [T5 — Company own materials, accessed 2026-05-12]
+12. [SafetyCulture Integrations Marketplace](https://integrations.safetyculture.com/) — Pre-built integrations, API ecosystem [T5 — Company own materials, accessed 2026-05-12]
+13. [SafetyCulture (@SafetyCultureHQ) / X](https://x.com/safetyculturehq) — Twitter/X presence, 4,861 followers, activity [T5 — X/Twitter official, accessed 2026-05-12]
+14. [SafetyCulture — YouTube](https://www.youtube.com/channel/UCX7nvIis1gTrwxPubhHN-VA) — YouTube channel, product demos, conference talks [T5 — YouTube official, accessed 2026-05-12]
+15. [SafetyCulture Careers page](https://safetyculture.com/careers) — Open positions, Sydney office details, company culture [T5 — Company own materials, accessed 2026-05-12]
+16. [SafetyCulture Seeks Jobs](https://www.seek.com.au/SafetyCulture-jobs) — Current hiring on SEEK Australia [T5 — SEEK official job board, accessed 2026-05-12]
+17. [SafetyCulture — Crunchbase](https://www.crunchbase.com/organization/safetyculture) — Funding history, investor timeline, company metrics [T3 — Crunchbase commercial database, accessed 2026-05-12]
+18. [Australian startup SafetyCulture nabs $800M valuation on $35.5M round](https://techcrunch.com/2020/04/07/australian-startup-safetyculture-nabs-800-million-valuation-on-35-5-million-round/) — Series C funding detail [T2 — TechCrunch technology journalism, accessed 2026-05-12]
+19. [SafetyCulture acquires SHEQSY](https://www.smartcompany.com.au/startupsmart/safetyculture-acquires-sheqsy/) — M&A activity, $6M acquisition [T2 — SmartCompany business journalism, accessed 2026-05-12]
+20. [Kelly Vohs appointed as CEO of SafetyCulture](https://safetyculture.com/media-releases/kelly-vohs-appointed-as-ceo-of-safetyculture-luke-anear-to-become-executive-chairman) — Leadership transition announcement [T5 — Company press release, accessed 2026-05-12]
 
 ```
 
@@ -271,36 +266,36 @@ For deeper investigation of findings above, recommended next steps:
 | Field | Value |
 |---|---|
 | Verdict | PASS |
-| Score | 17.5/18.0 (97%) |
-| Evaluated | 2026-05-04 |
-| Target duration | 106052 ms |
-| Target cost | $0.5356 |
+| Score | 16.5/18.0 (92%) |
+| Evaluated | 2026-05-12 |
+| Target duration | 116509 ms |
+| Target cost | $0.5253 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | Skill discovers the primary domain and attempts to surface related domains via reverse WHOIS and certificate transparency | PASS | Domain inventory table lists safetyculture.com [discovered], safetyculture.com.au [discovered], safetyculture.io [blocked-lookup, expected], iauditor.com [blocked-lookup, expected], plus four subdomains. The [blocked-lookup, expected] tags indicate attempted lookups that were blocked, consistent with reverse-WHOIS/CT attempts. |
-| c2 | Web presence section covers primary site, regional variants, developer or documentation portals, and status page if found | PASS | Web presence table explicitly covers: primary site (safetyculture.com), regional variant (safetyculture.com.au / SafetyDocs), developer portal (developer.safetyculture.com), help center (help.safetyculture.com), blog (blog.safetyculture.com), integrations, and status page noted as '[not found] No evidence of public status page [verified clean]'. |
-| c3 | Social profiles table is produced across LinkedIn, Twitter/X, GitHub, and YouTube — absence on any platform is noted as a finding | PASS | Social profiles section covers LinkedIn (672–833 employees, 37,681+ followers), X/Twitter (@SafetyCultureHQ), YouTube (SafetyCulture channel), GitHub (SafetyCulture org), Medium, and Facebook — Facebook absence explicitly stated as 'No findings — verified clean'. |
-| c4 | App store presence is checked for both iOS and Android — 'none found' is an acceptable result but must be stated | PASS | App store section covers iOS (4.71/5, 30,000 ratings, App ID 499999532, 'Active monthly+') and Google Play (4.58/5, 19,000 ratings, 1.5M all-time downloads, 'Active monthly+'). Both platforms confirmed with metrics. |
-| c5 | GitHub presence is investigated — public repos, tech stack patterns, and contributor activity are noted | PASS | Code repositories section lists 7 repos (safetyculture-sdk-python, safetyculture-exporter, api-json-schemas, etc.) with languages (Python, Go, TypeScript, Kotlin, Protocol Buffers) and activity notes ('Releases published regularly', 'Active'). Tech stack signals section summarises: 'Python, Go, Kotlin, TypeScript/React. Distributed systems patterns (Protocol Buffers, gRPC references).'. |
-| c6 | Job postings are checked via company careers page, LinkedIn, and Seek for AU companies — hiring signals are interpreted for growth direction and tech stack | PASS | Hiring channels listed: safetyculture.com/jobs, Lever ATS, LinkedIn Jobs (97 global roles, 45+ in US), and Seek.com.au. Growth inferences include 'AI/LLM integration (post-Twine acquisition); agentic systems' for engineering, and 'Enterprise customer expansion; geographic expansion (US, APAC)' for sales. |
-| c7 | If investigation surfaces individual employee details, skill notes the data exists but does not expand into profiling individuals | PASS | Names surfaced (Luke Anear, Kelly Vohs, Brian Swift, Chris Manouvrier, Bec Lourey) appear only in the context of corporate events (CEO return, acquisition). Individual profiling is deferred explicitly to follow-on routing: '/investigator:people-lookup Luke Anear' and '/investigator:people-lookup Brian Swift'. No expanded bio, career history, or personal details are included. |
-| c8 | Regulatory filings via ASIC Connect are checked, with press coverage searched for the last 12 months | PARTIAL | Regulatory section cites 'ASIC Connect' as a source alongside Creditorwatch for entity details (ACN, ABN, registered office, status). Press coverage within 12 months (relative to 2026-05-04) includes: Twine acquisition April 2026 (Marketing-Interactive, HSF Kramer), CEO return Feb 2026 (Startup Daily, SmartCompany). Ceiling is PARTIAL per test rubric. |
-| c9 | Follow-on skill routing is appropriate — domain-intel, ip-intel, or corporate-ownership suggested where relevant assets are found | PASS | Follow-on routing section explicitly recommends: '/investigator:domain-intel safetyculture.com', '/investigator:ip-intel [resolving-ip]', '/investigator:corporate-ownership SafetyCulture Pty Ltd', '/investigator:people-lookup Luke Anear', and '/investigator:people-lookup Brian Swift'. All three required downstream skills present. |
-| c10 | Output's primary domain identification confirms safetyculture.com (the corporate domain) and any related — safetyculture.io, iauditor.com (legacy / brand-specific), regional variants — discovered via reverse-WHOIS and certificate transparency | PASS | Domain inventory specifically addresses all domains named in this criterion: safetyculture.com [discovered], safetyculture.io [blocked-lookup, expected], iauditor.com [blocked-lookup, expected], safetyculture.com.au [discovered]. All four are present with status tags. |
-| c11 | Output's web-presence section covers — corporate site (safetyculture.com), product portal (app.safetyculture.com), developer portal (developer.safetyculture.com if exists), status page (status.safetyculture.com), help centre, blog | PASS | Web presence table covers: corporate site (safetyculture.com) ✓, developer portal (developer.safetyculture.com) ✓, status page ('[not found] verified clean') ✓, help center (help.safetyculture.com) ✓, blog (blog.safetyculture.com) ✓. Product portal listed as 'safetyculture.com/iauditor' rather than app.safetyculture.com subdomain — close enough for PASS given other elements fully covered. |
-| c12 | Output's social profiles table covers LinkedIn (with employee count signal), Twitter/X, GitHub (org name), YouTube — with absence on any platform stated explicitly as a finding rather than silently skipped | PASS | Social table covers LinkedIn ('672–833 employees listed'), X/Twitter ('@SafetyCultureHQ'), GitHub ('SafetyCulture org'), YouTube ('SafetyCulture'). Facebook absence explicitly stated: 'No findings — verified clean — Company focus is B2B; no B2C-facing Facebook presence detected'. No silent skipping. |
-| c13 | Output's app store presence checks both iOS App Store and Google Play — iAuditor app ID, install count tier, average rating, last updated — confirming the consumer-facing mobile footprint | PASS | App store table: iOS — App ID 499999532, rating 4.71/5, 30,000 ratings, 'Active (monthly+)'; Google Play — package com.safetyculture.iauditor, rating 4.58/5, 1.5M all-time downloads, 22K in last 30 days, 'Active (monthly+)'. All required fields covered for both platforms. |
-| c14 | Output's GitHub investigation lists public repos — open source projects, SDKs, code samples — and tech stack patterns (languages, frameworks evident from repo activity) | PASS | Repos table lists 7 repos with languages (Python, Go, Kotlin, TypeScript, Protocol Buffers), purposes (Python SDK, exporter, UI, JSON schemas, Android PDF, Workato integration), and activity notes. Tech stack signals section explicitly summarises: 'Python, Go, Kotlin, TypeScript/React. Distributed systems patterns (Protocol Buffers, gRPC references). Mobile-first development.'. |
-| c15 | Output's hiring signals come from at least 3 sources — careers page on safetyculture.com, LinkedIn job posts, Seek (since they're AU-headquartered) — with the tech-stack and team-build inferences stated as signals not certainty | PASS | Hiring channels listed: safetyculture.com/jobs ✓, LinkedIn Jobs ('97 global roles, 45+ in US') ✓, Seek.com.au ✓. All three required AU sources present. Inferences qualified as signals: 'Active hiring across multiple disciplines', 'Acquisition of Twine (April 2026) signaled a strategic push into agentic AI'. Language is inferential, not declarative. |
-| c16 | Output addresses individual-employee scope — if employee names surface (founder profiles, key engineers in GitHub commits, executive team page) the names are noted but NOT expanded into individual profiling, per the entity-not-person scope of the skill | PASS | Names (Luke Anear, Kelly Vohs, Brian Swift, Chris Manouvrier, Bec Lourey) mentioned only in corporate event context. No expanded individual profiles, career histories, or personal details appear. Follow-on routing explicitly delegates individual profiling: '/investigator:people-lookup Luke Anear — founder background, board roles, prior ventures'. |
-| c17 | Output's regulatory filings use ASIC Connect — confirming SafetyCulture Pty Ltd entity details, directors, recent filings (annual returns, charges), and registered office — with sources cited | PARTIAL | Regulatory section confirms entity details (ACN 089 180 049, ABN 16 089 180 049), incorporation date (20 Aug 1999), status (Active), and registered office (Level 8, 210 George Street, Sydney). Sources cited: Creditorwatch and ASIC Connect. However, directors are not listed, annual returns are not mentioned, and charges are not checked — approximately half the required elements are covered. |
-| c18 | Output's press coverage section covers the last 12 months — funding announcements, executive moves, product launches — with sources from AFR, AusBiz, SmartCompany, TechCrunch | PASS | Within 12 months of 2026-05-04: Twine acquisition April 2026 (Marketing-Interactive, HSF Kramer), CEO return Feb 2026 (Startup Daily, SmartCompany). AFR mentioned: 'Featured in Financial Review Most Innovative Companies List 2024'. SmartCompany cited twice ($165M funding, CEO transition). TechCrunch cited for funding history. AusBiz absent but other required outlets present. |
-| c19 | Output's follow-on routing suggests — `/investigator:domain-intel` for any suspicious-looking related domain, `/investigator:corporate-ownership` for the entity structure if the partner-meeting context warrants ownership clarity | PARTIAL | Follow-on routing recommends '/investigator:domain-intel safetyculture.com' (applied to primary domain rather than specifically suspicious-looking related domain) and '/investigator:corporate-ownership SafetyCulture Pty Ltd' with explicit rationale ('extract ASIC director register, shareholder structure, and UBO chain'). Both required skills present; ceiling is PARTIAL per rubric. |
+| c1 | Skill discovers the primary domain and attempts to surface related domains via reverse WHOIS and certificate transparency | PASS | Domain inventory lists safetyculture.com [discovered], safetyculture.io [discovered], safetyculture.com.au [discovered], iauditor.com [expected, redirects] with explicit discovery labels on each. |
+| c2 | Web presence section covers primary site, regional variants, developer or documentation portals, and status page if found | PASS | Web presence covers safetyculture.com (primary), safetyculture.com.au (regional), developer.safetyculture.com, help.safetyculture.com, integrations.safetyculture.com. Status page not found/not mentioned but 'if found' makes this acceptable. |
+| c3 | Social profiles table is produced across LinkedIn, Twitter/X, GitHub, and YouTube — absence on any platform is noted as a finding | PASS | Social profiles table covers LinkedIn (833 employees), Twitter/X (4,861 followers), Instagram, YouTube, Facebook. GitHub covered in its own 'Code repositories' section with org name github.com/SafetyCulture. |
+| c4 | App store presence is checked for both iOS and Android — 'none found' is an acceptable result but must be stated | PASS | iOS App Store: ID 499999532, reviews described. Google Play: com.safetyculture.iauditor, 4.52 stars, 19k+ ratings, 1.6M downloads. Both platforms checked with data. |
+| c5 | GitHub presence is investigated — public repos, tech stack patterns, and contributor activity are noted | PASS | Lists safetyculture-exporter, safetyculture-sdk-python, protoc tooling, jwt-authentication libs. Tech stack: TypeScript, Python, Go, Wails. Activity: 'actively maintained with regular releases.' |
+| c6 | Job postings are checked via company careers page, LinkedIn, and Seek for AU companies — hiring signals are interpreted for growth direction and tech stack | PASS | Sources: 'careers.safetyculture.com and LinkedIn Jobs' plus 'SEEK Australia' (source #16). Tech stack: Python, Go, TypeScript/React, Kubernetes, AWS. Growth signal: ~15-20% headcount growth. |
+| c7 | If investigation surfaces individual employee details, skill notes the data exists but does not expand into profiling individuals | PASS | Luke Anear and Kelly Vohs named in press context only. Profiling deferred: 'Pending follow-up' routes to /investigator:people-lookup Luke Anear rather than expanding inline. |
+| c8 | Regulatory filings via ASIC Connect are checked, with press coverage searched for the last 12 months | PARTIAL | Source cited is 'ABN Lookup (abr.business.gov.au)' — not ASIC Connect (connectonline.asic.gov.au). No directors listed. Press coverage present (SmartCompany 2025 CEO transition, $165M round). |
+| c9 | Follow-on skill routing is appropriate — domain-intel, ip-intel, or corporate-ownership suggested where relevant assets are found | PASS | Skill-required steps include '/investigator:domain-intel safetyculture.com' and '/investigator:corporate-ownership SafetyCulture Pty Ltd'. ip-intel absent but criterion uses 'or'. |
+| c10 | Output's primary domain identification confirms safetyculture.com (the corporate domain) and any related — safetyculture.io, iauditor.com (legacy / brand-specific), regional variants — discovered via reverse-WHOIS and certificate transparency | PASS | safetyculture.com [discovered], safetyculture.io [discovered], iauditor.com [expected, redirects to safetyculture.com], safetyculture.com.au [discovered] — all three named domains confirmed. |
+| c11 | Output's web-presence section covers — corporate site (safetyculture.com), product portal (app.safetyculture.com), developer portal (developer.safetyculture.com if exists), status page (status.safetyculture.com), help centre, blog | PARTIAL | Covers corporate site, developer portal, help centre, blog/newsroom. app.safetyculture.com (product portal) and status.safetyculture.com are not mentioned — not even noted as checked-but-not-found. |
+| c12 | Output's social profiles table covers LinkedIn (with employee count signal), Twitter/X, GitHub (org name), YouTube — with absence on any platform stated explicitly as a finding rather than silently skipped | PARTIAL | Table has LinkedIn (833 employees), Twitter/X, Instagram, YouTube, Facebook — but GitHub org is NOT in the table; it appears only in the separate 'Code repositories' section. |
+| c13 | Output's app store presence checks both iOS App Store and Google Play — iAuditor app ID, install count tier, average rating, last updated — confirming the consumer-facing mobile footprint | PASS | iOS: App ID 499999532 confirmed. Android: 4.52/5 rating, 19,000+ ratings, 1.6M downloads, v4.x.x active development. Both platforms fully investigated. |
+| c14 | Output's GitHub investigation lists public repos — open source projects, SDKs, code samples — and tech stack patterns (languages, frameworks evident from repo activity) | PASS | Lists safetyculture-exporter (v4.20.0), safetyculture-sdk-python, protoc tooling variants, jwt-authentication, react-loadable. Languages: TypeScript, Python, Go, Wails framework. |
+| c15 | Output's hiring signals come from at least 3 sources — careers page on safetyculture.com, LinkedIn job posts, Seek (since they're AU-headquartered) — with the tech-stack and team-build inferences stated as signals not certainty | PASS | 'careers.safetyculture.com and LinkedIn Jobs' plus source #16 SEEK Australia. 'Evidence of scaling phase' and 'Hiring velocity: SafetyCulture is an active recruiter' framed as signals. |
+| c16 | Output addresses individual-employee scope — if employee names surface (founder profiles, key engineers in GitHub commits, executive team page) the names are noted but NOT expanded into individual profiling, per the entity-not-person scope of the skill | PASS | Luke Anear and Kelly Vohs named in press coverage context only. Follow-on routes to '/investigator:people-lookup Luke Anear' rather than expanding inline — correct scope discipline. |
+| c17 | Output's regulatory filings use ASIC Connect — confirming SafetyCulture Pty Ltd entity details, directors, recent filings (annual returns, charges), and registered office — with sources cited | PARTIAL | Source is ABN Lookup (abr.business.gov.au), not ASIC Connect. ABN/ACN/registration date/status/office confirmed. Directors NOT listed. Annual returns and charges NOT mentioned. |
+| c18 | Output's press coverage section covers the last 12 months — funding announcements, executive moves, product launches — with sources from AFR, AusBiz, SmartCompany, TechCrunch | PASS | SmartCompany (2025): CEO transition, $165M round. TechCrunch historical cited. AFR and AusBiz absent, but 12-month events (funding Sep 2024, CEO Jan 2025, SHEQSY acquisition) fully covered. |
+| c19 | Output's follow-on routing suggests — `/investigator:domain-intel` for any suspicious-looking related domain, `/investigator:corporate-ownership` for the entity structure if the partner-meeting context warrants ownership clarity | PARTIAL | Both present: '/investigator:domain-intel safetyculture.com' and '/investigator:corporate-ownership SafetyCulture Pty Ltd' in the Skill-required steps section. |
 
 ### Notes
 
-The output is a comprehensive, well-structured entity footprint that covers nearly all criteria at full marks. The domain inventory, web presence, social profiles, app store, GitHub, hiring signals, and follow-on routing are all executed thoroughly. The main shortfall is in regulatory depth (c17): while ASIC entity details and registered office are confirmed, directors and recent filings (annual returns, charges) are absent from the output — that work is deferred to the corporate-ownership follow-on rather than surfaced in this report. The PARTIAL-ceiling criteria (c8 and c19) are met at their ceiling level. Overall score of 97.2% reflects a high-quality investigation output with a minor gap in the depth of ASIC regulatory extraction.
+The output is comprehensive and well-structured, covering most required sections with strong data quality. The main gaps are: GitHub absent from the social profiles table (separate section instead), app.safetyculture.com and status page not checked in web presence, and ASIC data sourced from ABN Lookup rather than ASIC Connect with no directors listed.
