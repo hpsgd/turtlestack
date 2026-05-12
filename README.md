@@ -24,6 +24,7 @@ A plugin marketplace for Claude Code. Agents, skills, rules, and conventions tha
   - [Research](#research)
     - [Analyst](#analyst)
     - [Investigator](#investigator)
+    - [Dossier](#dossier)
   - [Leadership](#leadership)
     - [Coordinator](#coordinator)
     - [CPO](#cpo)
@@ -449,6 +450,22 @@ OSINT investigation with mandatory ethical authorisation gates.
 | [public-records](plugins/research/investigator/skills/public-records/SKILL.md) | Public records search | [Public records](examples/research/investigator/skills/public-records/result.md) |
 | [corporate-ownership](plugins/research/investigator/skills/corporate-ownership/SKILL.md) | Beneficial ownership investigation | [Ownership trace](examples/research/investigator/skills/corporate-ownership/result.md) |
 
+#### Dossier
+
+End-to-end research campaigns and report consolidation. Drives multiple research skills against a single target, then compiles the outputs into a single brand-styled PDF.
+
+```
+/plugin install dossier@turtlestack
+```
+
+**[Dossier driver](plugins/research/dossier/agents/dossier.md)** — orchestrates an end-to-end campaign on one target (person, company, or domain), dispatches the right research skills, then consolidates their reports.
+
+| Skill | Description | Example |
+|---|---|---|
+| [consolidate](plugins/research/dossier/skills/consolidate/SKILL.md) | Gather every conforming research report under an engagement directory into one `DOSSIER.md` plus brand-styled PDF | — |
+
+`dossier` and the other research plugins (`analyst`, `investigator`) share `research-conventions` as an internal dependency — installed automatically; you don't install it directly.
+
 ### Leadership
 
 #### [Coordinator](plugins/leadership/coordinator/agents/coordinator.md)
@@ -657,6 +674,8 @@ Customer journeys, personas, usability assessment, information architecture. See
 | [service-blueprint](plugins/product/ux-researcher/skills/service-blueprint/SKILL.md) | Service blueprint | [Service blueprint](examples/product/ux-researcher/skills/service-blueprint/result.md) |
 
 ### Engineering
+
+The engineering plugins share `engineering-conventions` as an internal dependency (spec-first implementation, definition of ready) — installed automatically with `ai-engineer`, `data-engineer`, `devops`, `python-developer`, `qa-engineer`, `react-developer`, and `security-engineer`. You don't install it directly.
 
 #### [AI Engineer](plugins/engineering/ai-engineer/agents/ai-engineer.md)
 
