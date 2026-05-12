@@ -1,7 +1,7 @@
 {
   "name": "react-developer",
   "description": "React/Next.js developer — TypeScript, Tailwind, content-collections, react-pdf, Vitest, atomic design",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "author": {
     "name": "hps.gd"
   },
