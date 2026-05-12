@@ -46,6 +46,13 @@ Deletes, force pushes, production deploys — always ask first. Don't rely on ge
 Bad: "Clean up cruft" → delete 15 files including backups without asking.
 Correct: List candidates, ask approval first with context about consequences.
 
+## Confirm before launching agents
+
+When about to dispatch background agents (evaluators, parallel test runs, large-scale operations), pause and confirm the plan with the user first. Don't assume they're ready for execution just because the work is defined. Once an agent is running, you can't easily reach in and adjust scope.
+
+Bad: Define four evaluator agents → launch all four immediately.
+Correct: List the agents and what each will do → wait for approval → launch.
+
 ## Read before modifying
 
 Understand existing code, imports, and patterns first.
@@ -130,6 +137,20 @@ Claude Code files split between global (`~/.claude/`) and project-local (`./.cla
 
 Bad: "All learnings are in `~/.claude/turtlestack/learnings`." Assume config is only in `./.claude/settings.json`.
 Correct: Check both `~/.claude/` and `./.claude/` for the file type. State which location you found it in.
+
+## Flag paid services in execution paths
+
+When a skill, agent, or tool includes a paid service (API with usage costs, subscription required, etc.) in its execution path, flag it explicitly. Don't bury it in a code template. Prefer free or open alternatives where they exist, or escalate to the human with options.
+
+Bad: Add a paid scraping API as Tier 4 of a content-retrieval skill without flagging the cost.
+Correct: Flag the paid service, propose free alternatives, or escalate to the human.
+
+## Justify numeric thresholds
+
+When proposing or enforcing a numeric threshold (e.g., "100-300 lines", "80% coverage", "5 minute timeout"), explain WHY that specific number. Line count, percentages, and time limits are crude proxies — a line could be dense or a single character. If there's no strong justification, make it configurable or present it as a default that can be adjusted.
+
+Bad: "Skills should be under 300 lines" with no rationale.
+Correct: State the rationale, or widen the range with reasoning, or make it a configurable default.
 
 ## Error recovery
 
