@@ -322,6 +322,39 @@ def setup_isolated_plugins(cfg: RunConfig, workspace: Path) -> None:
         )
 
 
+def warn_unresolved_marketplace_deps(cfg: RunConfig) -> None:
+    """When the plugin-under-test declares marketplace-qualified deps but
+    --isolate-plugins is not set, claude's plugin loader silently refuses to
+    register the parent plugin — slash commands fail with "Unknown command"
+    and every criterion scores FAIL. Surface that diagnosis up front so
+    operators don't chase a phantom skill regression.
+
+    Tests are designed to run hermetically — the operator's local plugin cache
+    is not consulted, so any declared marketplace dep is unresolved unless
+    --isolate-plugins + --marketplace-source are provided. We therefore warn
+    on every marketplace-qualified dep when --isolate-plugins is off, without
+    inspecting the host cache.
+    """
+    if cfg.isolate_plugins:
+        return
+    deps = _read_plugin_deps(cfg.plugin_dirs)
+    if not deps:
+        return
+    print(
+        "[run-test] WARNING: plugin-under-test declares marketplace-qualified "
+        f"dependencies but --isolate-plugins was not set: {deps}",
+        file=sys.stderr,
+    )
+    print(
+        "[run-test] WARNING: claude's plugin loader will refuse to register "
+        "the parent plugin if these deps aren't installed in the test "
+        "workspace. Slash commands may fail with 'Unknown command' (target "
+        "duration <100ms, cost $0). Re-run with --isolate-plugins and "
+        "--marketplace-source <name>=<source> per referenced marketplace.",
+        file=sys.stderr,
+    )
+
+
 def _resolve_plugin_dirs(cfg: RunConfig, test: TestCase) -> list[Path]:
     """Return the list of --plugin-dir paths to pass to claude.
 
@@ -881,6 +914,7 @@ def main() -> int:
 
     try:
         setup_isolated_plugins(cfg, workspace)
+        warn_unresolved_marketplace_deps(cfg)
 
         print("[run-test] invoking target...", file=sys.stderr)
         target = run_target(cfg, test, workspace)
