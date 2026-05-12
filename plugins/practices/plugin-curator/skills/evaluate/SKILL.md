@@ -98,11 +98,24 @@ Without `--isolate-plugins`, claude's plugin loader silently refuses to register
 
 This applies to any plugin with marketplace-qualified deps — even when a single test happens to "just work" because the dep is rules-only and contributes no commands.
 
+### Test prompt conventions
+
+Test prompts may pass an output directory to the skill (some skills accept an artifact destination as an argument). Use the literal token `{workspace}` for that destination — the runner substitutes the resolved per-run workspace path before invoking the target:
+
+```
+/recon:technical-recon canva.com {workspace}/assessments/canva
+```
+
+The runner captures everything written under the workspace and feeds it to the judge as artifacts. Anything written *outside* the workspace (e.g. `~/Assessments/canva` or `/tmp/foo`) is invisible to the judge — it only sees the chat summary, which is deliberately terse, and criteria that depend on the artifact will FAIL even when the skill produced it correctly. Symptom: plausible overall score but specific criteria FAIL with "no mention in chat" while the actual report file looks fine.
+
+The runner warns on stderr if a test prompt references absolute or home-relative paths that aren't `{workspace}`-rooted. Ignore the warning only if the path is genuinely required (Docker volume mount, system cache).
+
 ## Troubleshooting
 
 | Signal | Likely cause |
 |---|---|
 | `target_duration_ms < 100` and `target_cost_usd == 0`, every criterion FAIL | Slash command never registered. Plugin under test has marketplace deps that need `--isolate-plugins` + `--marketplace-source`. |
+| Plausible overall score but criteria FAIL with "no mention in chat" / "not found in output" while the skill clearly produced the artifact | Skill wrote files to a path outside the workspace (e.g. `~/Assessments/...` taken from the test prompt). Update the test prompt to use `{workspace}/<subpath>` so the runner can capture them. |
 
 ## Step 5: Build the summary
 

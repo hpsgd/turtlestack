@@ -322,6 +322,56 @@ def setup_isolated_plugins(cfg: RunConfig, workspace: Path) -> None:
         )
 
 
+_ABS_PATH_TOKEN = re.compile(
+    r"(?:(?<=\s)|^)(~/[^\s'\"]+|/[A-Za-z][^\s'\":]*/[^\s'\"]+)"
+)
+"""Token that looks like an absolute path the operator may have meant as an
+artifact destination. Requires at least one more `/` after the leading one
+(or a `~/` prefix) so slash commands like `/recon:technical-recon` and
+`/foo:bar` don't match. Excludes `:` from the first path segment so namespaced
+slash commands are filtered even when followed by a `/`-suffixed argument."""
+
+
+def warn_external_paths_in_prompt(test: TestCase) -> None:
+    """Warn when a test prompt contains absolute or home-relative paths that
+    aren't {workspace}-rooted. Skills that write artifacts to such paths bypass
+    _snapshot_artifacts, leaving the judge with only the chat summary to
+    score against. Symptom: plausible overall score but criteria FAIL with
+    "no mention in chat" while the skill clearly produced the artifact.
+    """
+    tokens = _ABS_PATH_TOKEN.findall(test.prompt)
+    suspect = [t for t in tokens if not t.startswith("{workspace}")]
+    if not suspect:
+        return
+    unique = sorted(set(suspect))
+    print(
+        "[run-test] WARNING: test prompt references absolute / home-relative "
+        f"paths that bypass the workspace: {unique}",
+        file=sys.stderr,
+    )
+    print(
+        "[run-test] WARNING: artifacts written outside the workspace are "
+        "invisible to the judge (it sees only the chat summary). Use "
+        "{workspace}/<subpath> in the prompt so the runner can capture "
+        "them. Ignore this warning only if the path is genuinely required "
+        "(e.g. a Docker volume mount).",
+        file=sys.stderr,
+    )
+
+
+def substitute_workspace_in_prompt(prompt: str, workspace: Path) -> str:
+    """Replace `{workspace}` in a test prompt with the resolved workspace path.
+
+    Operators write test prompts with `{workspace}/<subpath>` to tell the
+    skill where to write artifacts; the runner substitutes the literal
+    workspace path at invocation time. The chosen brace syntax doesn't
+    collide with shell variable expansion — prompts are passed as a single
+    subprocess argument, not through a shell, so $-style would also be safe,
+    but braces read as a template placeholder rather than an env var.
+    """
+    return prompt.replace("{workspace}", str(workspace))
+
+
 def warn_unresolved_marketplace_deps(cfg: RunConfig) -> None:
     """When the plugin-under-test declares marketplace-qualified deps but
     --isolate-plugins is not set, claude's plugin loader silently refuses to
@@ -405,6 +455,7 @@ def run_target(cfg: RunConfig, test: TestCase, workspace: Path) -> TargetRun:
     for pd in plugin_dirs:
         plugin_dir_args += ["--plugin-dir", str(pd)]
 
+    effective_prompt = substitute_workspace_in_prompt(test.prompt, workspace)
     cmd = [
         "claude", "-p",
         *plugin_dir_args,
@@ -414,7 +465,7 @@ def run_target(cfg: RunConfig, test: TestCase, workspace: Path) -> TargetRun:
         "--add-dir", str(workspace / "learnings"),
         "--add-dir", str(workspace / "rules"),
         "--model", cfg.target_model,
-        test.prompt,
+        effective_prompt,
     ]
     work = cfg.project_dir if cfg.project_dir is not None else workspace / "work"
     env = env_for_run(workspace, cfg.extra_env, cfg.isolate_config, cfg.isolate_plugins)
@@ -915,6 +966,7 @@ def main() -> int:
     try:
         setup_isolated_plugins(cfg, workspace)
         warn_unresolved_marketplace_deps(cfg)
+        warn_external_paths_in_prompt(test)
 
         print("[run-test] invoking target...", file=sys.stderr)
         target = run_target(cfg, test, workspace)
