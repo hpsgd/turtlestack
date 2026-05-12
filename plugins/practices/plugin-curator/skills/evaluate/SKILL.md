@@ -80,6 +80,30 @@ Treat exit codes ≥ 3 as failures of the harness, not the skill — record them
 
 For long batches, run sequentially. Parallel runs are safe in principle (each gets its own tmp workspace) but cost-of-debugging outweighs the speed-up for now.
 
+### Plugin dependencies and isolation
+
+If the plugin under test declares marketplace-qualified dependencies (any `"dependencies"` entry of the form `name@marketplace`), the runner cannot resolve them against the operator's local plugin cache — tests are meant to run hermetically. Pass `--isolate-plugins` so the runner sets up a per-run isolated plugin cache, and one `--marketplace-source <name>=<source>` per marketplace referenced:
+
+```bash
+"$RUNNER" \
+  --test-dir "<test_dir>" \
+  --plugin-dir "<plugin_dir>" \
+  --isolate-plugins \
+  --marketplace-source turtlestack=hpsgd/turtlestack \
+  --target-model claude-haiku-4-5-20251001 \
+  --judge-model claude-sonnet-4-6
+```
+
+Without `--isolate-plugins`, claude's plugin loader silently refuses to register a plugin whose declared dependencies aren't installed — meaning the plugin's slash commands (and skills, agents) never become available to the target session. The target invocation returns `Unknown command: /<ns>:<skill>` in tens of milliseconds with zero model cost. Every criterion then scores FAIL, which looks identical to a skill regression but is actually harness misconfiguration.
+
+This applies to any plugin with marketplace-qualified deps — even when a single test happens to "just work" because the dep is rules-only and contributes no commands.
+
+## Troubleshooting
+
+| Signal | Likely cause |
+|---|---|
+| `target_duration_ms < 100` and `target_cost_usd == 0`, every criterion FAIL | Slash command never registered. Plugin under test has marketplace deps that need `--isolate-plugins` + `--marketplace-source`. |
+
 ## Step 5: Build the summary
 
 For directory or all-tests mode, collect the per-test JSON summaries into a table for chat output. Don't write this to a file — each test's `result.md` already carries the full record on disk; an aggregate snapshot just goes stale between runs.
