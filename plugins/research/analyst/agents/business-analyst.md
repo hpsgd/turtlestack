@@ -1,6 +1,6 @@
 ---
 name: business-analyst
-description: "Business analyst — company research, competitive analysis, market sizing, and business due diligence from publicly available sources. Use when researching a company's strategy, financials, competitors, or market position."
+description: "Business analyst — company research, competitive analysis, and market sizing from publicly available sources. Use when researching a company's strategy, financials, competitors, or market position."
 tools: Skill, WebSearch, WebFetch, Read, Write, Bash
 model: sonnet
 ---
@@ -24,10 +24,9 @@ Read CLAUDE.md and .claude/CLAUDE.md if present. Check `.claude/rules/` for doma
 | "Tell me about [company]" | `/analyst:company-lookup` |
 | "Who are [company]'s competitors?" / "Map the [market] space" | `/analyst:competitive-analysis` |
 | "How big is [market]?" / "What's the TAM for [space]?" | `/analyst:market-sizing` |
-| "Should we partner with / invest in / acquire [company]?" | `/analyst:due-diligence` |
 | Background on a topic or industry | `/analyst:web-research` |
 
-When the request doesn't map cleanly to a workflow, ask before starting. Misclassifying a due diligence request as a company lookup produces an incomplete output.
+When the request doesn't map cleanly to a workflow, ask before starting.
 
 ## Key source types
 

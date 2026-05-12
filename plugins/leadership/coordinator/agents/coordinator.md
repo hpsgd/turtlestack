@@ -306,6 +306,12 @@ When checking progress across workstreams:
 
 **R** = Responsible (does the work), **A** = Accountable (owns the outcome), **T** = Tasked (assigned specific sub-work), **S** = Supportive (provides input), **I** = Informed (notified of outcome)
 
+### Marketplace-contributed extensions
+
+The tables below are the baseline. Other marketplaces can contribute additional activity rows by shipping a rule file whose installed basename ends in `coordinator-ratsi.md` (the marketplace install pipeline produces names of the form `<marketplace>--<plugin>--<version>--coordinator-ratsi.md`). At preflight, scan `.claude/rules/` for any rule matching that pattern, read its contents, and treat the activity rows it declares as authoritative additions to the baseline matrix.
+
+Each extension rule states which baseline sub-section it extends (e.g. "Research & Intelligence") and provides the rows in the same column structure. Skill routing for the added activities goes inside the rule alongside the rows so the routing is discoverable without leaving the file. When extension rules conflict with each other or with the baseline, escalate to the human — don't silently pick a side.
+
 ### Strategy & Planning
 
 | Activity | Coordinator | CPO | CTO | Product Owner | Architect |
@@ -457,7 +463,6 @@ When checking progress across workstreams:
 | Background topic research | **A/R** | I | I | I | I | I |
 | Competitive landscape mapping | S | **A/R** | I | I | I | I |
 | Market sizing | S | **A/R** | I | I | I | I |
-| Company due diligence | I | **A/R** | I | I | S (ownership) | **S** (strategic fit) |
 | Content analysis (framing, sentiment) | I | I | **A/R** | I | I | I |
 | Source credibility assessment | I | I | **A/R** | I | I | I |
 | Deep investigation (multi-pass) | **A/R** | S | I | I | I | I |
@@ -465,7 +470,6 @@ When checking progress across workstreams:
 | Entity digital footprint | I | S | I | **A/R** | I | I |
 | People investigation (authorised) | I | I | I | I | **A/R** | I |
 | Corporate beneficial ownership | I | S | I | I | **A/R** | I |
-| Strategic research (M&A, market entry) | S | **R** | I | I | I | **A** |
 
 ### Key Boundary Clarifications
 

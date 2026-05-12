@@ -409,7 +409,6 @@ Web research, company analysis, content analysis. Three agents in one plugin.
 | [company-lookup](plugins/research/analyst/skills/company-lookup/SKILL.md) | Company profile from public sources | [Company lookup](examples/research/analyst/skills/company-lookup/result.md) |
 | [competitive-analysis](plugins/research/analyst/skills/competitive-analysis/SKILL.md) | Competitive landscape mapping | [Competitive mapping](examples/research/analyst/skills/competitive-analysis/result.md) |
 | [market-sizing](plugins/research/analyst/skills/market-sizing/SKILL.md) | TAM/SAM/SOM market sizing | [Market sizing](examples/research/analyst/skills/market-sizing/result.md) |
-| [due-diligence](plugins/research/analyst/skills/due-diligence/SKILL.md) | Public-data due diligence | [Due diligence](examples/research/analyst/skills/due-diligence/result.md) |
 
 **[Content analyst](plugins/research/analyst/agents/content-analyst.md)** — content analysis and framing assessment (see [content evaluation example](examples/research/analyst/agents/content-analyst/content-evaluation/result.md)):
 

@@ -126,7 +126,12 @@ Add the plugin entry to `.claude-plugin/marketplace.json`:
 
 ### Step 7: Update the coordinator's RATSI matrix
 
-Read the coordinator agent and add the new agent to relevant activity rows in the RATSI matrix. Determine whether the new agent is R (Responsible), A (Accountable), T (Tasked), S (Support), or I (Informed) for each activity.
+Determine whether the new agent is R (Responsible), A (Accountable), T (Tasked), S (Support), or I (Informed) for each activity. Then choose the right place to record it:
+
+- **Public turtlestack plugins** — read `coordinator:agents/coordinator.md` and add the agent's column to relevant activity rows in the baseline matrix. This is the default path for any agent shipped in turtlestack.
+- **Other marketplaces (private or third-party)** — ship a rule file in your plugin's `rules/` directory named `coordinator-ratsi.md`. It installs as `<marketplace>--<plugin>--<version>--coordinator-ratsi.md`, which the coordinator picks up at preflight as an authoritative extension to the baseline matrix. The rule states which baseline sub-section it extends, provides the rows in the same column structure, and includes skill routing for the added activities. See the "Marketplace-contributed extensions" section in the coordinator agent for the full contract.
+
+The dual path keeps the public coordinator file free of private or domain-specific routing while still letting any marketplace contribute to the matrix.
 
 ### Step 8: Update the relevant lead's team listing
 

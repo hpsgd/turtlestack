@@ -45,7 +45,7 @@ Show the user which skills are available across installed plugins for each categ
 | People | `/investigator:people-lookup`, `/investigator:identity-verification`, `/investigator:public-records`, `/investigator:social-media-footprint` |
 | Corporate | `/investigator:corporate-ownership`, `/investigator:public-records`, `/investigator:entity-footprint`, `/analyst:company-lookup` |
 | Technical | `/investigator:domain-intel`, `/investigator:ip-intel` |
-| Commercial | `/analyst:company-lookup`, `/analyst:competitive-analysis`, `/analyst:due-diligence`, `/analyst:market-sizing` |
+| Commercial | `/analyst:company-lookup`, `/analyst:competitive-analysis`, `/analyst:market-sizing` |
 | OSINT | `/investigator:entity-footprint`, `/investigator:social-media-footprint` |
 
 If the user picks Commercial and the `analyst` plugin is not installed, surface that — `ls plugins/` or check `command -v` style detection isn't worth the effort, but if a dispatched skill returns "skill not found", report it back rather than silently dropping the category.
