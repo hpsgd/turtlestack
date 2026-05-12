@@ -1,7 +1,7 @@
 {
   "name": "release-manager",
   "description": "Release manager — release coordination, deployment scheduling, rollback decisions, release notes, and go/no-go gates.",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "author": {
     "name": "hps.gd"
   },
