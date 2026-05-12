@@ -165,7 +165,8 @@ Failed fetches (timeouts, rate limits) go under `## Pending follow-up → Re-fet
 
 - Every template section heading must remain in the report. Use explicit "None found." or "Not publicly searchable" rather than removing sections.
 - The three sub-sections under `## Pending follow-up` (Human-required steps, Skill-required steps, Re-fetches) also stay. Write "None." under any that are empty.
-- Distinguish "no records found" (searched, nothing returned) from "not checked" (didn't search this source) in the Source log table.
+- **The Source log table must include every named primary source for the subject's jurisdiction — searched, blocked, and not-checked alike.** Use `Searched: Yes / No / Blocked` to distinguish them. Sources that were skipped or deferred to a human still get a row. Do not move not-checked sources into the Gaps narrative as a substitute for a table entry.
+- **Mandatory rows when the subject is AU:** AustLII, ASIC Connect, ASIC banned/disqualified persons register, ABN Lookup, AFSA bankruptcy register, NSW Caselaw (if NSW-connected). Each gets a row even if the result is `[no data]`, `[blocked]`, or `[deferred to human follow-up]`. Same pattern applies for NZ (NZLII, Companies Office), UK (BAILII, Companies House, The Gazette), and US (CourtListener, PACER, state SoS portals) — name the jurisdiction's primary sources and include them all.
 - Note paid/restricted sources as requiring manual follow-up (and raise them under Pending follow-up → Human-required steps).
 - Replace placeholder source rows with actual sources, tagged with tier per source-quality.
 - Set `status: Final` once complete; optionally set `confidence: 0-4`.
@@ -175,6 +176,8 @@ Failed fetches (timeouts, rate limits) go under `## Pending follow-up → Re-fet
 This skill covers formal records (court, licences, registrations). For professional history, social presence, and people-search aggregators, run `/investigator:people-lookup` alongside this skill — together they constitute a complete background check.
 
 If company records surface a complex ownership structure worth mapping, hand off to `/investigator:corporate-ownership`.
+
+If the assessor is relying on media reports of cases that don't appear in AustLII / NZLII / BAILII, suggest `/analyst:source-credibility` to assess the reporting outlet before treating media as a substitute for primary records.
 
 When the dossier plugin is in use, suggest `/dossier:consolidate <engagement_dir>` once the campaign is complete.
 

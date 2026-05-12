@@ -30,10 +30,15 @@ status: Draft
 
 ## Source log
 
+Every primary source named for the subject's jurisdiction must appear in this table — searched, blocked, and not-checked alike. Replace the seed rows below with the full set for the jurisdiction in scope. Do not delete a row to hide that a source was not checked; record `No` in Searched and explain why under Result or in Gaps.
+
 | Source | Searched | Result |
 |---|---|---|
-| AustLII | Yes | [result] |
-| ASIC Connect | Yes | [result] |
+| AustLII (austlii.edu.au) | Yes / No / Blocked | [result, or "not checked — deferred to human follow-up"] |
+| ASIC Connect | Yes / No / Blocked | [result] |
+| ASIC banned / disqualified persons | Yes / No / Blocked | [result] |
+| ABN Lookup | Yes / No / Blocked | [result] |
+| AFSA bankruptcy register | Yes / No / Blocked | [result] |
 
 ## Gaps and limitations
 

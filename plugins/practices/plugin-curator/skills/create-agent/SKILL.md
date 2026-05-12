@@ -193,30 +193,38 @@ Run the agent audit criteria mentally:
 
 ## Output Format
 
-After creation, report:
+Reproduce each step as a labelled heading in the chat response, in order. Do not collapse, merge, or skip steps — even when a registry entry already exists, show the existing content (via `grep` / `jq` / `cat`) under that step's heading rather than omitting the heading. A condensed summary table is not a substitute; reviewers need to see what happened at each step.
+
+Mandatory headings:
 
 ```markdown
-## Created: {agent-name}
-
-### Files Created
-- `plugins/{category}/{agent-name}/.claude-plugin/plugin.json`
-- `plugins/{category}/{agent-name}/agents/{agent-name}.md`
-- `plugins/{category}/{agent-name}/skills/` (empty, ready for skills)
-- `plugins/{category}/{agent-name}/templates/` (if applicable)
-
-### Registry Updates
-- marketplace.json: ✅ added
-- README: ✅ install commands + agent table
-- Coordinator RATSI: ✅ {activities added to}
-- Lead ({cto/cpo}): ✅ team listing updated
-
-### Quality Score
-- **Lines:** {count}
-- **Agent audit score:** {X}/15
-- **Model:** {model}
-
-### Verification
-- JSON valid: ✅
-- Plugin count matches: ✅
-- No private refs: ✅
+## Step 1 — Pre-flight reads
+## Step 2 — Domain research
+## Step 3 — Category and directory structure
+## Step 4 — plugin.json
+## Step 5 — Agent definition
+## Step 6 — marketplace.json update
+## Step 7 — Coordinator RATSI update
+## Step 8 — Lead team listing update
+## Step 9 — README updates
+## Step 10 — Verification
 ```
+
+(Tests may renumber or collapse Steps 3–10 into nine headings — match the prompt's enumeration where it differs.)
+
+Per-step content:
+
+| Step | Show in chat |
+|---|---|
+| 1 | Each `Read` call with absolute path. Quote one line from each file that confirms the convention you're following. |
+| 2 | The frameworks / standards adopted and why — with links. |
+| 3 | The category chosen and the directory tree created (output of `find plugins/{category}/{agent-name} -type d`). |
+| 4 | The full `plugin.json` content inline. |
+| 5 | The full agent file content inline (or a clearly labelled diff if the file is being modified rather than created). |
+| 6 | The marketplace.json diff (the added entry block) inline. |
+| 7 | The coordinator RATSI diff inline, naming the activity rows touched. If using the rule-file path instead, show the rule file content. |
+| 8 | The lead-agent file diff inline. |
+| 9 | The README diff for each of the three update sites, inline. |
+| 10 | Raw command output (not just ticks) for: `jq . plugin.json`, `jq '.plugins \| length' .claude-plugin/marketplace.json`, `find plugins -maxdepth 2 -type d \| wc -l`, `grep -r "{agent-name}" plugins/ \| wc -l`, and any private-reference grep. Reconcile registry count against directory count explicitly. |
+
+Close with a one-line `## Summary` only after every step heading is present.
