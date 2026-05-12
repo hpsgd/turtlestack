@@ -19,7 +19,7 @@ Captured from a real headless invocation of the skill/agent.
 ## User Docs Bootstrap Complete
 
 ### Files merged
-- `docs/content/CLAUDE.md` — appended user documentation conventions (safe merge: preserved existing "Custom team notes" section with USER-EDIT-SENTINEL-DO-NOT-STRIP)
+- `docs/content/CLAUDE.md` — appended user documentation conventions (safe-merge preserved existing "Custom team notes" section)
 
 ### Next steps
 - Write onboarding content using `/user-docs-writer:write-onboarding`
@@ -43,9 +43,9 @@ This section was written by the team and must survive any bootstrap re-run.
 It exists to test the safe-merge contract: the bootstrap skill must not
 overwrite or remove user-authored content.
 
-<!-- User documentation section — added by user-docs-writer bootstrap v0.1.0 -->
-
 ## User Documentation
+
+<!-- Merged from user-docs-writer bootstrap v0.1.0 -->
 
 This section covers user guide conventions, onboarding content format, KB article structure, and content strategy.
 
@@ -131,25 +131,25 @@ Every KB article follows this template:
 | Field | Value |
 |---|---|
 | Verdict | PASS |
-| Score | 6.5/7.5 (87%) |
+| Score | 7.5/7.5 (100%) |
 | Evaluated | 2026-05-13 |
-| Target duration | 25318 ms |
-| Target cost | $0.1266 |
+| Target duration | 26103 ms |
+| Target cost | $0.0820 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | After bootstrap, `docs/content/CLAUDE.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | Artifact contains the line `USER-EDIT-SENTINEL-DO-NOT-STRIP` under the 'Custom team notes' section, intact and verbatim. |
-| c2 | After bootstrap, `docs/content/CLAUDE.md` contains the safe-merge marker `<!-- Merged from user-docs-writer bootstrap v0.1.0 -->` — sections missing from the fixture were appended, not silently merged | FAIL | Artifact has `<!-- User documentation section — added by user-docs-writer bootstrap v0.1.0 -->` — different text. The exact required marker `<!-- Merged from user-docs-writer bootstrap v0.1.0 -->` is absent. |
-| c3 | After bootstrap, `docs/content/CLAUDE.md` contains the appended user-docs sections — at minimum the `## User Documentation` heading and the `### User Guide Conventions` heading now appear alongside the preserved user content | PASS | Artifact contains both `## User Documentation` and `### User Guide Conventions` headings, appearing after the preserved 'Custom team notes' section. |
-| c4 | After bootstrap, `docs/content/CLAUDE.md` contains the `### KB Article Structure` section, which defines the KB article template | PASS | `### KB Article Structure` section is present with a full table defining Title, Summary, Steps/Explanation, Related articles, and Last verified fields. |
-| c5 | After bootstrap, `docs/content/CLAUDE.md` contains the `### Available User Docs Skills` section listing the four skill slash commands | PASS | `### Available User Docs Skills` section lists all four: `write-user-guide`, `write-onboarding`, `write-kb-article`, `content-strategy` with slash-command format. |
-| c6 | Output includes a manifest summary with a "Files merged" section naming `docs/content/CLAUDE.md` | PASS | Chat response has `### Files merged` with `- \`docs/content/CLAUDE.md\`` listed explicitly. |
-| c7 | Output does not claim it overwrote or replaced `docs/content/CLAUDE.md` — the language reflects merge or append, not replacement | PASS | Chat uses 'appended user documentation conventions (safe merge: preserved existing...)' — no replacement or overwrite language. |
-| c8 | Output points the reader at next steps referencing at least two of the three skills (`write-onboarding`, `write-kb-article`, `content-strategy`) consistent with the skill's documented manifest | PARTIAL | Chat next steps list all three: `/user-docs-writer:write-onboarding`, `/user-docs-writer:write-kb-article`, `/user-docs-writer:content-strategy` — satisfies the criterion at the PARTIAL ceiling. |
+| c1 | After bootstrap, `docs/content/CLAUDE.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | Artifact shows the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` intact within the '## Custom team notes' section, including surrounding text. |
+| c2 | After bootstrap, `docs/content/CLAUDE.md` contains the safe-merge marker `<!-- Merged from user-docs-writer bootstrap v0.1.0 -->` — sections missing from the fixture were appended, not silently merged | PASS | Artifact contains exactly `<!-- Merged from user-docs-writer bootstrap v0.1.0 -->` immediately after the `## User Documentation` heading. |
+| c3 | After bootstrap, `docs/content/CLAUDE.md` contains the appended user-docs sections — at minimum the `## User Documentation` heading and the `### User Guide Conventions` heading now appear alongside the preserved user content | PASS | Artifact shows both `## User Documentation` and `### User Guide Conventions` headings present alongside the preserved '## Custom team notes' section. |
+| c4 | After bootstrap, `docs/content/CLAUDE.md` contains the `### KB Article Structure` section, which defines the KB article template | PASS | Artifact contains `### KB Article Structure` with a full table defining Title, Summary, Steps/Explanation, Related articles, and Last verified sections. |
+| c5 | After bootstrap, `docs/content/CLAUDE.md` contains the `### Available User Docs Skills` section listing the four skill slash commands | PASS | Artifact contains `### Available User Docs Skills` with a table listing four skills: write-user-guide, write-onboarding, write-kb-article, content-strategy. |
+| c6 | Output includes a manifest summary with a "Files merged" section naming `docs/content/CLAUDE.md` | PASS | Chat response contains `### Files merged` with the entry `docs/content/CLAUDE.md — appended user documentation conventions...`. |
+| c7 | Output does not claim it overwrote or replaced `docs/content/CLAUDE.md` — the language reflects merge or append, not replacement | PASS | Chat response says 'appended user documentation conventions (safe-merge preserved existing "Custom team notes" section)' — merge language throughout, no replacement claim. |
+| c8 | Output points the reader at next steps referencing at least two of the three skills (`write-onboarding`, `write-kb-article`, `content-strategy`) consistent with the skill's documented manifest | PARTIAL | Chat response lists all three skills in '### Next steps': write-onboarding, write-kb-article, and content-strategy — satisfies the ceiling fully. |
 
 ### Notes
 
-The bootstrap correctly preserved the sentinel content and appended all required sections. The only failure is c2: the safe-merge HTML comment uses 'added by' rather than the exact 'Merged from' wording required by the criterion.
+The output achieved a perfect score within the defined ceilings: the safe-merge contract was honoured exactly (sentinel preserved, marker present, sections appended), all required sections appear in the artifact, and the manifest summary uses correct merge language. The only cap was c8's PARTIAL ceiling, which the output fully satisfied.

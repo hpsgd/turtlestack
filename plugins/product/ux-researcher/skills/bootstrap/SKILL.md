@@ -39,9 +39,6 @@ This directory contains design and UX research documentation.
 Append this content (~80 lines):
 
 ```markdown
-
-<!-- UX Research section — added by ux-researcher bootstrap v0.1.0 -->
-
 ## UX Research
 
 This section covers UX research methodology, persona definitions, journey maps, and usability review conventions.

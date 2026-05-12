@@ -16,12 +16,15 @@ Captured from a real headless invocation of the skill/agent.
 
 ### Chat response
 
----
-
 ## Internal Docs Bootstrap Complete
 
 ### Files merged
-- `docs/content/CLAUDE.md` — appended internal documentation conventions (preserved existing "Custom team notes" section)
+- `docs/content/CLAUDE.md` — appended internal documentation conventions
+
+**Merge details:**
+- Existing user-authored "Custom team notes" section preserved intact
+- Missing "Internal Documentation" section appended with merge marker
+- Safe-merge pattern applied: no user content overwritten
 
 ### Next steps
 - Write architecture documentation using `/internal-docs-writer:write-architecture-doc`
@@ -45,7 +48,7 @@ This section was written by the team and must survive any bootstrap re-run.
 It exists to test the safe-merge contract: the bootstrap skill must not
 overwrite or remove user-authored content.
 
-<!-- Internal documentation section — added by internal-docs-writer bootstrap v0.1.0 -->
+<!-- Merged from internal-docs-writer bootstrap v0.1.0 -->
 
 ## Internal Documentation
 
@@ -168,25 +171,25 @@ Post-mortems are blameless and follow this structure:
 | Field | Value |
 |---|---|
 | Verdict | PASS |
-| Score | 6.5/7.5 (87%) |
+| Score | 7.5/7.5 (100%) |
 | Evaluated | 2026-05-13 |
-| Target duration | 34727 ms |
-| Target cost | $0.1292 |
+| Target duration | 29902 ms |
+| Target cost | $0.0779 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | After bootstrap, `docs/content/CLAUDE.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | Artifact contains `USER-EDIT-SENTINEL-DO-NOT-STRIP` on its own line, with surrounding user-authored content intact. |
-| c2 | After bootstrap, `docs/content/CLAUDE.md` contains the safe-merge marker `<!-- Merged from internal-docs-writer bootstrap v0.1.0 -->` — missing sections were appended, not silently merged | FAIL | Artifact uses `<!-- Internal documentation section — added by internal-docs-writer bootstrap v0.1.0 -->`, not the required `<!-- Merged from internal-docs-writer bootstrap v0.1.0 -->`. |
-| c3 | After bootstrap, `docs/content/CLAUDE.md` contains the appended template sections — at minimum the "Runbook Conventions" and "Post-Mortem Template" headings now appear alongside the preserved user content | PASS | Artifact has `### Runbook Conventions` and `### Post-Mortem Template` headings both present after the merged marker. |
-| c4 | After bootstrap, `docs/content/CLAUDE.md` contains the "Internal Docs Conventions" section — confirming the full template was appended, not just a partial fragment | PASS | Artifact contains `### Internal Docs Conventions` section with bullet-point conventions listed. |
-| c5 | Chat output includes a manifest that names `docs/content/CLAUDE.md` as a merged file, consistent with the skill's documented manifest shape | PASS | Chat output's `### Files merged` section lists `docs/content/CLAUDE.md` with description of the merge action. |
-| c6 | Output names `docs/content/CLAUDE.md` individually — a bare "bootstrap complete" without the per-file listing is not enough | PASS | `- \`docs/content/CLAUDE.md\` — appended internal documentation conventions (preserved existing "Custom team notes" section)` is explicitly listed. |
-| c7 | Output does not claim it overwrote or replaced `docs/content/CLAUDE.md` — the language reflects merge or append, not replacement | PASS | Chat says "appended internal documentation conventions (preserved existing 'Custom team notes' section)" — no overwrite/replace language. |
-| c8 | Output points the reader at next steps referencing at least one `/internal-docs-writer:*` skill, consistent with the skill's documented manifest | PARTIAL | `### Next steps` lists `/internal-docs-writer:write-architecture-doc`, `/internal-docs-writer:write-runbook`, `/internal-docs-writer:write-changelog`. |
+| c1 | After bootstrap, `docs/content/CLAUDE.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | Artifact contains the exact line `USER-EDIT-SENTINEL-DO-NOT-STRIP` under the 'Custom team notes' section, with surrounding user-authored text intact. |
+| c2 | After bootstrap, `docs/content/CLAUDE.md` contains the safe-merge marker `<!-- Merged from internal-docs-writer bootstrap v0.1.0 -->` — missing sections were appended, not silently merged | PASS | Artifact contains the exact string `<!-- Merged from internal-docs-writer bootstrap v0.1.0 -->` placed between user content and appended template sections. |
+| c3 | After bootstrap, `docs/content/CLAUDE.md` contains the appended template sections — at minimum the "Runbook Conventions" and "Post-Mortem Template" headings now appear alongside the preserved user content | PASS | Artifact contains both `### Runbook Conventions` and `### Post-Mortem Template` headings with full content appended after the merge marker. |
+| c4 | After bootstrap, `docs/content/CLAUDE.md` contains the "Internal Docs Conventions" section — confirming the full template was appended, not just a partial fragment | PASS | Artifact contains `### Internal Docs Conventions` section near the end with bullet points about doc update policy, runbooks, changelogs, and post-mortems. |
+| c5 | Chat output includes a manifest that names `docs/content/CLAUDE.md` as a merged file, consistent with the skill's documented manifest shape | PASS | Chat response has '### Files merged' section listing `- \`docs/content/CLAUDE.md\` — appended internal documentation conventions'. |
+| c6 | Output names `docs/content/CLAUDE.md` individually — a bare "bootstrap complete" without the per-file listing is not enough | PASS | The file path `docs/content/CLAUDE.md` is explicitly named in the manifest under 'Files merged', not buried in a generic completion message. |
+| c7 | Output does not claim it overwrote or replaced `docs/content/CLAUDE.md` — the language reflects merge or append, not replacement | PASS | Chat says 'appended internal documentation conventions', 'preserved intact', 'appended with merge marker', 'Safe-merge pattern applied: no user content overwritten'. |
+| c8 | Output points the reader at next steps referencing at least one `/internal-docs-writer:*` skill, consistent with the skill's documented manifest | PARTIAL | Next steps list three skills: `/internal-docs-writer:write-architecture-doc`, `/internal-docs-writer:write-runbook`, `/internal-docs-writer:write-changelog`. |
 
 ### Notes
 
-The bootstrap correctly preserved user content and appended the full template, with manifest output in the expected shape. The only failure is c2: the merge marker written was `<!-- Internal documentation section — added by ... -->` rather than the required `<!-- Merged from internal-docs-writer bootstrap v0.1.0 -->` verbatim.
+The skill executed flawlessly: sentinel preserved, merge marker present, full template appended, and manifest correctly structured. All criteria met at ceiling.

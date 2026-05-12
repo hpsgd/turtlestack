@@ -39,9 +39,6 @@ This directory contains documentation conventions and content standards.
 Append this content (~60 lines):
 
 ```markdown
-
-<!-- User documentation section — added by user-docs-writer bootstrap v0.1.0 -->
-
 ## User Documentation
 
 This section covers user guide conventions, onboarding content format, KB article structure, and content strategy.

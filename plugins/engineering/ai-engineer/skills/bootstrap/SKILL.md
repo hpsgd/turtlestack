@@ -147,7 +147,7 @@ Address the [OWASP Top 10 for LLM Applications](https://owasp.org/www-project-to
 
 Create with this content:
 
-```markdown
+````markdown
 # Prompt Library
 
 > Central catalogue of production prompts. Each prompt is version-controlled and eval-tested.
@@ -203,7 +203,7 @@ Create with this content:
 | | | | |
 
 > Add new prompts here before implementing in code. Every prompt must have at least one eval run.
-```
+````
 
 #### File 3: `docs/ai/eval-suite-template.md`
 

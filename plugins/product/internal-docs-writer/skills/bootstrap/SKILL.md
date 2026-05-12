@@ -39,9 +39,6 @@ This directory contains documentation conventions and content standards.
 Append this content (~60 lines):
 
 ```markdown
-
-<!-- Internal documentation section — added by internal-docs-writer bootstrap v0.1.0 -->
-
 ## Internal Documentation
 
 This section covers architecture documentation format, runbook conventions, changelog format, and post-mortem templates.

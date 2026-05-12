@@ -101,11 +101,8 @@ After creating/merging all files, output a summary:
 ```
 ## Python Developer Bootstrap Complete
 
-### Files updated
-- `docs/architecture/CLAUDE.md` — appended Python Conventions section
-
 ### Files merged
-- (list any existing files where sections were appended)
+- `docs/architecture/CLAUDE.md` — appended Python Conventions section
 
 ### Next steps
 - Configure mypy strict mode in `pyproject.toml`

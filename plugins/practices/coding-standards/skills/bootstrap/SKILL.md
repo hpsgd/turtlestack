@@ -1,6 +1,6 @@
 ---
 name: bootstrap
-description: "Bootstrap the coding standards documentation for a project. Creates docs/tooling-register.md, installs relevant rules, and appends coding conventions to root CLAUDE.md. Idempotent — merges missing sections into existing files without overwriting."
+description: "Bootstrap the coding standards documentation for a project. Creates docs/tooling-register.md and appends coding conventions to root CLAUDE.md. Idempotent — merges missing sections into existing files without overwriting. Rule installation is handled separately by the thinking plugin's SessionStart hook."
 argument-hint: "[project name]"
 user-invocable: false
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
@@ -91,18 +91,7 @@ This document tracks all tools, services, and platforms used by the project.
 > Update this register when tools are added or removed. Each tool should have a clear owner.
 ```
 
-#### File 2: Install relevant `.claude/rules/`
-
-Based on the languages detected in Step 1, check if the coding-standards plugin has matching rules:
-
-```bash
-ls ${CLAUDE_PLUGIN_ROOT}/rules/ 2>/dev/null
-```
-
-For each rule file that matches a detected language:
-1. Check if `.claude/rules/{rule-name}.md` already exists in the project
-2. If not, copy the rule file to `.claude/rules/`
-3. If it exists, apply the safe merge pattern
+Rule installation is NOT this skill's responsibility — the thinking plugin's `install-rules.sh` SessionStart hook installs rules from every enabled plugin into `.claude/rules/` automatically. Do not copy rule files here.
 
 ### Step 4: Append coding conventions to root CLAUDE.md
 
@@ -164,9 +153,6 @@ After creating/merging all files, output a summary:
 ### Files created
 - `docs/tooling-register.md` — project tooling register
 
-### Rules installed
-- (list any rule files copied to .claude/rules/)
-
 ### CLAUDE.md updated
 - Appended "Coding Standards" section to root CLAUDE.md
 
@@ -179,5 +165,6 @@ After creating/merging all files, output a summary:
 ### Next steps
 - Review and customise `docs/tooling-register.md` with project-specific tools
 - Configure SonarCloud quality gates
+- Ensure the `thinking` plugin is enabled so language-specific rules are installed into `.claude/rules/`
 - Use `/coding-standards:review-*` skills during code review
 ```

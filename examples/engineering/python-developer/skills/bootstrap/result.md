@@ -18,11 +18,8 @@ Captured from a real headless invocation of the skill/agent.
 
 ## Python Developer Bootstrap Complete
 
-### Files updated
-- `docs/architecture/CLAUDE.md` — appended Python Conventions section
-
 ### Files merged
-- `docs/architecture/CLAUDE.md` — Python Conventions section inserted before user-authored "Custom team notes" (preserved)
+- `docs/architecture/CLAUDE.md` — appended Python Conventions section
 
 ### Next steps
 - Configure mypy strict mode in `pyproject.toml`
@@ -131,25 +128,25 @@ overwrite or remove user-authored content.
 | Verdict | PASS |
 | Score | 9.5/9.5 (100%) |
 | Evaluated | 2026-05-13 |
-| Target duration | 26551 ms |
-| Target cost | $0.1336 |
+| Target duration | 21285 ms |
+| Target cost | $0.0724 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | After bootstrap, `docs/architecture/CLAUDE.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | Artifact contains '## Custom team notes\n\nUSER-EDIT-SENTINEL-DO-NOT-STRIP' with surrounding text intact at end of file. |
-| c2 | After bootstrap, `docs/architecture/CLAUDE.md` contains the merge marker `<!-- Added by python-developer bootstrap v0.1.0 -->` — the Python Conventions section was appended with the correct marker | PASS | Artifact contains '<!-- Added by python-developer bootstrap v0.1.0 -->' immediately before '## Python Conventions'. |
-| c3 | After bootstrap, `docs/architecture/CLAUDE.md` contains a `## Python Conventions` heading — the conventions block was appended | PASS | Artifact contains '## Python Conventions' as a top-level heading after the ADR Conventions section. |
-| c4 | After bootstrap, `docs/architecture/CLAUDE.md` contains the `### Typing` subsection — strict typing requirements are present | PASS | Artifact contains '### Typing' with content about mypy strict mode, type annotations, and no Any without comment. |
-| c5 | After bootstrap, `docs/architecture/CLAUDE.md` contains the `### Linting and Formatting` subsection — Ruff configuration guidance is present | PASS | Artifact contains '### Linting and Formatting' with Ruff rules, line length 120, and CI gate details. |
-| c6 | After bootstrap, `docs/architecture/CLAUDE.md` contains the `### Testing (BDD)` subsection — pytest-bdd test conventions are present | PASS | Artifact contains '### Testing (BDD)' with pytest-bdd, feature file location, and naming conventions. |
-| c7 | Chat output includes a manifest summary listing `docs/architecture/CLAUDE.md` as updated or merged | PASS | Chat output has '### Files updated' and '### Files merged' sections both explicitly listing 'docs/architecture/CLAUDE.md'. |
-| c8 | Output names `docs/architecture/CLAUDE.md` as the file that was updated — a bare 'bootstrap complete' without the per-file manifest is not enough | PASS | Both manifest sections explicitly name 'docs/architecture/CLAUDE.md' with descriptions of what was done. |
-| c9 | Output does not claim it overwrote or replaced `docs/architecture/CLAUDE.md` — the language reflects append or merge, not replacement | PASS | Uses 'appended Python Conventions section' and 'inserted before user-authored ... (preserved)' — no overwrite/replace language. |
-| c10 | Output points the reader at next steps (configuring mypy, Ruff, or using `/python-developer:write-feature-spec`) consistent with the skill's documented manifest | PARTIAL | Next steps list includes 'Configure mypy strict mode in pyproject.toml', 'Configure Ruff rules in pyproject.toml', and '/python-developer:write-feature-spec'. |
+| c1 | After bootstrap, `docs/architecture/CLAUDE.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | Artifact contains 'USER-EDIT-SENTINEL-DO-NOT-STRIP' in the 'Custom team notes' section at the bottom of the file, with surrounding text intact. |
+| c2 | After bootstrap, `docs/architecture/CLAUDE.md` contains the merge marker `<!-- Added by python-developer bootstrap v0.1.0 -->` — the Python Conventions section was appended with the correct marker | PASS | Artifact contains exactly '<!-- Added by python-developer bootstrap v0.1.0 -->' immediately before the '## Python Conventions' heading. |
+| c3 | After bootstrap, `docs/architecture/CLAUDE.md` contains a `## Python Conventions` heading — the conventions block was appended | PASS | Artifact contains '## Python Conventions' as a second-level heading after the existing architecture content. |
+| c4 | After bootstrap, `docs/architecture/CLAUDE.md` contains the `### Typing` subsection — strict typing requirements are present | PASS | Artifact contains '### Typing' subsection with mypy strict mode, type annotations, and 'No `Any`' requirements. |
+| c5 | After bootstrap, `docs/architecture/CLAUDE.md` contains the `### Linting and Formatting` subsection — Ruff configuration guidance is present | PASS | Artifact contains '### Linting and Formatting' subsection with Ruff rule set, line length 120, and CI gate requirements. |
+| c6 | After bootstrap, `docs/architecture/CLAUDE.md` contains the `### Testing (BDD)` subsection — pytest-bdd test conventions are present | PASS | Artifact contains '### Testing (BDD)' subsection with pytest-bdd, feature files location, fixture conventions, and naming patterns. |
+| c7 | Chat output includes a manifest summary listing `docs/architecture/CLAUDE.md` as updated or merged | PASS | Chat output has '### Files merged' section listing '`docs/architecture/CLAUDE.md` — appended Python Conventions section'. |
+| c8 | Output names `docs/architecture/CLAUDE.md` as the file that was updated — a bare 'bootstrap complete' without the per-file manifest is not enough | PASS | Output explicitly names '`docs/architecture/CLAUDE.md`' under the 'Files merged' section with specific description of what changed. |
+| c9 | Output does not claim it overwrote or replaced `docs/architecture/CLAUDE.md` — the language reflects append or merge, not replacement | PASS | Output uses 'merged' in heading and 'appended Python Conventions section' in the file entry — no overwrite or replacement language. |
+| c10 | Output points the reader at next steps (configuring mypy, Ruff, or using `/python-developer:write-feature-spec`) consistent with the skill's documented manifest | PARTIAL | Next steps lists mypy strict mode, Ruff rules, '/python-developer:write-feature-spec', and '/python-developer:write-schema' — all skill-relevant items. |
 
 ### Notes
 
-All criteria fully met. The artifact correctly preserves user-authored content, inserts the Python Conventions section with the proper merge marker before the user section, and the chat manifest accurately describes append/merge semantics with specific next steps.
+The skill executed flawlessly: user-authored content preserved, merge marker correct, all convention subsections present, and manifest output well-formed. The score is 100% of achievable points with c10 capped at PARTIAL by the test author.
