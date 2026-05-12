@@ -130,7 +130,7 @@ for d in [os.environ['GLOBAL_RULES_DIR'], os.environ['RULES_DIR']]:
             parts = basename.split('--', 1)
             if len(parts) == 2:
                 plugins.add(parts[0])
-snapshot = {'marketplace_plugins': sorted(plugins), 'reconciled_at': datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')}
+snapshot = {'marketplace_plugins': sorted(plugins), 'reconciled_at': datetime.datetime.now(datetime.UTC).strftime('%Y-%m-%dT%H:%M:%SZ')}
 os.makedirs(os.environ['GLOBAL_LEARNINGS_DIR'], exist_ok=True)
 with open(os.path.join(os.environ['GLOBAL_LEARNINGS_DIR'], 'reconcile-snapshot.json'), 'w') as f:
     json.dump(snapshot, f, indent=2)
