@@ -1,7 +1,7 @@
 {
   "name": "dotnet-stack",
   "description": "Framework-specific conventions for JasperFx (Wolverine/Marten) on .NET",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "author": {
     "name": "hps.gd"
   },

@@ -1,7 +1,7 @@
 {
   "name": "python-stack",
   "description": "Framework-specific conventions for Python projects — Django, python-eventsourcing, and related tooling",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "author": {
     "name": "hps.gd"
   },
