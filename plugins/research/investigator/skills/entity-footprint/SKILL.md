@@ -113,10 +113,19 @@ Look for: technology stack requirements, new functional areas being built out, s
 - AU broadcast/telco entities: [ACMA](https://www.acma.gov.au) register
 - Any relevant industry-specific regulatory bodies
 
+### Raise human-required steps explicitly
+
+Some footprint sources need a paid subscription or commercial access — Crunchbase Pro for funding/acquisition history, Pitchbook for private-market intelligence, LinkedIn Sales Navigator for org-chart depth, paywalled industry analyst reports (Gartner, IDC). **Silently skipping them is the bug to avoid.** If a reasonable lookup exists but can't run from this session, raise it under `## Pending follow-up → Human-required steps`. Name the source, the access path, the rough cost, and what it would resolve. The assessor decides whether to spend.
+
+If another investigator skill would resolve a gap (`/investigator:domain-intel` per surfaced domain, `/investigator:corporate-ownership` on the legal entity, `/investigator:social-media-footprint` on a named executive), name it under `## Pending follow-up → Skill-required steps` with a one-line rationale.
+
+If a source failed mid-investigation (timeout, rate limit, transient error), log it under `## Pending follow-up → Re-fetches` with the URL and what it was meant to confirm.
+
 ## Step 4: Finalise the report
 
-- Confirm every section has either content or an explicit "none found" note. A minimal footprint is itself a finding.
-- Replace placeholder source rows with actual sources, tagged with tier per source-quality.
+- Every template section heading must remain in the report, even if empty. Use "None found." rather than removing sections. A minimal footprint is itself a finding.
+- The three sub-sections under `## Pending follow-up` (Human-required steps, Skill-required steps, Re-fetches) also stay. Write "None." under any that are empty.
+- Replace placeholder source rows with actual sources, tagged with tier per source-quality and access dates.
 - Set `status: Final` once complete; optionally set `confidence: 0-4`.
 
 ## Follow-on skills

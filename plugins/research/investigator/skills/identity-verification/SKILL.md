@@ -109,11 +109,23 @@ Document any:
 
 Distinguish clearly between "unverifiable" (no public evidence either way) and "contradicted" (evidence that the claim is false).
 
+### Raise human-required steps explicitly — but stay inside the gate
+
+Some verification needs a paid service or human action — paid background-check providers, certified document verification, in-person interview, court-record certified copies. **Silently skipping these when they're in scope is the bug to avoid.** If the step is **in scope per the gate record**, raise it under `## Pending follow-up → Human-required steps` with source, access path, rough cost, and what it would resolve.
+
+The gate scope matters here more than in other investigator skills. This skill's job is to verify what the subject claims — not to expand into out-of-scope profiling. **A paid lookup that goes beyond the gate's stated scope is not a legitimate pending item.** Don't fill buckets for the sake of it. If every in-scope lookup is automated, write "None.".
+
+If another investigator skill would resolve a gap (`/investigator:people-lookup` for professional context, `/investigator:public-records` for formal records, `/investigator:social-media-footprint` for photo/timeline consistency), name it under `## Pending follow-up → Skill-required steps` with a one-line rationale — staying inside the gate scope.
+
+If a source failed mid-investigation (timeout, rate limit, transient error), log it under `## Pending follow-up → Re-fetches` with the URL and what it was meant to confirm.
+
 ## Step 4: Finalise the report
 
+- Every template section heading must remain in the report, even if empty. Use "Unverifiable" or "Not applicable to gate scope" rather than removing sections.
+- The three sub-sections under `## Pending follow-up` (Human-required steps, Skill-required steps, Re-fetches) also stay. Write "None." under any that are empty — and remember that out-of-scope lookups don't belong here.
 - Set `status: Final` once content is complete; leave `Draft` if claims remain unverified or disambiguation is incomplete.
 - Optionally set `confidence: 0-4` based on the verification evidence (per source-quality).
-- Source list with tier tags.
+- Source list with tier tags and access dates.
 
 ## Rules
 
@@ -122,6 +134,7 @@ Distinguish clearly between "unverifiable" (no public evidence either way) and "
 - Disambiguation failures must be surfaced. Reporting on the wrong person is worse than reporting nothing.
 - Photo comparison is visual only — note photo consistency across sources; don't speculate beyond what you can observe.
 - One file per invocation.
+- **Silently skipping an in-scope verification step is a bug.** If a paid or human-required check is in scope per the gate, raise it under `## Pending follow-up → Human-required steps`. Out-of-scope lookups do NOT belong there — the section isn't a wish-list.
 
 ## Output
 

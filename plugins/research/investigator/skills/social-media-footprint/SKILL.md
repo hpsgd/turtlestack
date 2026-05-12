@@ -100,10 +100,19 @@ For organisation investigations, map:
 - Executive accounts (often the most informative signal of direction and culture)
 - Product-specific sub-accounts
 
+### Raise human-required steps explicitly
+
+Some footprint signal sits behind a paid tool or an authenticated session — Brandwatch / Sprinklr / Hootsuite Insights for content-volume analysis, deeper LinkedIn search behind a Sales Navigator account, Facebook visibility expanded via mutual connections, niche or invite-only platforms (private Discords, gated forums). **Silently skipping these is the bug to avoid.** If a reasonable lookup is in scope per the gate but can't run from this session, raise it under `## Pending follow-up → Human-required steps`. Name the source, the access path, the rough cost, and what it would resolve. The assessor decides whether to spend.
+
+If another investigator skill would resolve a gap (`/investigator:people-lookup` for the off-platform professional view, `/investigator:identity-verification` to confirm a profile genuinely belongs to the named subject, `/investigator:entity-footprint` for organisational scope), name it under `## Pending follow-up → Skill-required steps` with a one-line rationale.
+
+If a source failed mid-investigation (timeout, rate limit, transient error), log it under `## Pending follow-up → Re-fetches` with the URL and what it was meant to confirm.
+
 ## Step 4: Finalise the report
 
-- Confirm every section has either content or an explicit "none found / not on this platform" note.
-- Replace placeholder source rows with actual sources, tagged with tier per source-quality.
+- Every template section heading must remain in the report, even if empty. Use "None found / not on this platform" rather than removing sections.
+- The three sub-sections under `## Pending follow-up` (Human-required steps, Skill-required steps, Re-fetches) also stay. Write "None." under any that are empty.
+- Replace placeholder source rows with actual sources, tagged with tier per source-quality and access dates.
 - Set `status: Final` once complete.
 - Optionally set `confidence: 0-4`.
 

@@ -118,12 +118,21 @@ Search [ViewDNS.info](https://viewdns.info) for other domains registered to the 
 
 Historical gaps (domain registered but no Wayback content for a period) can be significant.
 
+### Raise human-required steps explicitly
+
+Some sources need a paid subscription or commercial access — DomainTools paid WHOIS history, SecurityTrails/Farsight commercial passive DNS, trademark or registration disputes that need legal counsel. **Silently skipping them is the bug to avoid.** If a reasonable lookup exists but can't run from this session, raise it under `## Pending follow-up → Human-required steps`. Name the source, the access path, the rough cost, and what it would resolve. The assessor decides whether to spend.
+
+If another investigator skill would resolve a gap (`/investigator:ip-intel` on the hosting ASN, `/investigator:entity-footprint` for the wider org picture, follow-on `/investigator:domain-intel` on a related domain), name it under `## Pending follow-up → Skill-required steps` with a one-line rationale.
+
+If a source failed mid-investigation (timeout, rate limit, transient error), log it under `## Pending follow-up → Re-fetches` with the URL and what it was meant to confirm.
+
 ## Step 4: Finalise the report
 
 After populating the body sections:
 
-- Ensure every section has content or an explicit "none found" / "privacy-protected, unable to determine" note. Empty placeholders aren't acceptable in the final file.
-- Strip the placeholder rows in the Sources section and replace with the actual sources used.
+- Every template section heading must remain in the report, even if empty. Use "None found." or "Privacy-protected, unable to determine." rather than removing sections.
+- The three sub-sections under `## Pending follow-up` (Human-required steps, Skill-required steps, Re-fetches) also stay. Write "None." under any that are empty.
+- Strip the placeholder rows in the Sources section and replace with the actual sources used, with tier tags (T1-T5) per source-quality and access dates.
 - Set `status: Final` in the frontmatter once content is complete (Draft is fine if any section is incomplete).
 - Optionally set `confidence: 0-4` based on overall source quality and coverage.
 

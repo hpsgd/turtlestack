@@ -95,10 +95,19 @@ Has this IP been notable before? Search:
 - Threat intelligence feeds with public exposure (GreyNoise, pulsedive)
 - Any major ownership changes (ASN transfers, RIPE records)
 
+### Raise human-required steps explicitly
+
+Useful IP intel often sits behind a paywall — Recorded Future and Mandiant Advantage for threat-intel context, Shodan/Censys paid tiers for historical scanning, Farsight/SecurityTrails for deep passive-DNS history, and customer attribution behind cloud-provider abuse channels (AWS/Azure/GCP won't expose customers via public APIs). **Silently skipping these is the bug to avoid.** If a reasonable lookup exists but can't run from this session, raise it under `## Pending follow-up → Human-required steps`. Name the source, the access path, the rough cost, and what it would resolve. The assessor decides whether to spend.
+
+If another investigator skill would resolve a gap (`/investigator:domain-intel` per domain surfaced via reverse-IP, `/investigator:entity-footprint` on the operator surfaced via PTR or WHOIS), name it under `## Pending follow-up → Skill-required steps` with a one-line rationale.
+
+If a source failed mid-investigation (timeout, rate limit, transient error), log it under `## Pending follow-up → Re-fetches` with the URL and what it was meant to confirm.
+
 ## Step 4: Finalise the report
 
-- Confirm every section has either content or an explicit "none found" note.
-- Replace placeholder source rows with actual sources, tagged with tier per source-quality.
+- Every template section heading must remain in the report, even if empty. Use "None found." rather than removing sections.
+- The three sub-sections under `## Pending follow-up` (Human-required steps, Skill-required steps, Re-fetches) also stay. Write "None." under any that are empty.
+- Replace placeholder source rows with actual sources, tagged with tier per source-quality and access dates.
 - Set `status: Final` once complete; optionally set `confidence: 0-4`.
 
 ## Rules

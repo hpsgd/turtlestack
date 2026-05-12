@@ -51,6 +51,20 @@ status: Draft
 
 [What couldn't be established; what would require deeper access.]
 
+## Pending follow-up
+
+### Human-required steps
+
+[Paid WHOIS history (DomainTools subscription), commercial passive DNS deep history (SecurityTrails / Farsight paid tier), trademark or registration validation requiring legal counsel. Name the source, access path, rough cost, and what the lookup would resolve. "None." if every reasonable lookup is automated.]
+
+### Skill-required steps
+
+[Other investigator skills that should be run next — `/investigator:ip-intel <IP or ASN>` on the hosting infrastructure, `/investigator:entity-footprint <subject>` for the wider organisational picture, follow-on `/investigator:domain-intel` on related domains discovered via reverse WHOIS. State why each is relevant.]
+
+### Re-fetches
+
+[Sources that failed first time and should be retried — timeouts, rate limits, transient errors. Include the URL and what the source was meant to confirm.]
+
 ## Sources
 
 1. [Tool/Registry](URL) — [what it contributed]

@@ -46,6 +46,20 @@ status: Draft
 
 [What couldn't be established with passive methods.]
 
+## Pending follow-up
+
+### Human-required steps
+
+[Paid threat-intel feeds (Recorded Future, Mandiant Advantage), commercial Shodan/Censys paid-tier history, paid passive-DNS deep history (Farsight, SecurityTrails), authoritative cloud-customer attribution requests (provider abuse channel for AWS/Azure/GCP). Name the source, access path, rough cost, and what the lookup would resolve. "None." if every reasonable lookup is automated.]
+
+### Skill-required steps
+
+[Other investigator skills that should be run next — `/investigator:domain-intel` per reverse-IP hit, `/investigator:entity-footprint` on the operator surfaced via WHOIS or PTR. State why each is relevant.]
+
+### Re-fetches
+
+[Sources that failed first time and should be retried — timeouts, rate limits, transient errors. Include the URL and what the source was meant to confirm.]
+
 ## Sources
 
 1. [Source / URL](URL) — [what it contributed]
