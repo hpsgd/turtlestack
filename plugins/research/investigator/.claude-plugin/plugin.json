@@ -1,7 +1,7 @@
 {
   "name": "investigator",
   "description": "OSINT investigation agents — domain and infrastructure intel, and people/entity investigation with mandatory ethical authorisation gates.",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "author": {
     "name": "hps.gd"
   },
