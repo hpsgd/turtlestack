@@ -59,6 +59,16 @@ Specific exit codes from the wrapper:
 
 On success, report which device folder the PDF was uploaded to and remind the user it'll appear on the device when it next syncs.
 
+## Evidence requirements (non-negotiable)
+
+Every claim about upload status must be grounded in actual command output. The skill MUST:
+
+1. Show the literal command run, including the wrapper path and arguments.
+2. Show the captured stdout and stderr from the wrapper (or, if `rmapi` was checked directly first, show that output too).
+3. Quote the exit code.
+
+Never assert "the upload succeeded" or "rmapi was found" without showing the underlying tool output. If the test or runtime environment makes the tool unavailable, the wrapper's exit-69 path produces the install instructions — surface those verbatim rather than imagining a happier outcome.
+
 ## Rules
 
 - **Never modify the source PDF.** Read-only.

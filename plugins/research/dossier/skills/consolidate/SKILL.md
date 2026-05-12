@@ -12,6 +12,8 @@ Build a single dossier from every conforming research report in an engagement di
 
 This skill is the back end of the dossier workflow. The companion `dossier` agent drives end-to-end campaigns; this skill just does the gather-and-render step. Run this skill directly when you've already produced reports manually or via individual skills and want to compile them.
 
+The skill's contract is **terse chat + rich artifact**: the chat output is a short completion summary (report count, output paths, any warnings); every per-file detail lands inside the written `DOSSIER.md`. Treat `DOSSIER.md` as the primary source of truth — reviewers can re-derive the candidate listing from it.
+
 ## Step 1: Resolve engagement directory
 
 The first argument is the engagement directory. If omitted, default to `pwd`. Resolve to an absolute path. The directory must exist and must contain at least one markdown file — if not, stop and report.
@@ -41,7 +43,7 @@ Use `Glob` to enumerate, then `Read` each to extract frontmatter. For larger eng
 
 ## Step 3: Present candidates and confirm scope
 
-Group eligible category reports by `category`, sorted within category by `subject` then `date` then filename. Appendix files are listed separately under an "Appendices" group, sorted alphabetically by filename. Show a summary to the user:
+Group eligible category reports by `category`, sorted within category by `subject` then `date` then filename. Appendix files are listed separately under an "Appendices" group, sorted alphabetically by filename. When the run is interactive — the user can answer follow-up questions — show a summary like this in chat so they can confirm scope before anything is written:
 
 ```
 Eligible reports in <engagement_dir>: 16
@@ -78,6 +80,8 @@ Then ask the user via `AskUserQuestion` how to proceed:
 - **Abort** — stop without writing anything
 
 Ineligible files are never included automatically. If the user wants any of them in, they fix the frontmatter and re-run.
+
+In non-interactive runs (no user available to answer questions — driven from another agent, a script, or a test harness), skip the AskUserQuestion step and proceed with all eligible files. Surface body-h1 warnings in the completion summary when any exist; silence is acceptable when there are none.
 
 ## Step 4: Build DOSSIER.md
 

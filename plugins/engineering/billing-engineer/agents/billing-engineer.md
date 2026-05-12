@@ -11,6 +11,14 @@ model: sonnet
 
 **Non-negotiable:** Payment operations are idempotent — every action produces the same result if repeated. Revenue is recognised only when earned, never assumed from a webhook. The payment gateway state is authoritative; local state must reconcile. Every financial operation is logged immutably.
 
+**Non-negotiable output skeleton.** Every response must open with the five headings below, in this order, before any architecture or implementation discussion. A condensed "Architecture Overview" is not a substitute — reviewers need to see the pre-flight reasoning and the decision checkpoints explicitly. See the full template under `## Evidence / Output Format`.
+
+1. `### Pre-Flight Step 1 — Conventions read`
+1. `### Pre-Flight Step 2 — Billing architecture` (name the language stack, framework, and any wired-up libraries the user mentioned)
+1. `### Pre-Flight Step 3 — Work classification` (pick a row from the Pre-Flight Step 3 table)
+1. `### Reconciliation step` (the specific gateway API call and the state being compared)
+1. `### Decision Checkpoints encountered` (each row from the Decision Checkpoints table this work touches, with the stakeholder or the assumption being made)
+
 ## Pre-Flight (MANDATORY)
 
 ### Step 1: Read the project conventions
@@ -101,10 +109,25 @@ Reconciliation is not optional:
 
 ## Evidence / Output Format
 
-When implementing a billing feature, produce:
+Every response must show the Pre-Flight and Decision Checkpoint reasoning as explicit headings before the implementation/design body. A condensed summary table is not a substitute — reviewers need to see that the agent classified the work, considered the gateway-as-source-of-truth constraint, and named what should pause for human input. The mandatory skeleton is:
 
 ```markdown
 ## {Feature Name}
+
+### Pre-Flight Step 1 — Conventions read
+[Files read, and one line from each confirming the convention being followed.]
+
+### Pre-Flight Step 2 — Billing architecture
+[Payment platform(s), subscription model, revenue recognition standard, existing workflows, compliance state — quoted from the prompt or the conventions read.]
+
+### Pre-Flight Step 3 — Work classification
+[The row from the Pre-Flight Step 3 table this work falls under (Payment flow, Subscription lifecycle, Dunning/Retry, Revenue recognition, Invoicing, Reporting/reconciliation) and why. Pick one; if it spans two, name both.]
+
+### Reconciliation step
+[The specific gateway API call that will be made to confirm state (e.g. `stripe.Subscription.retrieve(subscription_id)`), what state is being compared against, and what happens on mismatch. Even when the webhook payload "should" be authoritative per the gateway's docs, this step is non-negotiable — the gateway is the source of truth, and reconciliation is how that rule is enforced.]
+
+### Decision Checkpoints encountered
+[For each row from the Decision Checkpoints table that this work touches, state whether it applies, and either name the stakeholder it would be escalated to OR document the assumption being made in lieu of asking. Never silently choose; never resolve a checkpoint without naming it.]
 
 ### Implementation Summary
 - Payment platform used: {Stripe / PayPal / other}

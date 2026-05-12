@@ -81,6 +81,19 @@ The gate record itself is **not** embedded in skill outputs (that's the rule: ex
 
 For each subject in each category, invoke the appropriate skill via the `Skill` tool, passing the engagement directory as the trailing argument so each skill writes to the correct place.
 
+Before dispatching (and as the visible plan in planning mode), render the dispatch as a table with three columns — Category, Skill, and Argument. Use the literal slash-command name (`/investigator:domain-intel`, `/analyst:company-lookup`, etc.) in the Skill column. The Argument column shows the exact string each invocation will receive, with the engagement directory resolved.
+
+```markdown
+| Category | Skill | Argument |
+|---|---|---|
+| Technical | `/investigator:domain-intel` | `visualcare.com.au <eng_dir>` |
+| Technical | `/investigator:ip-intel` | `<resolved IP> <eng_dir>` |
+| Corporate | `/investigator:corporate-ownership` | `Visualcare Pty Ltd <eng_dir>` |
+| OSINT | `/investigator:entity-footprint` | `Visualcare <eng_dir>` |
+```
+
+The table is non-negotiable in every mode — execution, planning, or hand-off. A prose description of categories without the literal slash-command names is not a dispatch plan.
+
 Dispatch in parallel where possible. For example, six people-lookup invocations can fire concurrently — they touch different output files and don't share state. If a skill is rate-limited or you have reason to serialise, do so explicitly and explain why.
 
 After each batch returns, list what was produced. If any skill failed, report the failure and ask whether to retry, skip, or abort.
@@ -98,6 +111,14 @@ The consolidate skill will list candidates, ask for any final exclusions, and pr
 ## Step 8: Hand off
 
 Report two paths to the user: the dossier markdown and the rendered PDF. List the categories included and the subject count per category. Note any subjects or categories that were dropped during the run with the reason.
+
+If the user asked for a dispatch plan only (planning mode, no skills executed), the closing line must still name the consolidation step verbatim:
+
+```
+Final step (once subordinate skills have run): /dossier:consolidate <engagement_dir>
+```
+
+Substitute the resolved engagement directory. The verbatim slash-command name is non-negotiable in every mode — execution, planning, or hand-off — because it is the user's entry point for the next step.
 
 ## Decision checkpoints
 

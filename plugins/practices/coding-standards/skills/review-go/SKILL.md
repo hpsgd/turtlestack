@@ -249,12 +249,38 @@ Go has specific idioms. Follow them.
 - Table-driven tests: X findings
 - Code structure: X findings
 
-### Findings
-[grouped by severity: critical, important, suggestion]
+### Pass 1 — Error Handling
+[findings, or "No findings." Each finding follows the Evidence Format above.]
+
+### Pass 2 — Interface Design
+[findings, or "No findings."]
+
+### Pass 3 — Goroutine Safety
+[findings, or "No findings."]
+
+### Pass 4 — Table-Driven Tests
+[findings, or "No findings."]
+
+### Pass 5 — Code Structure and Idiom
+[findings, or "No findings."]
 
 ### Clean Areas
 [what was done well]
 ```
+
+Severity (critical / important / suggestion) is part of each finding header, not the section structure. The five passes are the primary skeleton; severity belongs inside the per-pass section.
+
+## Evidence Gate (non-negotiable)
+
+Every finding must be grounded in the actual fixture code. Before recording a finding:
+
+1. Quote the line that violates the rule. The quote must match the source byte-for-byte.
+2. State the line number.
+3. Name the specific rule from "Rules" above that is violated.
+
+If you cannot quote a matching line, the finding is fabricated — drop it. Do not paraphrase "this function should be lowercase" when the function already is lowercase. Do not apply exported-symbol rules to unexported identifiers. Do not invent missing tests, missing context.Context parameters, or missing interface boundaries unless you can quote the place they should have appeared and explain why their absence is observable in the diff under review.
+
+When in doubt: re-grep the fixture for the pattern the finding depends on. If the grep returns nothing, the finding has no evidence — drop it.
 
 ## Zero-Finding Gate
 
