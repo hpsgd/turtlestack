@@ -502,7 +502,7 @@ Human (CEO/Founder)
 | [write-meeting-agenda](plugins/leadership/coordinator/skills/write-meeting-agenda/SKILL.md) | Synthesise the session discussion into a structured meeting agenda | [Agenda writing](examples/leadership/coordinator/skills/write-meeting-agenda/result.md) |
 | [write-meeting-qanda](plugins/leadership/coordinator/skills/write-meeting-qanda/SKILL.md) | Expand an agenda into a Q-and-A document with talking points, questions, notes capture | [Q-and-A writing](examples/leadership/coordinator/skills/write-meeting-qanda/result.md) |
 | [write-meeting-pdf](plugins/leadership/coordinator/skills/write-meeting-pdf/SKILL.md) | Render the Q-and-A document as a printable PDF for tablet note-taking (Remarkable Paper Pro) | [PDF rendering](examples/leadership/coordinator/skills/write-meeting-pdf/result.md) |
-| bootstrap-project | Scaffold docs via installed agents | N/A |
+| [bootstrap-project](plugins/leadership/coordinator/skills/bootstrap-project/SKILL.md) | Scaffold docs via installed agents | [Bootstrap project](examples/leadership/coordinator/skills/bootstrap-project/result.md) |
 
 #### [CPO](plugins/leadership/cpo/agents/cpo.md)
 
@@ -975,6 +975,8 @@ Run evaluations via the [evaluate skill](plugins/practices/plugin-curator/skills
 ```
 
 The skill prints a summary table to the chat. Per-test `result.md` files in each test directory carry the full output and judge breakdown — those are linked from the Example column in every plugin table above.
+
+The 23 per-agent `bootstrap` skills don't appear in the skill tables (they're not user-invocable — `/coordinator:bootstrap-project` delegates to them), but each one has its own rubric test under `examples/<category>/<plugin>/skills/bootstrap/result.md`. The safe-merge contract — preserving user-edited sections while appending missing template sections — is exercised against a synthetic project fixture for every bootstrap.
 
 ### Creating a new plugin
 
