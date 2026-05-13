@@ -1,8 +1,9 @@
 # Dossier
 
-Build a single brand-styled PDF dossier from research outputs that conform to the report frontmatter contract. Two modes:
+Build a single brand-styled PDF dossier from research outputs that conform to the report frontmatter contract. Three entry points:
 
 - **`/dossier:consolidate`** — back end. Scan an engagement directory, group conforming reports by category, produce `DOSSIER.md` + `DOSSIER.pdf`. Use this when reports already exist (you ran individual skills or wrote them by hand).
+- **`/dossier:executive-summary`** — fill the executive summary section interactively. Pick which reports feed in, name the audience and posture, sign off on an outline, review the draft before it's written. Offered automatically by consolidate; callable standalone to regenerate without re-running the whole dossier.
 - **`/dossier:dossier`** (agent, drive mode) — front end. Name a target ("dossier on visualcare.com.au"), the agent asks what kind of investigation is wanted, dispatches the right skills with consistent arguments, then calls consolidate.
 
 ## What counts as a conforming report
