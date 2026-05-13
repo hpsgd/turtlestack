@@ -1,45 +1,49 @@
 #!/usr/bin/env bash
 # check-plugin-versions.sh — Detect plugin version drift on session start.
 #
-# Compares each installed plugin's version against the cached marketplace's
-# current version. If drift exists, writes a markdown file with ready-to-paste
-# `claude plugin update` commands and prints a one-line summary pointing at it.
-# If no drift, removes any stale file from a previous session.
+# Iterates every installed marketplace under ~/.claude/plugins/marketplaces/
+# and compares each installed plugin's version against the cached marketplace's
+# current version. Per-marketplace drift files are written under
+# .claude/<marketplace>/plugin-updates.md with ready-to-paste
+# `claude plugin update` commands; a single consolidated context line points
+# at all of them.
 #
 # Silent on no drift. Fails silent on errors (never blocks session start).
 
 set -uo pipefail
 
-PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-}"
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-}"
-
-# Derive marketplace name from CLAUDE_PLUGIN_ROOT
-# (e.g. ~/.claude/plugins/cache/turtlestack/thinking/1.15.0 -> turtlestack)
-[[ -z "$PLUGIN_ROOT" ]] && exit 0
-cache_path="${PLUGIN_ROOT%/}"
-cache_path=$(dirname "$cache_path")  # strip version
-cache_path=$(dirname "$cache_path")  # strip plugin name
-MARKETPLACE=$(basename "$cache_path")
-[[ -z "$MARKETPLACE" || "$MARKETPLACE" == "cache" ]] && exit 0
-
 CONFIG_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 INSTALLED="$CONFIG_DIR/plugins/installed_plugins.json"
-MARKETPLACE_JSON="$CONFIG_DIR/plugins/marketplaces/$MARKETPLACE/.claude-plugin/marketplace.json"
+MARKETPLACES_DIR="$CONFIG_DIR/plugins/marketplaces"
 
-# Drift file lives with the project so project-scoped drift travels with the
-# project. Fall back to global config dir for sessions with no project.
-if [[ -n "$PROJECT_DIR" ]]; then
-    DRIFT_FILE="${PROJECT_DIR}/.claude/${MARKETPLACE}/plugin-updates.md"
-else
-    DRIFT_FILE="${CONFIG_DIR}/${MARKETPLACE}/plugin-updates.md"
-fi
+[[ ! -f "$INSTALLED" || ! -d "$MARKETPLACES_DIR" ]] && exit 0
 
-if [[ ! -f "$INSTALLED" || ! -f "$MARKETPLACE_JSON" ]]; then
-    [[ -f "$DRIFT_FILE" ]] && rm -f "$DRIFT_FILE"
-    exit 0
-fi
+drift_target_dir() {
+    local marketplace="$1"
+    if [[ -n "$PROJECT_DIR" ]]; then
+        echo "${PROJECT_DIR}/.claude/${marketplace}"
+    else
+        echo "${CONFIG_DIR}/${marketplace}"
+    fi
+}
 
-drift=$(python3 - "$INSTALLED" "$MARKETPLACE_JSON" "$MARKETPLACE" "${PROJECT_DIR:-}" <<'PY' 2>/dev/null
+summary_lines=()
+total_count=0
+drift_paths=()
+
+shopt -s nullglob
+for mp_path in "$MARKETPLACES_DIR"/*/; do
+    MARKETPLACE=$(basename "$mp_path")
+    MARKETPLACE_JSON="${mp_path}.claude-plugin/marketplace.json"
+    DRIFT_FILE="$(drift_target_dir "$MARKETPLACE")/plugin-updates.md"
+
+    if [[ ! -f "$MARKETPLACE_JSON" ]]; then
+        [[ -f "$DRIFT_FILE" ]] && rm -f "$DRIFT_FILE"
+        continue
+    fi
+
+    drift=$(python3 - "$INSTALLED" "$MARKETPLACE_JSON" "$MARKETPLACE" "${PROJECT_DIR:-}" <<'PY' 2>/dev/null
 import json, sys
 
 installed_path, marketplace_path, marketplace, project_dir = sys.argv[1:5]
@@ -82,35 +86,53 @@ for name, scope, current, target in drifted:
 PY
 )
 
-if [[ -z "$drift" ]]; then
-    [[ -f "$DRIFT_FILE" ]] && rm -f "$DRIFT_FILE"
-    exit 0
-fi
+    if [[ -z "$drift" ]]; then
+        [[ -f "$DRIFT_FILE" ]] && rm -f "$DRIFT_FILE"
+        continue
+    fi
 
-count=$(printf '%s\n' "$drift" | wc -l | tr -d ' ')
+    count=$(printf '%s\n' "$drift" | wc -l | tr -d ' ')
+    total_count=$((total_count + count))
+    summary_lines+=("${count} ${MARKETPLACE}")
+    drift_paths+=("$DRIFT_FILE")
 
-mkdir -p "$(dirname "$DRIFT_FILE")"
-{
-    echo "# Plugin updates — ${MARKETPLACE}"
-    echo
-    echo "Generated: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-    echo
-    echo "${count} plugin(s) out of sync with the cached marketplace catalog."
-    echo "Run the commands below, then restart Claude Code for the new versions to load."
-    echo
-    echo '```bash'
-    while IFS=$'\t' read -r name scope current target; do
-        [[ -z "$name" ]] && continue
-        echo "claude plugin update ${name}@${MARKETPLACE} --scope ${scope}    # ${current} -> ${target}"
-    done <<< "$drift"
-    echo '```'
-} > "$DRIFT_FILE"
+    mkdir -p "$(dirname "$DRIFT_FILE")"
+    {
+        echo "# Plugin updates — ${MARKETPLACE}"
+        echo
+        echo "Generated: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+        echo
+        echo "${count} plugin(s) out of sync with the cached marketplace catalog."
+        echo "Run the commands below, then restart Claude Code for the new versions to load."
+        echo
+        echo '```bash'
+        while IFS=$'\t' read -r name scope current target; do
+            [[ -z "$name" ]] && continue
+            echo "claude plugin update ${name}@${MARKETPLACE} --scope ${scope}    # ${current} -> ${target}"
+        done <<< "$drift"
+        echo '```'
+    } > "$DRIFT_FILE"
+done
 
-python3 - "$count" "$MARKETPLACE" "$DRIFT_FILE" <<'PY'
+[[ $total_count -eq 0 ]] && exit 0
+
+python3 - "$total_count" "${#summary_lines[@]}" "${summary_lines[@]}" "${drift_paths[@]}" <<'PY'
 import json, sys
-count, marketplace, drift_file = sys.argv[1:4]
-context = f"<plugin-version-drift>{count} {marketplace} plugin(s) out of date — see {drift_file}</plugin-version-drift>"
-message = f"⚠  {count} {marketplace} plugin(s) out of date — see {drift_file}"
+
+total = sys.argv[1]
+n = int(sys.argv[2])
+summaries = sys.argv[3 : 3 + n]
+paths = sys.argv[3 + n : 3 + 2 * n]
+
+breakdown = ", ".join(summaries)
+detail = "; ".join(f"{label} -> {path}" for label, path in zip(summaries, paths))
+
+context = (
+    f"<plugin-version-drift>{total} plugin(s) out of date across "
+    f"{n} marketplace(s) ({breakdown}). Details: {detail}"
+    "</plugin-version-drift>"
+)
+message = f"⚠  {total} plugin(s) out of date — {breakdown}"
 print(json.dumps({
     "hookSpecificOutput": {
         "hookEventName": "SessionStart",
