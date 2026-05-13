@@ -93,7 +93,7 @@ Write the prose summary following the agreed outline, target audience, and postu
 
 Constraints:
 
-- No `h1` or `h2` inside the summary body. The `## Executive summary` heading is already there; sub-sections (if any) use `h3+`
+- No `h1` inside the summary body. The `# Executive summary` heading is already there; sub-sections (if any) use `h2+`. Be sparing with sub-headings — an executive summary should usually read as continuous prose, not a mini-document
 - Reference reports by what they cover, not their filenames ("the corporate-ownership report" reads worse than "the ownership analysis")
 - Don't recap every report. Synthesise. A reader who only reads the summary should know the headline answer
 - Honour confidence: hedge low-confidence findings explicitly ("appears to", "single-source") rather than presenting them as facts
@@ -112,7 +112,7 @@ Iterate until accept or abort. Don't shortcut this loop — the user explicitly 
 
 ## Step 8: Inject into DOSSIER.md
 
-Find the executive summary section in `DOSSIER.md`. The block is everything between the `## Executive summary` heading (which may carry a `{#exec-summary}` anchor) and the next h1 or h2.
+Find the executive summary section in `DOSSIER.md`. The block is everything between the `# Executive summary` heading and the next `h1`.
 
 Replace that block's body with the approved draft. Keep the heading line and the blank line that follows. Don't rewrite anything outside the section.
 
@@ -144,7 +144,7 @@ Don't auto-render the PDF — the user may want to make other edits first, and r
 
 - **Never modify source reports.** Read-only on everything except `DOSSIER.md`.
 - **Stop at sign-off, every time.** The draft is shown to the user before it touches `DOSSIER.md`. No exceptions, even in agent-driven flows
-- **Don't rewrite outside the executive summary section.** Boundary is the `## Executive summary` heading and the next `h1`/`h2`
+- **Don't rewrite outside the executive summary section.** Boundary is the `# Executive summary` heading and the next `h1`
 - **Don't re-render the PDF.** Surface the command, let the user run it
 - **Synthesise, don't enumerate.** A list of "Report X says Y, Report Z says W" isn't an executive summary
 

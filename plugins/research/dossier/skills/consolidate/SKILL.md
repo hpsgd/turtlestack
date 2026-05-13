@@ -88,17 +88,25 @@ Once scope is confirmed, ask a second `AskUserQuestion` about **category orderin
 
 Skip this question when only one category is present (there's nothing to order). The Appendices section is unaffected — it always comes last, ordered alphabetically by filename.
 
-In non-interactive runs (no user available to answer questions — driven from another agent, a script, or a test harness), skip both AskUserQuestion steps and proceed with all eligible files in default order. Surface body-h1 warnings in the completion summary when any exist; silence is acceptable when there are none.
+Then ask a third `AskUserQuestion` about **Table of Contents depth**. Use the `preview` field on each option to show what the TOC will look like — render a small example built from the actual report titles in this run (and a couple of real h2s for the H1+H2 option) so the user can see the difference:
+
+- **H1 only (Recommended)** — one bullet per report. Compact and scannable. This is the default.
+- **H1 + H2** — nested: each report plus the section headings inside it. Use this when reports are long enough that section-level navigation is useful
+- **No table of contents** — skip the Contents page entirely. The dossier flows from cover straight to the executive summary
+
+The executive summary and the Appendices section never appear in the TOC regardless of depth — the executive summary follows the TOC directly, and appendices are reached by reading to the end.
+
+In non-interactive runs (no user available to answer questions — driven from another agent, a script, or a test harness), skip all three AskUserQuestion steps and proceed with all eligible files, default category order, and H1-only TOC. Surface body-h1 warnings in the completion summary when any exist; silence is acceptable when there are none.
 
 ## Step 4: Build DOSSIER.md
 
 Write `$ENG/DOSSIER.md`. The structure is:
 
 1. **Dossier frontmatter** — produces the cover page when rendered
-1. **Table of Contents** as `## Contents` — lands on page 2 (the cover forces a page break). Links to every `h1` and `h2` in the dossier (except itself)
-1. **Executive summary** as `h2` — flows after the TOC
-1. **One `h1` per embedded category report** — each report becomes its own page-break boundary
-1. **Appendices section** (only if there are appendix files) — one `h1` divider, then one `h1` per embedded appendix
+1. **Table of Contents** as `## Contents` — lands on page 2 (the cover forces a page break). Links to category reports only — omit the executive summary, the Appendices divider, and individual appendix titles. Skip this section entirely if the user chose "No table of contents" in Step 3
+1. **Executive summary** as `h1` — `# Executive summary` forces its own page break. Not linked from the TOC
+1. **One `h1` per embedded category report** — each report becomes its own page-break boundary and is the primary TOC target
+1. **Appendices section** (only if there are appendix files) — `# Appendices` divider, then `# <Appendix title>` per file. Each h1 forces a page break. Not linked from the TOC
 
 Categories drive **ordering only** in the main body. There are no visible category dividers. The default order is `People` → `Corporate` → `Commercial` → `Technical` → `OSINT` → any other categories alphabetically. The user can override this in Step 3; use whatever order they chose.
 
@@ -106,42 +114,58 @@ Appendices come after all category reports, separated from the main body by a si
 
 ### Anchor scheme
 
-Every heading that the TOC references needs a stable id. Use python-markdown's `attr_list` syntax (already enabled in the renderer): append `{#id}` to the heading line. The id scheme is sequential so collisions are impossible:
+Every heading the TOC links to needs an inline `<a name="…">` anchor. **Do not rely on `{#id}` attr_list syntax** — the python-markdown attr_list extension emits `id="…"` on the heading, which xhtml2pdf does not consistently treat as a navigable PDF anchor. The named-anchor element is the historically-reliable pattern. Embed it inside the heading text so the markdown stays clean:
+
+```markdown
+# <a name="report-1"></a>Michael Graves
+```
+
+The id scheme is sequential so collisions are impossible:
 
 | Element | Anchor |
 |---|---|
-| Executive summary | `{#exec-summary}` |
-| Nth category report's title h1 | `{#report-N}` (1-indexed across the whole dossier, in final emitted order) |
-| Mth h2 inside category report N | `{#report-N-sM}` |
-| Appendices divider | `{#appendices}` |
-| Nth appendix's title h1 | `{#appendix-N}` |
-| Mth h2 inside appendix N | `{#appendix-N-sM}` |
+| Nth category report's title h1 | `report-N` (1-indexed in final emitted order across the whole dossier) |
+| Mth h2 inside category report N | `report-N-sM` |
 
-When embedding a report, rewrite every `^## (.+)$` line in its body to `## $1 {#report-N-sM}` (or `{#appendix-N-sM}` for appendices), counting H2s as they appear. The H1 you inject for the report's title gets `{#report-N}`. Don't touch h3+ headings.
+Only emit anchors that the TOC will actually link to. With H1-only depth, anchor every report h1 and leave h2s alone. With H1+H2 depth, anchor report h1s and every h2 in their bodies. With No TOC, emit no anchors at all.
+
+Don't anchor the executive summary, the Appendices divider, individual appendix titles, or h2s inside appendices — none of them appear in the TOC. h3+ headings are never anchored.
+
+When embedding a report, rewrite each `^## (.+)$` line to `## <a name="report-N-sM"></a>$1` (only when H1+H2 depth is selected), counting H2s as they appear. The h1 you inject for the report's title always gets `<a name="report-N"></a>` when a TOC exists.
 
 ### Table of Contents
 
-Emit `## Contents` immediately after the dossier frontmatter, before the executive summary. The body is a nested unordered list of markdown links — one bullet per h1 and h2 in the dossier, in document order, excluding `## Contents` itself. h2s are nested one level under their parent h1; the executive summary is a top-level entry alongside the report h1s.
+Emit `## Contents` immediately after the dossier frontmatter. The body is a markdown bullet list — one entry per category report. When the user picked H1+H2 depth, each entry has a nested sub-list of the report's h2s. Skip the section entirely when the user picked "No table of contents".
 
-Example shape:
+Example shape (H1 only):
 
 ```markdown
 ## Contents
 
-- [Executive summary](#exec-summary)
+- [Michael Graves](#report-1)
+- [Susan Lau](#report-2)
+- [VisualCare Pty Ltd](#report-3)
+- [visualcare.com.au](#report-4)
+```
+
+Example shape (H1 + H2):
+
+```markdown
+## Contents
+
 - [Michael Graves](#report-1)
   - [Roles and directorships](#report-1-s1)
   - [Public profile](#report-1-s2)
 - [Susan Lau](#report-2)
   - [Roles and directorships](#report-2-s1)
-- [Appendices](#appendices)
-  - [Sources register](#appendix-1)
-  - [Open questions](#appendix-2)
+- [VisualCare Pty Ltd](#report-3)
+  - [Corporate structure](#report-3-s1)
+  - [Beneficial ownership](#report-3-s2)
 ```
 
 Link text is the verbatim heading text. Don't truncate.
 
-Template:
+Template (with H1-only TOC):
 
 ```markdown
 ---
@@ -155,46 +179,47 @@ status: Draft
 
 ## Contents
 
-- [Executive summary](#exec-summary)
 - [<Report 1 title>](#report-1)
-  - [<H2 from report 1>](#report-1-s1)
-  ...
-- [Appendices](#appendices)
-  - [<Appendix 1 title>](#appendix-1)
-  ...
+- [<Report 2 title>](#report-2)
+...
 
-## Executive summary {#exec-summary}
+# Executive summary
 
 <!-- TODO: write a 3-5 paragraph summary covering the engagement target, scope of the investigation, and the headline findings across all categories. The dossier agent fills this in drive mode; in standalone consolidate runs, leave the placeholder for the user. -->
 
-# <Report 1 title — verbatim from frontmatter> {#report-1}
+# <a name="report-1"></a><Report 1 title — verbatim from frontmatter>
 
-<full embedded body of report 1, frontmatter stripped, h2s rewritten with sequential anchors>
+<full embedded body of report 1, frontmatter stripped>
 
-# <Report 2 title> {#report-2}
+# <a name="report-2"></a><Report 2 title>
 
 ...
 
-# Appendices {#appendices}
+# Appendices
 
-# <Appendix 1 title — verbatim from frontmatter> {#appendix-1}
+# <Appendix 1 title — verbatim from frontmatter>
 
-<full embedded body of appendix 1, frontmatter stripped, h2s rewritten with sequential anchors>
+<full embedded body of appendix 1, frontmatter stripped>
 
-# <Appendix 2 title> {#appendix-2}
+# <Appendix 2 title>
 
 ...
 ```
+
+For H1+H2 TOC, the only differences are: the TOC includes nested h2 entries, and each embedded report's body h2s get rewritten to `## <a name="report-N-sM"></a><heading text>`. The executive summary and appendices are unchanged.
+
+For "No table of contents", omit the `## Contents` block entirely and emit no anchors. Everything else is the same.
 
 Rules for embedding:
 
 - **Strip the leading `---...---` frontmatter block** from each embedded report. Frontmatter values (`author`, `date`, `source`, `confidence`, `status`, etc.) are metadata, not body content — do not render them as visible text in the dossier
 - **Do NOT demote headings.** The body is already `h2+` per the report-conventions rule. If a body has an `h1` (contract violation, flagged in Step 3), embed it as-is — the result will be visually wrong but doesn't require special handling here
-- **Inject one `h1` per report** with the verbatim `title` from the report's frontmatter, plus its TOC anchor (see Anchor scheme above)
-- **Rewrite body h2s** with sequential TOC anchors as they're embedded — h3+ left alone
+- **Inject one `h1` per report** with the verbatim `title` from the report's frontmatter, prefixed with `<a name="report-N"></a>` when a TOC exists
+- **Rewrite body h2s** to include `<a name="report-N-sM"></a>` only when the user picked H1+H2 TOC depth. With H1-only or No TOC, leave body h2s untouched. h3+ headings are always left alone
 - **Category report order:** by category (default `People` → `Corporate` → `Commercial` → `Technical` → `OSINT` → alphabetical for any other, unless the user supplied a custom order in Step 3), then by `subject` if present, then by `date`, then by filename
 - **No category headings.** Don't write `# People` or any category-level visible separator. Ordering carries the grouping
-- **Appendix section:** emit a single `# Appendices {#appendices}` divider after the last category report only when there are appendix files. Then embed each appendix the same way as a category report — one `h1` per file with the verbatim `title` and a `{#appendix-N}` anchor — ordered alphabetically by filename
+- **Executive summary as h1.** Emit `# Executive summary` before the first category report. No anchor — the TOC doesn't link to it
+- **Appendix section:** emit a single `# Appendices` divider after the last category report only when there are appendix files. Then embed each appendix the same way as a category report — one `h1` per file with the verbatim `title`. No anchors on the divider or the appendix h1s — the TOC doesn't link to them. h2s inside appendix bodies are also left unanchored
 - **No provenance footers.** Don't render `*Source: <path> — <author> — <date>*` under embedded reports. Provenance lives in the source file's frontmatter, which the reader does not need to see in the rendered dossier
 
 ## Step 5: Offer to generate the executive summary
@@ -246,9 +271,10 @@ Each report begins on a fresh page in the PDF.
 - **Never modify source reports.** Read-only on everything except `DOSSIER.md` and `DOSSIER.pdf`.
 - **The dossier file declares `category: Dossier`.** Re-runs must skip it.
 - **Embed full content, not synopses.** The dossier is a single document with everything we know.
-- **One `h1` per report, ever.** Don't add category h1s, don't keep body h1s from source reports (the rule forbids those, and the renderer treats every h1 as a page break). The single `# Appendices` divider is the one exception — it's a section divider, not a report.
+- **Every `h1` forces a page break.** Use `h1` only for: the executive summary, each category report, the Appendices divider, and each appendix. Don't introduce h1s anywhere else. Don't keep body h1s from source reports — the rule forbids those — but if you find one anyway, embed as-is and the result will be visually wrong (Step 3 flags this).
 - **No provenance in the body.** Frontmatter fields (`author`, `date`, `source`, `confidence`, `status`) are metadata. The reader sees the report title and content, not who wrote it or when. The provenance is in the source file for audit if anyone needs it.
-- **`h2` for the table of contents and executive summary.** Both must be `h2` so they flow on page 2 (after the cover's forced break) without inserting additional blank pages. The first `h1` is reserved for the first embedded report.
+- **`h2` for the table of contents.** The TOC must be `h2` so it flows on page 2 (after the cover's forced break) without inserting an additional blank page. The executive summary, reports, and appendix sections are h1 and force their own page breaks.
+- **TOC links use `<a name="…">` anchors, not `{#id}` attr_list.** xhtml2pdf treats named-anchor elements as reliable PDF link targets; the `id` attribute does not consistently resolve. Anchors are only emitted for elements the TOC actually links to (report h1s always, body h2s only at H1+H2 depth).
 - **Don't auto-fix ineligible files.** If a file is missing `category` or `date`, that's a producer-side issue. Surface it; let the user fix the source.
 - **Confirm before writing.** The user gets a candidate list and chooses scope before any output is produced.
 
