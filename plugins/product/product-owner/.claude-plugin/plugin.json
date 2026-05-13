@@ -1,7 +1,7 @@
 {
   "name": "product-owner",
   "description": "Product owner — requirements, user stories, acceptance criteria, backlog prioritisation",
-  "version": "2.3.1",
+  "version": "2.4.0",
   "author": {
     "name": "hps.gd"
   },
