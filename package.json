@@ -1,6 +1,6 @@
 {
   "name": "turtlestack",
-  "version": "2.6.0",
+  "version": "2.6.1",
   "private": true,
   "description": "Claude Code plugin marketplace",
   "repository": "https://github.com/hpsgd/turtlestack.git",
