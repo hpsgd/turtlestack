@@ -41,15 +41,16 @@ plugins/practices/plugin-curator/scripts/run-test.py \
 
 The result lands at `examples/practices/thinking/skills/handoff/result.md` and a JSON summary prints to stdout.
 
-Run with custom models:
+Override the target or judge model for an ad-hoc run:
 
 ```bash
 plugins/practices/plugin-curator/scripts/run-test.py \
   --test-dir examples/.../skills/foo \
   --plugin-dir plugins/.../foo-plugin \
-  --target-model claude-sonnet-4-6 \
-  --judge-model claude-sonnet-4-6
+  --target-model claude-sonnet-4-6
 ```
+
+Without `--target-model`, the runner uses the test's own preference (`target-model:` in `test.md` frontmatter — see [Test.md format](#testmd-format)) and falls back to a hardcoded default. Same for `--judge-model`. The chosen model is logged to stderr at start, recorded in `result.md`'s metadata table, and included in the JSON summary.
 
 Keep the workspace for debugging:
 
@@ -89,8 +90,8 @@ The isolated cache lives under the workspace and is torn down with it. Nothing u
 |---|---|---|
 | `--test-dir` | required | Test directory containing `test.md` |
 | `--plugin-dir` | required | Plugin under test (the dir holding `.claude-plugin/plugin.json`). Repeatable — pass once for the plugin under test, again for any dependencies it declares. |
-| `--target-model` | `claude-haiku-4-5-20251001` | Model that runs the skill/agent |
-| `--judge-model` | `claude-sonnet-4-6` | Model that scores the output |
+| `--target-model` | from test frontmatter, else `claude-haiku-4-5-20251001` | Model that runs the skill/agent. CLI flag wins over `target-model:` in test.md frontmatter, which wins over the hardcoded default. |
+| `--judge-model` | from test frontmatter, else `claude-sonnet-4-6` | Model that scores the output. Same resolution order as `--target-model`. |
 | `--judge-prompt` | `judge-prompt.md` (sibling) | Override the judge system prompt |
 | `--workspace-root` | `$TMPDIR` | Where per-run workspaces are created |
 | `--keep-workspace` | off | Don't delete the workspace after the run |
@@ -105,6 +106,10 @@ The isolated cache lives under the workspace and is torn down with it. Nothing u
 ## Test.md format
 
 ```markdown
+---
+target-model: claude-sonnet-4-6
+---
+
 # Test: <short title>
 
 <Scenario paragraph — what's being tested and why>
@@ -125,6 +130,17 @@ The isolated cache lives under the workspace and is torn down with it. Nothing u
 ```
 
 Both `## Criteria` and `## Output expectations` are optional but at least one must be present. The `PASS:` / `PARTIAL:` / `SKIP:` prefix sets the **scoring ceiling**, not the expected outcome — see `judge-prompt.md`.
+
+### Frontmatter (optional)
+
+A leading YAML block fenced by `---` lines lets a test declare per-test config. Currently supported keys:
+
+| Key | Effect |
+|---|---|
+| `target-model` | Model to invoke for the skill/agent under test. Overridden by `--target-model` on the CLI; otherwise used in place of the hardcoded default. |
+| `judge-model` | Model to invoke for scoring. Overridden by `--judge-model` on the CLI; otherwise used in place of the hardcoded default. |
+
+A malformed frontmatter block (missing closing `---`, line without `:`) fails the run loudly rather than silently falling through — a typo in a model name must not cause the wrong model to run. Tests without frontmatter are unchanged; the runner just sees no preference and falls back to the default.
 
 ## Path env overrides
 

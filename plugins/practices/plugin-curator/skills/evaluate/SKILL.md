@@ -61,12 +61,12 @@ For each (test, plugin) pair, run:
 ```bash
 "$RUNNER" \
   --test-dir "<test_dir>" \
-  --plugin-dir "<plugin_dir>" \
-  --target-model claude-haiku-4-5-20251001 \
-  --judge-model claude-sonnet-4-6
+  --plugin-dir "<plugin_dir>"
 ```
 
-The runner emits a JSON summary on stdout. Capture that. The runner also writes `result.md` to `<test_dir>` for inspection.
+The runner picks the target model from (in order) the `--target-model` flag, a `target-model:` entry in the test's frontmatter, or its hardcoded default. Same precedence for `--judge-model`. Only pass `--target-model` / `--judge-model` for ad-hoc overrides; otherwise let the test or the default decide.
+
+The runner emits a JSON summary on stdout (including the `target_model` and `judge_model` that ran). Capture that. The runner also writes `result.md` to `<test_dir>` for inspection.
 
 Exit code reflects the verdict:
 
@@ -89,9 +89,7 @@ If the plugin under test declares marketplace-qualified dependencies (any `"depe
   --test-dir "<test_dir>" \
   --plugin-dir "<plugin_dir>" \
   --isolate-plugins \
-  --marketplace-source turtlestack=hpsgd/turtlestack \
-  --target-model claude-haiku-4-5-20251001 \
-  --judge-model claude-sonnet-4-6
+  --marketplace-source turtlestack=hpsgd/turtlestack
 ```
 
 Without `--isolate-plugins`, claude's plugin loader silently refuses to register a plugin whose declared dependencies aren't installed — meaning the plugin's slash commands (and skills, agents) never become available to the target session. The target invocation returns `Unknown command: /<ns>:<skill>` in tens of milliseconds with zero model cost. Every criterion then scores FAIL, which looks identical to a skill regression but is actually harness misconfiguration.

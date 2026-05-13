@@ -47,6 +47,9 @@ EXIT_FAIL = 2
 EXIT_INFRA = 3
 EXIT_TARGET_API_ERROR = 4
 
+DEFAULT_TARGET_MODEL = "claude-haiku-4-5-20251001"
+DEFAULT_JUDGE_MODEL = "claude-sonnet-4-6"
+
 
 class TargetAPIError(RuntimeError):
     """Target claude invocation returned a structured error response (e.g. content
@@ -61,6 +64,7 @@ class TestCase:
     criteria: list[str]
     output_expectations: list[str]
     test_dir: Path
+    frontmatter: dict[str, str] = field(default_factory=dict)
 
     @property
     def all_criteria(self) -> list[str]:
@@ -115,10 +119,12 @@ def parse_test_md(test_dir: Path) -> TestCase:
         raise FileNotFoundError(f"test.md not found at {test_path}")
     text = test_path.read_text()
 
+    frontmatter, body = _split_frontmatter(text, test_path)
+
     sections: dict[str, str] = {}
     current = "_preamble"
     buf: list[str] = []
-    for line in text.splitlines():
+    for line in body.splitlines():
         m = re.match(r"^##\s+(.+?)\s*$", line)
         if m:
             sections[current] = "\n".join(buf).strip()
@@ -150,7 +156,58 @@ def parse_test_md(test_dir: Path) -> TestCase:
         criteria=criteria,
         output_expectations=output_expectations,
         test_dir=test_dir,
+        frontmatter=frontmatter,
     )
+
+
+def _split_frontmatter(text: str, test_path: Path) -> tuple[dict[str, str], str]:
+    """Detect a leading YAML-style frontmatter block fenced by `---` lines and
+    return (parsed_dict, remaining_body). When the file has no frontmatter,
+    returns ({}, text) unchanged. Malformed frontmatter fails loudly rather
+    than silently falling through — a typo in a model name must not cause the
+    wrong model to run."""
+    if not text.startswith("---\n") and not text.startswith("---\r\n"):
+        return {}, text
+    lines = text.splitlines(keepends=True)
+    end_idx = None
+    for i, line in enumerate(lines[1:], start=1):
+        if line.rstrip() == "---":
+            end_idx = i
+            break
+    if end_idx is None:
+        raise ValueError(
+            f"test.md at {test_path} starts with `---` but the frontmatter block is unterminated "
+            "(expected a closing `---` line)"
+        )
+    fm: dict[str, str] = {}
+    for raw in lines[1:end_idx]:
+        stripped = raw.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        if ":" not in stripped:
+            raise ValueError(
+                f"test.md at {test_path} has malformed frontmatter line (expected `key: value`): {stripped!r}"
+            )
+        key, _, value = stripped.partition(":")
+        key = key.strip()
+        value = value.strip()
+        if (value.startswith('"') and value.endswith('"')) or (value.startswith("'") and value.endswith("'")):
+            value = value[1:-1]
+        if not key:
+            raise ValueError(f"test.md at {test_path} has frontmatter line with empty key: {stripped!r}")
+        fm[key] = value
+    body = "".join(lines[end_idx + 1:])
+    return fm, body
+
+
+def _resolve_model(cli_value: str | None, frontmatter_value: str | None, default: str) -> tuple[str, str]:
+    """Pick the effective model and report where it came from. CLI flag always wins,
+    then test.md frontmatter, then the hardcoded fallback."""
+    if cli_value is not None:
+        return cli_value, "from CLI flag"
+    if frontmatter_value:
+        return frontmatter_value, "from test.md frontmatter"
+    return default, "default"
 
 
 def _extract_checkboxes(section: str) -> list[str]:
@@ -794,7 +851,7 @@ def _extract_json_block(text: str) -> dict | None:
     return None
 
 
-def write_result_md(test: TestCase, target: TargetRun, judge: JudgeOutput) -> Path:
+def write_result_md(cfg: RunConfig, test: TestCase, target: TargetRun, judge: JudgeOutput) -> Path:
     result_path = test.test_dir / "result.md"
     today = time.strftime("%Y-%m-%d")
 
@@ -873,6 +930,8 @@ def write_result_md(test: TestCase, target: TargetRun, judge: JudgeOutput) -> Pa
     lines.append(f"| Verdict | {judge.verdict} |")
     lines.append(f"| Score | {judge.score_points}/{judge.score_max} ({judge.score_pct:.0f}%) |")
     lines.append(f"| Evaluated | {today} |")
+    lines.append(f"| Target model | {cfg.target_model} |")
+    lines.append(f"| Judge model | {cfg.judge_model} |")
     lines.append(f"| Target duration | {target.duration_ms} ms |")
     lines.append(f"| Target cost | ${target.cost_usd:.4f} |")
     lines.append(f"| Permission denials | {len(target.permission_denials)} |")
@@ -905,10 +964,14 @@ def parse_args() -> argparse.Namespace:
                         "(contains .claude-plugin/plugin.json). Repeatable — "
                         "pass once for the plugin under test, again for any "
                         "dependencies it declares.")
-    p.add_argument("--target-model", default="claude-haiku-4-5-20251001",
-                   help="Model to invoke for the skill/agent under test")
-    p.add_argument("--judge-model", default="claude-sonnet-4-6",
-                   help="Model to invoke for scoring the captured output")
+    p.add_argument("--target-model", default=None,
+                   help="Model to invoke for the skill/agent under test. When omitted, the runner "
+                        "falls back to test.md frontmatter (`target-model: ...`), then to "
+                        f"{DEFAULT_TARGET_MODEL}.")
+    p.add_argument("--judge-model", default=None,
+                   help="Model to invoke for scoring the captured output. When omitted, the runner "
+                        "falls back to test.md frontmatter (`judge-model: ...`), then to "
+                        f"{DEFAULT_JUDGE_MODEL}.")
     p.add_argument("--judge-prompt", type=Path,
                    default=Path(__file__).resolve().parent / "judge-prompt.md",
                    help="Judge system prompt template")
@@ -975,11 +1038,25 @@ def main() -> int:
         k, v = kv.split("=", 1)
         marketplace_sources[k.strip()] = v.strip()
 
+    test_dir = args.test_dir.resolve()
+    print(f"[run-test] reading {test_dir}/test.md", file=sys.stderr)
+    test = parse_test_md(test_dir)
+    print(f"[run-test] {len(test.all_criteria)} criteria parsed", file=sys.stderr)
+
+    target_model, target_source = _resolve_model(
+        args.target_model, test.frontmatter.get("target-model"), DEFAULT_TARGET_MODEL,
+    )
+    judge_model, judge_source = _resolve_model(
+        args.judge_model, test.frontmatter.get("judge-model"), DEFAULT_JUDGE_MODEL,
+    )
+    print(f"[run-test] target-model: {target_model} ({target_source})", file=sys.stderr)
+    print(f"[run-test] judge-model: {judge_model} ({judge_source})", file=sys.stderr)
+
     cfg = RunConfig(
-        test_dir=args.test_dir.resolve(),
+        test_dir=test_dir,
         plugin_dirs=[p.resolve() for p in args.plugin_dir],
-        target_model=args.target_model,
-        judge_model=args.judge_model,
+        target_model=target_model,
+        judge_model=judge_model,
         judge_prompt_path=args.judge_prompt.resolve(),
         extra_env=extra_env,
         workspace_root=args.workspace_root.resolve() if args.workspace_root else None,
@@ -990,10 +1067,6 @@ def main() -> int:
         marketplace_sources=marketplace_sources,
         project_dir=args.project_dir.resolve() if args.project_dir else None,
     )
-
-    print(f"[run-test] reading {cfg.test_dir}/test.md", file=sys.stderr)
-    test = parse_test_md(cfg.test_dir)
-    print(f"[run-test] {len(test.all_criteria)} criteria parsed", file=sys.stderr)
 
     workspace = make_workspace(cfg.workspace_root)
     print(f"[run-test] workspace: {workspace}", file=sys.stderr)
@@ -1016,7 +1089,7 @@ def main() -> int:
               f"({judge.score_pct:.0f}%)", file=sys.stderr)
 
         if args.write_result:
-            result_path = write_result_md(test, target, judge)
+            result_path = write_result_md(cfg, test, target, judge)
             print(f"[run-test] wrote {result_path}", file=sys.stderr)
 
         summary = {
@@ -1025,6 +1098,8 @@ def main() -> int:
             "score_points": judge.score_points,
             "score_max": judge.score_max,
             "score_pct": judge.score_pct,
+            "target_model": cfg.target_model,
+            "judge_model": cfg.judge_model,
             "target_duration_ms": target.duration_ms,
             "target_cost_usd": target.cost_usd,
             "target_denials": len(target.permission_denials),
