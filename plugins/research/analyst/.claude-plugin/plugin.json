@@ -1,7 +1,7 @@
 {
   "name": "analyst",
   "description": "Research and business intelligence agents — web research with source attribution, and company/market analysis from public sources.",
-  "version": "2.6.1",
+  "version": "2.6.2",
   "author": {
     "name": "hps.gd"
   },
@@ -14,5 +14,7 @@
     "competitive-analysis",
     "market-research"
   ],
-  "dependencies": ["research-conventions"]
+  "dependencies": [
+    "research-conventions"
+  ]
 }
