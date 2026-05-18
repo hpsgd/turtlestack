@@ -1,7 +1,7 @@
 {
   "name": "investigator",
   "description": "OSINT investigation agents — domain and infrastructure intel, and people/entity investigation with mandatory ethical authorisation gates.",
-  "version": "2.6.1",
+  "version": "2.6.2",
   "author": {
     "name": "hps.gd"
   },
@@ -14,5 +14,7 @@
     "people-research",
     "public-records"
   ],
-  "dependencies": ["research-conventions"]
+  "dependencies": [
+    "research-conventions"
+  ]
 }

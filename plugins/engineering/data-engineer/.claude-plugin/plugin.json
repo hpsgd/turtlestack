@@ -1,7 +1,7 @@
 {
   "name": "data-engineer",
   "description": "Data engineer — data pipelines, analytics, event tracking, metrics, data modelling",
-  "version": "2.6.1",
+  "version": "2.6.2",
   "author": {
     "name": "hps.gd"
   },
