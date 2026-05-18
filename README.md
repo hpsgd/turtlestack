@@ -1,5 +1,7 @@
 # Turtlestack
 
+<!-- ruleset-test: 2026-05-18 -->
+
 A plugin marketplace for Claude Code. Agents, skills, rules, and conventions that work together as a virtual team.
 
 <p align="center">
