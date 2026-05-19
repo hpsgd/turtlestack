@@ -1,0 +1,18 @@
+{
+  "name": "web-tools",
+  "description": "Web research tooling — content retrieval with escalating fallback strategies, and PDF snapshots for evidence archival.",
+  "version": "2.6.2",
+  "author": {
+    "name": "hps.gd"
+  },
+  "repository": "https://github.com/hpsgd/turtlestack",
+  "license": "Unlicense",
+  "keywords": [
+    "research",
+    "web-fetching",
+    "content-retrieval",
+    "snapshot",
+    "playwright",
+    "evidence"
+  ]
+}

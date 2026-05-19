@@ -25,6 +25,7 @@ A plugin marketplace for Claude Code. Agents, skills, rules, and conventions tha
     - [Analyst](#analyst)
     - [Investigator](#investigator)
     - [Dossier](#dossier)
+    - [Web Tools](#web-tools)
   - [Leadership](#leadership)
     - [Coordinator](#coordinator)
     - [CPO](#cpo)
@@ -55,7 +56,6 @@ A plugin marketplace for Claude Code. Agents, skills, rules, and conventions tha
     - [React Developer](#react-developer)
     - [Release Manager](#release-manager)
     - [Security Engineer](#security-engineer)
-    - [Workflow Tools](#workflow-tools)
 - [Under the hood](#under-the-hood)
   - [How rules and skills work](#how-rules-and-skills-work)
   - [The learning system (technical detail)](#the-learning-system-technical-detail)
@@ -166,7 +166,7 @@ Browse the full [plugin list](#plugins) below to see what else is available.
     "data-engineer@turtlestack": true,
     "analyst@turtlestack": true,
     "investigator@turtlestack": true,
-    "workflow-tools@turtlestack": true
+    "web-tools@turtlestack": true
   }
 }
 ```
@@ -465,6 +465,19 @@ End-to-end research campaigns and report consolidation. Drives multiple research
 | [consolidate](plugins/research/dossier/skills/consolidate/SKILL.md) | Gather every conforming research report under an engagement directory into one `DOSSIER.md` plus brand-styled PDF | — |
 
 `dossier` and the other research plugins (`analyst`, `investigator`) share `research-conventions` as an internal dependency — installed automatically; you don't install it directly.
+
+#### Web Tools
+
+Tools for fetching and archiving web content during research. Used by research skills and agents that need page content (for analysis) or PDF snapshots (for evidence).
+
+```
+/plugin install web-tools@turtlestack
+```
+
+| Skill | Description | Example |
+|---|---|---|
+| [content-retrieval](plugins/research/web-tools/skills/content-retrieval/SKILL.md) | Four-tier URL retrieval (WebFetch → curl → Playwright → human escalation) — returns page text/HTML for analysis | [URL retrieval](examples/research/web-tools/skills/content-retrieval/result.md) |
+| [web-snapshot](plugins/research/web-tools/skills/web-snapshot/SKILL.md) | Save a page as a rendered PDF using shot-scraper — for evidence archival in sources registers | — |
 
 ### Leadership
 
@@ -918,18 +931,6 @@ Threat modelling, security audits, CVSS scoring, vulnerability management. Inclu
 | [supply-chain-audit](plugins/engineering/security-engineer/skills/supply-chain-audit/SKILL.md) | Supply chain security review | [Supply chain audit](examples/engineering/security-engineer/skills/supply-chain-audit/result.md) |
 | [recon](plugins/engineering/security-engineer/skills/recon/SKILL.md) | External reconnaissance | [Recon](examples/engineering/security-engineer/skills/recon/result.md) |
 | [web-assessment](plugins/engineering/security-engineer/skills/web-assessment/SKILL.md) | Web application security assessment | [Web assessment](examples/engineering/security-engineer/skills/web-assessment/result.md) |
-
-#### Workflow Tools
-
-Utility skills for common engineering patterns.
-
-```
-/plugin install workflow-tools@turtlestack
-```
-
-| Skill | Description | Example |
-|---|---|---|
-| [content-retrieval](plugins/engineering/workflow-tools/skills/content-retrieval/SKILL.md) | Four-tier URL retrieval (WebFetch, curl, Playwright, BrightData) | [URL retrieval](examples/engineering/workflow-tools/skills/content-retrieval/result.md) |
 
 ## Under the hood
 

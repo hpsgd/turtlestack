@@ -4,7 +4,7 @@ Scenario: A researcher needs to retrieve a JavaScript-rendered government report
 
 ## Prompt
 
-> /workflow-tools:content-retrieval https://transparency.gov.au/annual-reports/australian-signals-directorate/reporting-year/2023-24 — WebFetch returned an empty div with no content, likely JS-rendered
+> /web-tools:content-retrieval https://transparency.gov.au/annual-reports/australian-signals-directorate/reporting-year/2023-24 — WebFetch returned an empty div with no content, likely JS-rendered
 > 
 > Follow the skill's Output Format template strictly. Every mandatory section must appear, including:
 > 
