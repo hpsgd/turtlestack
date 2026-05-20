@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.0.1](https://github.com/hpsgd/turtlestack/compare/v3.0.0...v3.0.1) (2026-05-20)
+
+
+### Bug Fixes
+
+* **thinking:** derive marketplace name from cache or source path ([#18](https://github.com/hpsgd/turtlestack/issues/18)) ([418ac10](https://github.com/hpsgd/turtlestack/commit/418ac10f761cc6a6038acbbaf0c92a93ea8ffc36))
+* **thinking:** sweep orphan marketplace rule files at user level ([#20](https://github.com/hpsgd/turtlestack/issues/20)) ([34cd918](https://github.com/hpsgd/turtlestack/commit/34cd9182769de54c7af2dd083a0c08ef15afe44a))
+
 ## [3.0.0](https://github.com/hpsgd/turtlestack/compare/v2.6.2...v3.0.0) (2026-05-20)
 
 
