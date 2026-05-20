@@ -28,9 +28,19 @@ drift_target_dir() {
     fi
 }
 
+display_path() {
+    local path="$1"
+    if [[ -n "$PROJECT_DIR" && "$path" == "$PROJECT_DIR"/* ]]; then
+        echo "${path#$PROJECT_DIR/}"
+    else
+        echo "$path"
+    fi
+}
+
 summary_lines=()
 total_count=0
 drift_paths=()
+display_paths=()
 
 shopt -s nullglob
 for mp_path in "$MARKETPLACES_DIR"/*/; do
@@ -95,6 +105,7 @@ PY
     total_count=$((total_count + count))
     summary_lines+=("${count} ${MARKETPLACE}")
     drift_paths+=("$DRIFT_FILE")
+    display_paths+=("$(display_path "$DRIFT_FILE")")
 
     mkdir -p "$(dirname "$DRIFT_FILE")"
     {
@@ -116,13 +127,14 @@ done
 
 [[ $total_count -eq 0 ]] && exit 0
 
-python3 - "$total_count" "${#summary_lines[@]}" "${summary_lines[@]}" "${drift_paths[@]}" <<'PY'
+python3 - "$total_count" "${#summary_lines[@]}" "${summary_lines[@]}" "${drift_paths[@]}" "${display_paths[@]}" <<'PY'
 import json, sys
 
 total = sys.argv[1]
 n = int(sys.argv[2])
 summaries = sys.argv[3 : 3 + n]
 paths = sys.argv[3 + n : 3 + 2 * n]
+displays = sys.argv[3 + 2 * n : 3 + 3 * n]
 
 breakdown = ", ".join(summaries)
 detail = "; ".join(f"{label} -> {path}" for label, path in zip(summaries, paths))
@@ -132,7 +144,7 @@ context = (
     f"{n} marketplace(s) ({breakdown}). Details: {detail}"
     "</plugin-version-drift>"
 )
-message = f"⚠  {total} plugin(s) out of date — {breakdown}"
+message = f"⚠  {total} plugin(s) out of date — see {', '.join(displays)}"
 print(json.dumps({
     "hookSpecificOutput": {
         "hookEventName": "SessionStart",
