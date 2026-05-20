@@ -551,17 +551,18 @@
       ]
     },
     {
-      "name": "workflow-tools",
-      "source": "./plugins/engineering/workflow-tools",
-      "description": "Utility skills for common engineering workflow patterns — content retrieval with four-tier escalation strategy (WebFetch → curl → Playwright → BrightData)",
+      "name": "web-tools",
+      "source": "./plugins/research/web-tools",
+      "description": "Web research tooling — content retrieval with four-tier escalation (WebFetch → curl → Playwright → human escalation) and PDF snapshots for evidence archival.",
       "version": "2.6.2",
-      "category": "engineering",
+      "category": "research",
       "tags": [
-        "workflow",
-        "scraping",
+        "research",
+        "web-fetching",
         "content-retrieval",
+        "snapshot",
         "playwright",
-        "brightdata"
+        "evidence"
       ]
     },
     {
