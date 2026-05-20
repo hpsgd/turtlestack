@@ -198,8 +198,31 @@ for existing in "$RULES_DIR"/${MARKETPLACE}--*.md; do
   fi
 done
 
+# --- Sweep orphan user-level rule files ---
+# The current architecture writes rule files only to PROJECT_DIR/.claude/rules.
+# Any <marketplace>-- prefixed file at user level (CONFIG_DIR/rules) is an
+# orphan from before this scheme. Sweep for every marketplace currently
+# installed on the machine, so a single hook run cleans up everything
+# regardless of which marketplace's thinking plugin fired.
+user_rules_dir="${CONFIG_DIR}/rules"
+user_swept_count=0
+if [[ -d "$user_rules_dir" && "$user_rules_dir" != "$RULES_DIR" ]]; then
+  marketplaces_dir="${CONFIG_DIR}/plugins/marketplaces"
+  if [[ -d "$marketplaces_dir" ]]; then
+    for mp_dir in "$marketplaces_dir"/*/; do
+      [[ -d "$mp_dir" ]] || continue
+      mp_name=$(basename "$mp_dir")
+      for existing in "$user_rules_dir"/${mp_name}--*.md; do
+        [[ -f "$existing" ]] || continue
+        rm "$existing"
+        ((user_swept_count++)) || true
+      done
+    done
+  fi
+fi
+
 # --- Output summary ---
-if [[ $installed_count -gt 0 || $removed_count -gt 0 || $pruned_versions -gt 0 ]]; then
+if [[ $installed_count -gt 0 || $removed_count -gt 0 || $pruned_versions -gt 0 || $user_swept_count -gt 0 ]]; then
   echo "<learning-context>"
   if [[ $installed_count -gt 0 ]]; then
     echo "Installed ${installed_count} new/updated rules from ${plugin_count} plugins (${MARKETPLACE})"
@@ -209,6 +232,9 @@ if [[ $installed_count -gt 0 || $removed_count -gt 0 || $pruned_versions -gt 0 ]
   fi
   if [[ $pruned_versions -gt 0 ]]; then
     echo "Pruned ${pruned_versions} old plugin version directories from cache"
+  fi
+  if [[ $user_swept_count -gt 0 ]]; then
+    echo "Swept ${user_swept_count} orphan rule file(s) from ${user_rules_dir}"
   fi
   echo "</learning-context>"
 fi
