@@ -19,23 +19,34 @@ if [[ -z "$PROJECT_DIR" ]]; then
 fi
 
 # --- Derive marketplace name and cache root ---
-# PLUGIN_ROOT is e.g. ~/.claude/plugins/cache/turtlestack/thinking/1.7.5
-# Walk up to find the marketplace name (parent of plugin name, child of "cache")
-cache_path="${PLUGIN_ROOT}"
-# Strip trailing slashes
-cache_path="${cache_path%/}"
-# Go up: version -> plugin -> marketplace -> cache
-version_dir=$(basename "$cache_path")
-cache_path=$(dirname "$cache_path")
-plugin_dir=$(basename "$cache_path")
-cache_path=$(dirname "$cache_path")
-MARKETPLACE=$(basename "$cache_path")
-CACHE_ROOT=$(dirname "$cache_path")/${MARKETPLACE}
+# PLUGIN_ROOT can be either:
+#   - cache path:  ~/.claude/plugins/cache/<marketplace>/<plugin>/<version>
+#   - source path: ~/.claude/plugins/marketplaces/<marketplace>/plugins/<category>/<plugin>
+# The cache path is used when Claude Code finds an installed cache entry
+# matching the current scope. The source path is used as a fallback when no
+# matching install is found (e.g. project-scoped install for a different
+# project) but the plugin is still enabled.
+PLUGIN_ROOT_NORM="${PLUGIN_ROOT%/}"
+running_from_cache=0
+plugin_dir=""
+version_dir=""
 
-if [[ -z "$MARKETPLACE" || "$MARKETPLACE" == "cache" ]]; then
-  echo "Could not derive marketplace name from CLAUDE_PLUGIN_ROOT" >&2
+if [[ "$PLUGIN_ROOT_NORM" =~ /plugins/cache/([^/]+)/([^/]+)/([^/]+)$ ]]; then
+  MARKETPLACE="${BASH_REMATCH[1]}"
+  plugin_dir="${BASH_REMATCH[2]}"
+  version_dir="${BASH_REMATCH[3]}"
+  running_from_cache=1
+elif [[ "$PLUGIN_ROOT_NORM" =~ /plugins/marketplaces/([^/]+)(/|$) ]]; then
+  MARKETPLACE="${BASH_REMATCH[1]}"
+else
+  echo "Could not derive marketplace name from CLAUDE_PLUGIN_ROOT=$PLUGIN_ROOT" >&2
   exit 1
 fi
+
+# Cache root is at a fixed location regardless of which path the running
+# plugin was loaded from.
+CONFIG_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+CACHE_ROOT="${CONFIG_DIR}/plugins/cache/${MARKETPLACE}"
 
 # --- Set up rules directory ---
 # RULES_DIR can be overridden via env var (used by test harnesses to redirect
@@ -122,7 +133,7 @@ for plugin in "${enabled_plugins[@]}"; do
     if [[ "$other" == "$version" ]]; then
       continue
     fi
-    if [[ "$plugin" == "$plugin_dir" && "$other" == "$version_dir" ]]; then
+    if [[ $running_from_cache -eq 1 && "$plugin" == "$plugin_dir" && "$other" == "$version_dir" ]]; then
       continue
     fi
     rm -rf "$d"
