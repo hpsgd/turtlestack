@@ -1,7 +1,7 @@
 {
   "name": "security-engineer",
   "description": "Security engineer — threat modelling, security audits, compliance, vulnerability management",
-  "version": "2.6.2",
+  "version": "3.0.0",
   "author": {
     "name": "hps.gd"
   },

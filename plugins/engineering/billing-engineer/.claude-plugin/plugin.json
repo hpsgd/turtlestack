@@ -1,7 +1,7 @@
 {
   "name": "billing-engineer",
   "description": "Billing engineer — subscription billing logic, invoicing, payment gateway integration, dunning management, and revenue recognition workflows.",
-  "version": "2.6.2",
+  "version": "3.0.0",
   "author": {
     "name": "hps.gd"
   },
