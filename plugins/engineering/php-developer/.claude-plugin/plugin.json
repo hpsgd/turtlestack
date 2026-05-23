@@ -1,0 +1,21 @@
+{
+  "name": "php-developer",
+  "description": "PHP developer — modern PHP 8.4+, PHPStan max, PHP-CS-Fixer (PER-CS), Pest + Behat, readonly value objects, EventSauce, symfony/messenger, Doctrine",
+  "version": "3.0.1",
+  "author": {
+    "name": "hps.gd"
+  },
+  "repository": "https://github.com/hpsgd/turtlestack",
+   "license": "Unlicense",
+  "keywords": [
+    "php",
+    "phpstan",
+    "pest",
+    "behat",
+    "eventsauce",
+    "ddd"
+  ],
+  "dependencies": [
+    "engineering-conventions"
+  ]
+}
