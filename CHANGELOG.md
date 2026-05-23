@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.1.0](https://github.com/hpsgd/turtlestack/compare/v3.0.1...v3.1.0) (2026-05-23)
+
+
+### Features
+
+* **php-developer:** add framework-agnostic PHP plugin ([#24](https://github.com/hpsgd/turtlestack/issues/24)) ([a789bbe](https://github.com/hpsgd/turtlestack/commit/a789bbe0e59fb1187bc8878198968cde402daa72))
+
+
+### Bug Fixes
+
+* **thinking:** point plugin drift message at the per-marketplace files ([#22](https://github.com/hpsgd/turtlestack/issues/22)) ([9fad01a](https://github.com/hpsgd/turtlestack/commit/9fad01aea65cc4d074e3e36c9839d926fff5962e))
+
 ## [3.0.1](https://github.com/hpsgd/turtlestack/compare/v3.0.0...v3.0.1) (2026-05-20)
 
 
