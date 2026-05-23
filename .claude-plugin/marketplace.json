@@ -6,14 +6,14 @@
   },
   "metadata": {
     "description": "Centralized marketplace for sharing Claude Code plugins, instructions, and configurations across teams",
-    "version": "3.0.1"
+    "version": "3.1.0"
   },
   "plugins": [
     {
       "name": "coding-standards",
       "source": "./plugins/practices/coding-standards",
       "description": "Shared coding conventions for TypeScript, .NET, Python, PHP, plus git workflow, testing, architecture, and AI steering rules",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "practices",
       "tags": [
         "typescript",
@@ -29,7 +29,7 @@
       "name": "writing-style",
       "source": "./plugins/practices/writing-style",
       "description": "Tone of voice, writing style, AI tell avoidance, and communication guidelines",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "practices",
       "tags": [
         "writing",
@@ -42,7 +42,7 @@
       "name": "security-compliance",
       "source": "./plugins/practices/security-compliance",
       "description": "Security baseline rules and audit skills for maintaining secure code",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "practices",
       "tags": [
         "security",
@@ -55,7 +55,7 @@
       "name": "thinking",
       "source": "./plugins/practices/thinking",
       "description": "Structured thinking and reasoning skills — first principles, ISC, algorithm, council, red team, and more",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "practices",
       "tags": [
         "reasoning",
@@ -69,7 +69,7 @@
       "name": "dotnet-stack",
       "source": "./plugins/practices/dotnet-stack",
       "description": "Framework-specific conventions for JasperFx (Wolverine/Marten) on .NET",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "practices",
       "tags": [
         "dotnet",
@@ -83,7 +83,7 @@
       "name": "nextjs-stack",
       "source": "./plugins/practices/nextjs-stack",
       "description": "Framework-specific conventions for Next.js, React, and Vercel",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "practices",
       "tags": [
         "nextjs",
@@ -97,7 +97,7 @@
       "name": "python-stack",
       "source": "./plugins/practices/python-stack",
       "description": "Framework-specific conventions for Python projects — Django, python-eventsourcing, and related tooling",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "practices",
       "tags": [
         "python",
@@ -110,7 +110,7 @@
       "name": "php-stack",
       "source": "./plugins/practices/php-stack",
       "description": "Framework-specific conventions for PHP — EventSauce event sourcing, symfony/messenger buses, Doctrine read models",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "practices",
       "tags": [
         "php",
@@ -124,7 +124,7 @@
       "name": "plugin-curator",
       "source": "./plugins/practices/plugin-curator",
       "description": "Plugin curator — creates, reviews, and maintains agents, skills, and rules. Enforces structural consistency.",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "practices",
       "tags": [
         "meta",
@@ -138,7 +138,7 @@
       "name": "tooling",
       "source": "./plugins/practices/tooling",
       "description": "Organisational tooling conventions — which tool for which function. Ensures agents reference the correct tools.",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "practices",
       "tags": [
         "tooling",
@@ -151,7 +151,7 @@
       "name": "publishing",
       "source": "./plugins/practices/publishing",
       "description": "Brand-styled markdown-to-PDF rendering — A4 documents with hps.gd typography and palette, optional cover page from frontmatter, swappable stylesheets.",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "practices",
       "tags": [
         "pdf",
@@ -165,7 +165,7 @@
       "name": "coordinator",
       "source": "./plugins/leadership/coordinator",
       "description": "CEO/founder proxy — cross-team coordination, OKRs, initiative decomposition, strategic decisions spanning CPO and CTO",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "leadership",
       "tags": [
         "coordination",
@@ -178,7 +178,7 @@
       "name": "cpo",
       "source": "./plugins/leadership/cpo",
       "description": "Chief Product Officer — coordinates product, design, content, GTM, and support teams",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "leadership",
       "tags": [
         "product",
@@ -190,7 +190,7 @@
       "name": "cto",
       "source": "./plugins/leadership/cto",
       "description": "Chief Technology Officer — coordinates architecture, development, QA, DevOps, security, and data engineering",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "leadership",
       "tags": [
         "engineering",
@@ -202,7 +202,7 @@
       "name": "grc-lead",
       "source": "./plugins/leadership/grc-lead",
       "description": "GRC Lead — governance, risk management, regulatory compliance, AI governance, audit readiness",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "leadership",
       "tags": [
         "governance",
@@ -216,7 +216,7 @@
       "name": "product-owner",
       "source": "./plugins/product/product-owner",
       "description": "Product owner — requirements, user stories, acceptance criteria, backlog prioritisation",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "product",
       "tags": [
         "product",
@@ -229,7 +229,7 @@
       "name": "ui-designer",
       "source": "./plugins/product/ui-designer",
       "description": "UI designer — visual design, design system, component specifications, accessibility",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "product",
       "tags": [
         "design",
@@ -243,7 +243,7 @@
       "name": "ux-researcher",
       "source": "./plugins/product/ux-researcher",
       "description": "UX researcher — customer journeys, touchpoints, information architecture, usability assessment, personas",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "product",
       "tags": [
         "ux",
@@ -257,7 +257,7 @@
       "name": "user-docs-writer",
       "source": "./plugins/product/user-docs-writer",
       "description": "User documentation writer — guides, tutorials, knowledge base, onboarding. Product language for non-technical audiences.",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "product",
       "tags": [
         "documentation",
@@ -270,7 +270,7 @@
       "name": "developer-docs-writer",
       "source": "./plugins/product/developer-docs-writer",
       "description": "Developer documentation writer — API references, SDK guides, integration tutorials, code examples.",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "product",
       "tags": [
         "documentation",
@@ -283,7 +283,7 @@
       "name": "internal-docs-writer",
       "source": "./plugins/product/internal-docs-writer",
       "description": "Internal documentation writer — architecture docs, runbooks, changelogs, onboarding, post-mortems.",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "product",
       "tags": [
         "documentation",
@@ -296,7 +296,7 @@
       "name": "gtm",
       "source": "./plugins/product/gtm",
       "description": "Go-to-market specialist — positioning, launch strategy, content marketing, competitive analysis",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "product",
       "tags": [
         "marketing",
@@ -308,7 +308,7 @@
       "name": "support",
       "source": "./plugins/product/support",
       "description": "Customer support — ticket triage, feedback synthesis, knowledge base, bug escalation",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "product",
       "tags": [
         "support",
@@ -320,7 +320,7 @@
       "name": "customer-success",
       "source": "./plugins/product/customer-success",
       "description": "Customer Success Manager — health monitoring, churn prevention, expansion, onboarding quality",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "product",
       "tags": [
         "customer-success",
@@ -334,7 +334,7 @@
       "name": "engineering-conventions",
       "source": "./plugins/engineering/engineering-conventions",
       "description": "Shared rules for engineering plugins: spec-first implementation. Installed automatically as a dependency of ai-engineer, data-engineer, devops, python-developer, qa-engineer, react-developer, and security-engineer",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "engineering",
       "tags": [
         "engineering",
@@ -346,7 +346,7 @@
       "name": "architect",
       "source": "./plugins/engineering/architect",
       "description": "Software architect — system design, ADRs, technology evaluation, API strategy",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "engineering",
       "tags": [
         "architecture",
@@ -359,7 +359,7 @@
       "name": "react-developer",
       "source": "./plugins/engineering/react-developer",
       "description": "React/Next.js developer — TypeScript, Tailwind, content-collections, react-pdf, Vitest",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "engineering",
       "tags": [
         "react",
@@ -372,7 +372,7 @@
       "name": "dotnet-developer",
       "source": "./plugins/engineering/dotnet-developer",
       "description": ".NET/C# developer — Wolverine, Marten, event sourcing, CQRS, Alba testing",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "engineering",
       "tags": [
         "dotnet",
@@ -385,7 +385,7 @@
       "name": "python-developer",
       "source": "./plugins/engineering/python-developer",
       "description": "Python developer — strict typing, Ruff, mypy, BDD, Hypothesis, DDD",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "engineering",
       "tags": [
         "python",
@@ -398,7 +398,7 @@
       "name": "php-developer",
       "source": "./plugins/engineering/php-developer",
       "description": "PHP developer — modern PHP 8.4+, PHPStan max, PHP-CS-Fixer (PER-CS), Pest + Behat, readonly value objects, EventSauce, symfony/messenger, Doctrine",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "engineering",
       "tags": [
         "php",
@@ -413,7 +413,7 @@
       "name": "ai-engineer",
       "source": "./plugins/engineering/ai-engineer",
       "description": "AI/ML engineer — prompt engineering, model evaluation, RAG pipelines, embeddings, AI feature implementation",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "engineering",
       "tags": [
         "ai",
@@ -427,7 +427,7 @@
       "name": "qa-lead",
       "source": "./plugins/engineering/qa-lead",
       "description": "QA Lead — test strategy, acceptance criteria, 3 amigos, edge case identification",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "engineering",
       "tags": [
         "qa",
@@ -440,7 +440,7 @@
       "name": "qa-engineer",
       "source": "./plugins/engineering/qa-engineer",
       "description": "QA engineer — test automation, test execution, coverage analysis, bug investigation",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "engineering",
       "tags": [
         "testing",
@@ -453,7 +453,7 @@
       "name": "release-manager",
       "source": "./plugins/engineering/release-manager",
       "description": "Release manager — release coordination, deployment scheduling, rollback decisions, go/no-go gates",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "engineering",
       "tags": [
         "release",
@@ -466,7 +466,7 @@
       "name": "performance-engineer",
       "source": "./plugins/engineering/performance-engineer",
       "description": "Performance engineer — load testing, profiling, capacity planning, performance budgets",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "engineering",
       "tags": [
         "performance",
@@ -479,7 +479,7 @@
       "name": "devops",
       "source": "./plugins/engineering/devops",
       "description": "DevOps / platform engineer — IaC, CI/CD, deployment, monitoring, incident response",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "engineering",
       "tags": [
         "devops",
@@ -492,7 +492,7 @@
       "name": "security-engineer",
       "source": "./plugins/engineering/security-engineer",
       "description": "Security engineer — threat modelling, security audits, compliance, vulnerability management",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "engineering",
       "tags": [
         "security",
@@ -504,7 +504,7 @@
       "name": "data-engineer",
       "source": "./plugins/engineering/data-engineer",
       "description": "Data engineer — data pipelines, analytics, event tracking, metrics, data modelling",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "engineering",
       "tags": [
         "data",
@@ -517,7 +517,7 @@
       "name": "code-reviewer",
       "source": "./plugins/engineering/code-reviewer",
       "description": "Code review agent with multi-pass review, quality scoring, and PR creation skills",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "engineering",
       "tags": [
         "code-review",
@@ -530,7 +530,7 @@
       "name": "research-conventions",
       "source": "./plugins/research/research-conventions",
       "description": "Shared rules for research output: report frontmatter contract, file naming, source citation quality. Installed automatically as a dependency of analyst, investigator, and dossier",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "research",
       "tags": [
         "research",
@@ -542,7 +542,7 @@
       "name": "analyst",
       "source": "./plugins/research/analyst",
       "description": "Research and business intelligence agents — web research with source attribution, and company/market analysis from public sources",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "research",
       "tags": [
         "research",
@@ -556,7 +556,7 @@
       "name": "investigator",
       "source": "./plugins/research/investigator",
       "description": "OSINT investigation agents — domain and infrastructure intel, and people/entity investigation with mandatory ethical authorisation gates",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "research",
       "tags": [
         "osint",
@@ -570,7 +570,7 @@
       "name": "dossier",
       "source": "./plugins/research/dossier",
       "description": "Consolidate research outputs that conform to the report frontmatter contract into a single brand-styled PDF dossier, or drive an end-to-end campaign on a target",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "research",
       "tags": [
         "research",
@@ -584,7 +584,7 @@
       "name": "web-tools",
       "source": "./plugins/research/web-tools",
       "description": "Web research tooling — content retrieval with four-tier escalation (WebFetch → curl → Playwright → human escalation) and PDF snapshots for evidence archival.",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "research",
       "tags": [
         "research",
@@ -599,7 +599,7 @@
       "name": "billing-engineer",
       "source": "./plugins/engineering/billing-engineer",
       "description": "Billing engineer — subscription billing logic, invoicing, payment gateway integration, dunning management, and revenue recognition workflows.",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "category": "engineering",
       "tags": [
         "billing",
