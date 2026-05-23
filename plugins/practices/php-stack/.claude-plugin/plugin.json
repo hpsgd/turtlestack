@@ -1,0 +1,17 @@
+{
+  "name": "php-stack",
+  "description": "Framework-specific conventions for PHP — EventSauce event sourcing, symfony/messenger buses, Doctrine read models",
+  "version": "3.0.1",
+  "author": {
+    "name": "hps.gd"
+  },
+  "repository": "https://github.com/hpsgd/turtlestack",
+  "license": "Unlicense",
+  "keywords": [
+    "php",
+    "eventsauce",
+    "messenger",
+    "doctrine",
+    "event-sourcing"
+  ]
+}

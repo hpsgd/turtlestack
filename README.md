@@ -50,6 +50,7 @@ A plugin marketplace for Claude Code. Agents, skills, rules, and conventions tha
     - [DevOps](#devops)
     - [.NET Developer](#net-developer)
     - [Performance Engineer](#performance-engineer)
+    - [PHP Developer](#php-developer)
     - [Python Developer](#python-developer)
     - [QA Engineer](#qa-engineer)
     - [QA Lead](#qa-lead)
@@ -92,6 +93,7 @@ Add a technology stack if relevant:
 ```
 /plugin install dotnet-stack@turtlestack
 /plugin install nextjs-stack@turtlestack
+/plugin install php-stack@turtlestack
 /plugin install python-stack@turtlestack
 ```
 
@@ -135,6 +137,7 @@ Browse the full [plugin list](#plugins) below to see what else is available.
     "code-reviewer@turtlestack": true,
     "dotnet-stack@turtlestack": true,
     "nextjs-stack@turtlestack": true,
+    "php-stack@turtlestack": true,
     "python-stack@turtlestack": true,
     "plugin-curator@turtlestack": true,
     "publishing@turtlestack": true,
@@ -155,6 +158,7 @@ Browse the full [plugin list](#plugins) below to see what else is available.
     "billing-engineer@turtlestack": true,
     "react-developer@turtlestack": true,
     "dotnet-developer@turtlestack": true,
+    "php-developer@turtlestack": true,
     "python-developer@turtlestack": true,
     "ai-engineer@turtlestack": true,
     "qa-lead@turtlestack": true,
@@ -216,6 +220,7 @@ TypeScript, .NET, Python conventions, git workflow, testing, architecture, AI st
 | [dotnet](plugins/practices/coding-standards/rules/dotnet.md) | .NET / C# language conventions and project patterns |
 | [event-sourcing](plugins/practices/coding-standards/rules/event-sourcing.md) | Event Sourcing, CQRS, and DDD patterns |
 | [git-and-ci](plugins/practices/coding-standards/rules/git-and-ci.md) | Git workflow, branching, CI/CD, and commit conventions |
+| [php](plugins/practices/coding-standards/rules/php.md) | PHP language conventions and engineering standards |
 | [python](plugins/practices/coding-standards/rules/python.md) | Python language conventions and engineering standards |
 | [spec-driven-development](plugins/practices/coding-standards/rules/spec-driven-development.md) | Specs before code, acceptance criteria before implementation |
 | [strict-validation](plugins/practices/coding-standards/rules/strict-validation.md) | Strict validation principles |
@@ -228,6 +233,7 @@ TypeScript, .NET, Python conventions, git workflow, testing, architecture, AI st
 | [review-typescript](plugins/practices/coding-standards/skills/review-typescript/SKILL.md) | TypeScript/Next.js code review | [TS review](examples/practices/coding-standards/skills/review-typescript/result.md) |
 | [review-dotnet](plugins/practices/coding-standards/skills/review-dotnet/SKILL.md) | .NET/C# code review | [.NET review](examples/practices/coding-standards/skills/review-dotnet/result.md) |
 | [review-python](plugins/practices/coding-standards/skills/review-python/SKILL.md) | Python code review | [Python review](examples/practices/coding-standards/skills/review-python/result.md) |
+| [review-php](plugins/practices/coding-standards/skills/review-php/SKILL.md) | PHP code review | [PHP review](examples/practices/coding-standards/skills/review-php/result.md) |
 | [review-git](plugins/practices/coding-standards/skills/review-git/SKILL.md) | Git conventions review | [Git review](examples/practices/coding-standards/skills/review-git/result.md) |
 | [review-go](plugins/practices/coding-standards/skills/review-go/SKILL.md) | Go code review | — |
 | [review-standards](plugins/practices/coding-standards/skills/review-standards/SKILL.md) | Cross-cutting quality review | [Standards review](examples/practices/coding-standards/skills/review-standards/result.md) |
@@ -297,6 +303,7 @@ Framework-specific conventions. Install what matches your project.
 ```
 /plugin install dotnet-stack@turtlestack    # JasperFx (Wolverine/Marten) on .NET
 /plugin install nextjs-stack@turtlestack    # Next.js, React, Vercel
+/plugin install php-stack@turtlestack       # EventSauce + symfony/messenger
 /plugin install python-stack@turtlestack    # Django, python-eventsourcing
 ```
 
@@ -311,6 +318,12 @@ Framework-specific conventions. Install what matches your project.
 | Rule | Description |
 |---|---|
 | [nextjs](plugins/practices/nextjs-stack/rules/nextjs.md) | Next.js and React conventions |
+
+**php-stack rules:**
+
+| Rule | Description |
+|---|---|
+| [eventsauce-and-messenger](plugins/practices/php-stack/rules/eventsauce-and-messenger.md) | EventSauce + symfony/messenger conventions for event-sourced PHP |
 
 #### Thinking
 
@@ -823,6 +836,20 @@ Load testing, profiling, capacity planning, performance budgets. See [bottleneck
 | [load-test-plan](plugins/engineering/performance-engineer/skills/load-test-plan/SKILL.md) | Load test plan | [Load test plan](examples/engineering/performance-engineer/skills/load-test-plan/result.md) |
 | [performance-profile](plugins/engineering/performance-engineer/skills/performance-profile/SKILL.md) | Performance profiling report | [Perf profiling](examples/engineering/performance-engineer/skills/performance-profile/result.md) |
 | [capacity-plan](plugins/engineering/performance-engineer/skills/capacity-plan/SKILL.md) | Capacity planning analysis | [Capacity plan](examples/engineering/performance-engineer/skills/capacity-plan/result.md) |
+
+#### [PHP Developer](plugins/engineering/php-developer/agents/php-developer.md)
+
+Framework-agnostic modern PHP 8.4+ with PHPStan level 9, PHP-CS-Fixer (PER-CS), Pest + Behat, Infection mutation testing, readonly value objects, and event-sourced aggregates via EventSauce dispatched through symfony/messenger. See [aggregate implementation example](examples/engineering/php-developer/agents/php-developer/aggregate-implementation/result.md).
+
+```
+/plugin install php-developer@turtlestack
+```
+
+| Skill | Description | Example |
+|---|---|---|
+| [write-feature-spec](plugins/engineering/php-developer/skills/write-feature-spec/SKILL.md) | Behat feature specification | [Feature spec](examples/engineering/php-developer/skills/write-feature-spec/result.md) |
+| [write-aggregate](plugins/engineering/php-developer/skills/write-aggregate/SKILL.md) | Event-sourced aggregate (EventSauce) | [Aggregate authoring](examples/engineering/php-developer/skills/write-aggregate/result.md) |
+| [write-handler](plugins/engineering/php-developer/skills/write-handler/SKILL.md) | symfony/messenger command/query/event handler | [Handler authoring](examples/engineering/php-developer/skills/write-handler/result.md) |
 
 #### [Python Developer](plugins/engineering/python-developer/agents/python-developer.md)
 

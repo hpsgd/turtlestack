@@ -1,6 +1,6 @@
 {
   "name": "coding-standards",
-  "description": "Shared coding conventions for TypeScript, .NET, Python, plus git workflow, testing, architecture, and AI steering rules",
+  "description": "Shared coding conventions for TypeScript, .NET, Python, PHP, plus git workflow, testing, architecture, and AI steering rules",
   "version": "3.0.1",
   "author": {
     "name": "hps.gd"
@@ -11,6 +11,7 @@
     "typescript",
     "dotnet",
     "python",
+    "php",
     "conventions",
     "testing",
     "git"

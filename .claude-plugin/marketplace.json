@@ -12,13 +12,14 @@
     {
       "name": "coding-standards",
       "source": "./plugins/practices/coding-standards",
-      "description": "Shared coding conventions for TypeScript, .NET, Python, plus git workflow, testing, architecture, and AI steering rules",
+      "description": "Shared coding conventions for TypeScript, .NET, Python, PHP, plus git workflow, testing, architecture, and AI steering rules",
       "version": "3.0.1",
       "category": "practices",
       "tags": [
         "typescript",
         "dotnet",
         "python",
+        "php",
         "conventions",
         "testing",
         "git"
@@ -103,6 +104,20 @@
         "django",
         "eventsourcing",
         "pydantic"
+      ]
+    },
+    {
+      "name": "php-stack",
+      "source": "./plugins/practices/php-stack",
+      "description": "Framework-specific conventions for PHP — EventSauce event sourcing, symfony/messenger buses, Doctrine read models",
+      "version": "3.0.1",
+      "category": "practices",
+      "tags": [
+        "php",
+        "eventsauce",
+        "messenger",
+        "doctrine",
+        "event-sourcing"
       ]
     },
     {
@@ -377,6 +392,21 @@
         "ruff",
         "mypy",
         "bdd"
+      ]
+    },
+    {
+      "name": "php-developer",
+      "source": "./plugins/engineering/php-developer",
+      "description": "PHP developer — modern PHP 8.4+, PHPStan max, PHP-CS-Fixer (PER-CS), Pest + Behat, readonly value objects, EventSauce, symfony/messenger, Doctrine",
+      "version": "3.0.1",
+      "category": "engineering",
+      "tags": [
+        "php",
+        "phpstan",
+        "pest",
+        "behat",
+        "eventsauce",
+        "ddd"
       ]
     },
     {
