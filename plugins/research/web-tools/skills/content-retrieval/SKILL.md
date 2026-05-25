@@ -150,23 +150,24 @@ The output MUST follow this exact structure. Every section is mandatory — writ
 
 **Availability check:**
 \`\`\`bash
-$ npx playwright --version
+$ command -v docker
 [paste actual output, or "command not found" if unavailable]
 \`\`\`
 
 **robots.txt + ToS acknowledgement:**
 > Tier 3 (browser automation) bypasses robots.txt; this retrieval has a legitimate research purpose ([restate the purpose]) and the site's ToS does not prohibit automated reading. Confirmed before proceeding.
 
-**Intended Playwright command:**
-\`\`\`javascript
-await page.goto(url, { waitUntil: 'networkidle' });
-await page.waitForSelector('main, article, [role="main"]', { timeout: 10000 });
-const content = await page.content();
+**Intended invocation:**
+\`\`\`bash
+"${CLAUDE_PLUGIN_ROOT}/skills/content-retrieval/scripts/fetch-rendered.sh" \\
+  "[URL]" \\
+  --wait-for "main, article, [role='main']" \\
+  --timeout 30000
 \`\`\`
-(Bare `page.content()` after navigate would miss JS-rendered content.)
+(The wrapper runs Playwright inside its Docker image and waits for network-idle plus the named selector before reading the DOM — bare `page.content()` would miss JS-rendered content.)
 
 ### Tier 3 — Execution
-[Result: extracted content summary / partial extraction with selector that timed out / skipped because Playwright unavailable]
+[Result: extracted content summary / partial extraction with selector that timed out / skipped because Docker unavailable]
 
 ### Tier 4 — Human Escalation Options (REQUIRED — listed even when not used)
 1. Manual download by the user from the URL
