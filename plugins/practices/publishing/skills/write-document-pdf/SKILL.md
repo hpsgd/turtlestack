@@ -55,9 +55,31 @@ User-supplied paths under `$HOME` and `/tmp` resolve inside the container identi
 
 The script prints the output path on success and exits non-zero on failure. Capture stderr so any rendering errors surface back to the user.
 
-## Step 5: Confirm path
+## Step 5: Verify the output
 
-Output the absolute path to the generated PDF. Don't claim success without verifying the file exists and has non-zero size — `[ -s <path> ]`.
+Don't claim success without running these checks:
+
+```bash
+# File exists and is non-empty
+[ -s <path> ] || { echo "render failed: empty or missing output"; exit 1; }
+
+# Valid PDF and page count
+file <path>
+
+# Embedded fonts — Mona Sans + Inter should both appear; absence means a silent fallback to Helvetica
+pdffonts <path> 2>/dev/null || grep -ao '/BaseFont [^ ]*' <path> | sort -u
+```
+
+`file <path>` reports something like `PDF document, version 1.4, 2 pages` — copy that line into the chat so the page count and PDF magic are visible. `pdffonts` (or the `grep` fallback when `pdffonts` isn't installed) confirms the brand fonts embedded; if `MonaSans-Regular` and `Inter-Regular` are missing, the render fell back to Helvetica and the user needs to know.
+
+## Step 6: Report what happened
+
+After verification, surface the following in your chat reply:
+
+- The absolute path to the PDF.
+- The mechanism — name the wrapper script (`render-document-pdf.sh`) so the user knows what fired. If this was a first run, mention that the Docker image was built; otherwise note that the cached image was reused.
+- The verification evidence — the `file` output (page count, PDF version) and the embedded font check.
+- A one-line note on typical next steps for a document PDF: sharing with stakeholders, archiving alongside source markdown, or sideloading to a tablet for review. Don't open the PDF.
 
 ## Cover page from frontmatter
 
