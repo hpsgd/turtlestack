@@ -1,3 +1,10 @@
+---
+# Match the model the agent declares (`model: sonnet` in
+# open-source-researcher.md). Multi-source research is variance-prone on
+# Haiku; Sonnet is what the agent expects at runtime.
+target-model: claude-sonnet-4-6
+---
+
 # Test: open-source-researcher — topic research
 
 Scenario: A user needs background research on edge computing adoption in Australian manufacturing before a client meeting.
