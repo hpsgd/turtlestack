@@ -50,7 +50,7 @@ Confirm the absolute path of the PDF in your final message.
 - [ ] PASS: The PDF file exists with non-zero size — typically 30KB or larger because brand fonts (Mona Sans + Inter) are embedded.
 - [ ] PASS: The PDF has at least 2 pages (cover + body). Cover page shows the title "External Product Assessment", subtitle "VisualCare", and a metadata table with Date / Author / Status rows.
 - [ ] PASS: Skill does NOT modify the input markdown — only writes the new PDF.
-- [ ] PASS: Skill output identifies the renderer's wrapper script (`render-document-pdf.sh`) or the Python entry. On first run, the wrapper installs `xhtml2pdf` and `markdown` (with `svglib<1.6` constraint) into a venv at `~/.cache/turtlestack/publishing-document-pdf-venv` (or equivalent override path).
+- [ ] PASS: Skill output identifies the renderer's wrapper script (`render-document-pdf.sh`) or the Python entry. On first run, the wrapper builds a Docker image (`turtlestack/publishing-document-pdf:<hash>`) from the bundled Dockerfile and reuses it thereafter; the host only needs Docker.
 - [ ] PARTIAL: Output mentions that the PDF can be shared with stakeholders, archived, or sideloaded.
 
 ## Output expectations
@@ -60,4 +60,4 @@ Confirm the absolute path of the PDF in your final message.
 - [ ] PASS: `assessment.pdf` is between 30KB and 5MB. Smaller suggests the brand fonts didn't embed (silent fallback to Helvetica); much larger suggests something other than a document PDF was written.
 - [ ] PASS: The PDF embeds Mona Sans and Inter fonts. A `pdffonts` check or grep on `/BaseFont` should show `MonaSans-Regular` and `Inter-Regular` (and possibly `Inter-Bold`) in the embedded font list.
 - [ ] PASS: The cover page is on page 1 and the body content (`# Executive summary`) starts on page 2 — the YAML frontmatter triggers the cover, and the body follows after the page break.
-- [ ] PARTIAL: The skill catches and surfaces any wrapper-script error (e.g. Python missing, venv creation failed) rather than reporting success and producing an empty file.
+- [ ] PARTIAL: The skill catches and surfaces any wrapper-script error (e.g. Docker missing — exit 69, image build failed) rather than reporting success and producing an empty file.
