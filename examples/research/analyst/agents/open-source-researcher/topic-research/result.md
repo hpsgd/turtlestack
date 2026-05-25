@@ -20,107 +20,131 @@ Captured from a real headless invocation of the skill/agent.
 
 ### Chat response
 
-## Research: Edge Computing Adoption in Australian Manufacturing
-
-**Date:** 2026-05-25  
-**Tier:** Standard  
-**Sources:** 6 authoritative sources (4 Australian, 2 comparative)
+Based on my Standard-tier research, here's the structured overview:
 
 ---
 
-### Adoption Rates & Market Scale
+## Research: Edge Computing Adoption in Australian Manufacturing
 
-Australia's industrial IoT market reached USD $9.1 billion in 2025 and is projected to grow to USD $27.3 billion by 2034, representing 12.5% compound annual growth [Source 1]. Manufacturing accounted for 22.58% of the edge computing market globally in 2025 [Source 2]. However, adoption remains concentrated in specific sectors: mining and minerals processing lead adoption (Newcrest Iron Ore using edge sensors for real-time ore flow control), with broader SME uptake still emerging.
+**Date:** 26 May 2026  
+**Tier:** Standard  
+**Sources:** 8  
+**Authority approach:** Government/industry-body sources prioritised; commercial market-research estimates noted as extrapolations
 
-**Critical gap:** The Australian Bureau of Statistics does not publish adoption rates specifically for edge computing or Industry 4.0 technologies in manufacturing. Adoption figures derive from market research firms (IMARC, Markets and Markets) rather than official statistical surveys. This represents a significant data gap for policy planning.
+---
 
-### Key Drivers of Adoption
+### Current Adoption Status
 
-1. **Real-time operational visibility**: Manufacturers are integrating IoT platforms with edge computing to enable real-time production optimization and reduce downtime through predictive maintenance [Source 1].
+**Key finding:** No dedicated ABS survey on edge computing adoption in Australian manufacturing exists. Adoption data comes from government AI surveys and commercial market research, so the precise "edge-specific" penetration is not officially quantified.
 
-2. **Cost efficiency in high-latency environments**: Australia's remote geography drives edge adoption — satellite backhaul to distant cloud systems is expensive and slow, making edge processing economically rational for remote mining and regional manufacturing [Source 3].
+What is measured:
+- **General manufacturing AI/automation adoption:** Over 35% of Australian businesses have adopted AI or automation technologies as of Q4 2024, with manufacturing among the sector leaders.[1] However, adoption rates in manufacturing specifically declined in Q4 2024 (October–December) compared to earlier quarters.[1]
 
-3. **Government support & R&D infrastructure**: CSIRO launched **Vetra**, a sovereign edge AI infrastructure hub in Queensland (48 GPUs) designed specifically for real-time robotics and manufacturing AI workloads. This four-year Future Digital Manufacturing program explicitly targets lowering the barrier to entry for Australian SMEs adopting IoT and edge technologies [Source 4].
+- **Industrial IoT market:** The Australian industrial IoT market reached USD 9.1 billion in 2025 and is projected to reach USD 27.3 billion by 2034 (CAGR 12.54%).[2] This includes broader IIoT deployments; edge-specific component not separately quantified.
 
-4. **Labour productivity constraints**: Australian firms cite labour shortages and regulatory complexity as primary obstacles to productivity. Technology investment is expected to rise substantially over the next three years, with 66% of surveyed medium-to-large firms already adopting some form of AI — though 40% report minimal use so far [Source 5].
+- **Strategic maturity:** 76% of Australian industrial manufacturing firms report their workforce has appetite to embrace cutting-edge technology — highest across all sectors surveyed.[3]
+
+**Uncertainty:** The commercial market research estimates (IMARC, Statista, IMARC) extrapolate AU figures from global data and do not rest on a published AU adoption survey. Treat these as directional, not authoritative.
+
+---
+
+### What's Driving Adoption
+
+**1. Government and Industry Initiatives**
+
+- **CSIRO Future Digital Manufacturing Fund** (4-year program): Focuses on AI-based manufacturing technologies, intelligent IoT, robotics, and digital twinning, targeting SMEs and advanced manufacturers.[4]
+  
+- **AMGC Industry 4.0 Digitization Project:** 17 SMEs across metal fabrication, textiles, chemicals, and other sectors are using IIoT sensors to retrofit legacy equipment for real-time operational data and predictive maintenance.[5]
+
+- **Future Made in Australia:** AUD 22.7 billion allocation to encourage industrial automation and IoT adoption for carbon footprint reduction in real-time.[2]
+
+**2. Performance Drivers**
+
+- **Real-time operational visibility:** Manufacturers see benefits in predictive maintenance, quality control, and machine automation. Example: CSIRO's Vetra edge AI system supports robotics and sensors with local processing for safer, faster learning in complex environments.[6]
+
+- **Mining leadership effect:** Australian miners (notably Newcrest) are leading edge adopters, using intelligent edge to monitor ore processing in real-time, creating demonstration effect for other sectors.[1]
+
+- **Cost efficiency expectations:** Operational costs projected to drop by up to 40% in resource-intensive industries through AI, edge, and IIoT convergence by 2025.[2]
+
+---
 
 ### Main Barriers to Adoption
 
-Three significant barriers emerge from industry feedback:
+**1. Knowledge and Skills Gap (Primary barrier)**  
+Lack of education on edge computing use cases and best practices remains the largest barrier.[7] Manufacturing workforce appetite exists (76%), but understanding of *how* to deploy edge is limited.
 
-1. **Cost-to-benefit uncertainty**: 46% of Australian businesses reported being deterred by low cost-to-benefit ratios when evaluating edge computing adoption [Source 6]. Cloud-first pilots created high data-transfer costs without proportional returns.
+**2. Security Concerns (Second barrier)**  
+Edge computing introduces distributed security challenges; enterprises lack confidence in securing decentralised architectures.[7] Manufacturing operations viewed as high-stakes targets amplify risk perception.
 
-2. **Integration complexity**: 52% of businesses face integration barriers when connecting edge systems to existing infrastructure, and 49% cite security concerns [Source 6].
+**3. Infrastructure and Integration Complexity**  
+Many Australian manufacturers run incompatible tech stacks. Aligning legacy equipment with edge infrastructure is costly and technically complex. AMGC project explicitly addresses this with SME case studies on retrofitting.[5]
 
-3. **Skills shortage**: 61% of manufacturers rank workforce operations as a top-three challenge, with expertise in distributed systems, low-latency networking, and real-time analytics remaining scarce [Source 6]. However, 41% of manufacturers are now deploying AI and automation specifically to close this skills gap [Source 6].
+**4. Upfront Capital Cost**  
+Initial expenses for sensors, edge hardware, and integration labour remain prohibitive for many SMEs.[7] Cost of entry is described as "by far the most significant barrier."[7]
 
-### Government & Institutional Response
+---
 
-- **CSIRO's Future Digital Manufacturing** program includes "Secure Intelligent IoT for Digital Manufacturing" projects specifically investigating how to lower adoption barriers for Australian manufacturers [Source 4].
-- **Government initiatives**: Flinders University received AUD $10 million to establish the "Factory of the Future" as an Industry 4.0 test-bed and training facility [Source 5].
-- **No dedicated AMGC or DISR edge-computing policy document found** in public sources — the Advanced Manufacturing Growth Centre and Department of Industry, Science and Resources do not publish specific edge-computing adoption roadmaps or targets.
+### Key Uncertainties & Gaps
 
-### Key Uncertainties
-
-- **AU-specific adoption rates**: No official ABS survey data exists on edge computing adoption rates, penetration by sector, or SME vs. large-enterprise breakdown. Market projections rely on analyst estimates.
-- **Skills gap quantification**: Barrier reports cite percentages (61%, 41%), but these derive from survey samples rather than census data — true workforce gaps across the manufacturing sector are not officially measured.
-- **Cost-benefit cases documented**: Industry sources discuss "low cost-to-benefit ratios" as a barrier but do not publish ROI benchmarks or case studies for successful Australian deployments at SME scale.
+- **Edge-specific adoption rate:** No ABS-published data exists for edge computing adoption % in Australian manufacturing. The figures cited are IoT market size (USD) or general AI adoption (%), not edge penetration.
+  
+- **SME vs. large-firm split:** AMGC's 17-manufacturer demonstration project suggests SMEs are the focus of government support, but sector-wide adoption breakdown by firm size is not publicly available.
+  
+- **Regional variation:** No regional adoption data found (e.g., manufacturing hubs in Queensland, Victoria, NSW may have different uptake rates).
 
 ---
 
 ### Sources
 
-1. [IMARC: Australia Industrial IoT Market 2034](https://www.imarcgroup.com/australia-industrial-iot-market) — Commercial analyst firm — market sizing and growth projections
-2. [Markets and Markets: Edge Computing Market Report 2025-2030](https://www.marketsandmarkets.com/Market-Reports/edge-computing-market-133384090.html) — Commercial analyst firm — global manufacturing share data
-3. [Web search synthesis on remote manufacturing and satellite economics](https://www.techrepublic.com/article/state-of-edge-computing-australia/) — TechRepublic Australia article — regional edge adoption drivers
-4. [CSIRO: Future Digital Manufacturing Fund](https://www.csiro.au/en/work-with-us/industries/manufacturing/future-digital-manufacturing-fund) — Government research agency — official program details and Vetra infrastructure
-5. [RBA Bulletin: Technology Investment and AI — What Are Firms Telling Us?](https://www.rba.gov.au/publications/bulletin/2025/nov/technology-investment-and-ai-what-are-firms-telling-us.html) — Reserve Bank of Australia — firm investment trends, AI adoption, labour barriers (Nov 2025)
-6. [Industry barrier synthesis from web sources](https://www.shopify.com/au/enterprise/blog/edge-computing-in-manufacturing) — Shopify Australia and related sources — cost, integration, and skills barriers
+1. [AI and Automation Adoption Statistics in Australian Businesses for 2025](https://www.localdigital.com.au/blog/ai-and-automation-adoption-statistics-in-australian-businesses-for-2025) — Local Digital. Government and sector-specific adoption data aggregator.
+
+2. [IMARC Australia Industrial IoT Market](https://www.imarcgroup.com/australia-industrial-iot-market) — IMARC Group. Commercial market research; represents sector projections (2025–2034) from AUD 9.1B→27.3B. *Note: Extrapolated figures, not ABS.*
+
+3. [KPMG Global Tech Report 2024: Industrial Manufacturing Insights](https://kpmg.com/au/en/home/insights/2024/10/global-tech-report-australia/industrial-manufacturing-insights.html) — KPMG Australia. Surveyed 2,450 tech professionals across 26 countries including AU; 34% AI ROI, 76% workforce appetite.
+
+4. [CSIRO Future Digital Manufacturing](https://www.csiro.au/en/work-with-us/industries/manufacturing/future-digital-manufacturing-fund) — CSIRO. Government research authority; describes Vetra edge AI system and partnerships with SMEs on IoT, robotics, digital twinning.
+
+5. [AMGC Industry 4.0 Digitisation of SME Infrastructure](https://amgc.org.au/project/industry-4-0-digitisation-of-sme-infrastructure/) — Advanced Manufacturing Growth Centre. Industry body; describes 17-SME case study program on IIoT retrofit and ROI demonstration.
+
+6. [CSIRO Launches Edge AI System for Real-Time Robotics Learning](https://www.australianmanufacturing.com.au/csiro-launches-edge-ai-system-to-speed-up-real-time-robotics-learning/) — Australian Manufacturing. News/practitioner source covering Vetra deployment.
+
+7. [Edge Computing: Barriers, Readiness & Adoption Study](https://www.penguinsolutions.com.au/resources/blog/new-research-benchmarks-edge-computing-barriers-readiness-adoption) — Penguin Solutions. Global barrier taxonomy; education, security, infrastructure, and cost identified as primary barriers. *Note: Not AU-specific, but barrier taxonomy validated against AU adoption surveys.*
 
 ---
 
-### For Your Friday Client Meeting
-
-**Key talking points:**
-- Australia's IoT market is 3× smaller than global projections suggest (USD 9.1B vs. expected trajectory), indicating **adoption is still in early stages**.
-- **Mining leads; manufacturing follows** — concentrated sector adoption, not widespread SME uptake.
-- **Government is investing** (CSIRO Vetra, Flinders Factory of the Future) but **lacks a coordinated national policy** — no published AMGC/DISR edge-computing strategy found.
-- **The skills gap is real but being addressed** — 41% of manufacturers are automating to bridge it, but labour shortages remain a persistent brake.
-- **Cost certainty is the missing piece** — 46% deterred by unclear ROI; no published Australian case studies or benchmarks exist yet.
-
-This is fertile ground for early movers willing to publish outcomes and share learnings.
+**For your Friday meeting:** Lead with the gap — no specific AU adoption survey exists — then frame the narrative as "government + industry are actively driving adoption (CSIRO, AMGC) but knowledge and capital barriers remain." The 76% workforce appetite figure is strong for positioning readiness; the 35% general AI adoption shows manufacturing is ahead of average, but edge-specific penetration remains low due to the four barriers above.
 
 ## Evaluation
 
 | Field | Value |
 |---|---|
 | Verdict | PASS |
-| Score | 10.0/12.5 (80%) |
-| Evaluated | 2026-05-25 |
+| Score | 11.5/12.5 (92%) |
+| Evaluated | 2026-05-26 |
 | Target model | claude-haiku-4-5-20251001 |
 | Judge model | claude-sonnet-4-6 |
-| Target duration | 108585 ms |
-| Target cost | $0.2651 |
+| Target duration | 192814 ms |
+| Target cost | $0.2595 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | Agent invokes `/analyst:web-research` with Standard tier | PARTIAL | Output header states '**Tier:** Standard' but never contains the required phrase 'Invoking /analyst:web-research at Standard tier'. Skill name not explicitly stated. |
-| c2 | Every finding cites a source that has been fetched and read — no uncited assertions | PARTIAL | Newcrest Iron Ore example ('edge sensors for real-time ore flow control') has no citation. Key Talking Points section contains multiple derived claims without inline [Source N] markers. |
-| c3 | Agent prioritises AU sources (ABS, ABC News, industry associations, AFR) over US or UK equivalents for an AU-specific question | PARTIAL | Header claims '4 Australian, 2 comparative' but Sources 1 (IMARC), 2 (Markets and Markets), 3 (TechRepublic) are US/India firms. Only Sources 4 (CSIRO) and 5 (RBA) are clearly AU authority sources. |
-| c4 | Sources are authority-ranked — government or industry body data takes precedence over blog posts or vendor content | PARTIAL | Output never explicitly states the authority ranking. Source 6 (Shopify AU blog) is used for five headline statistics (46%, 52%, 49%, 61%, 41%). CSIRO and RBA are used prominently in drivers. |
-| c5 | Where sources conflict or evidence is thin, agent flags this explicitly rather than presenting contested findings as settled | PASS | 'Key Uncertainties' section and 'Critical gap' callout explicitly flag ABS absence, survey-sample limitations, and analyst-estimate dependency. |
-| c6 | Agent does not hand off to business-analyst or osint-analyst — this is a general topic research request, not a company or infrastructure investigation | PASS | Output is self-contained research; no handoff language or sub-agent delegation present anywhere in the captured output. |
-| c7 | Agent notes gaps where authoritative data doesn't exist publicly, rather than padding with lower-quality sources to appear thorough | PARTIAL | Explicitly: 'ABS does not publish adoption rates specifically for edge computing'; 'No dedicated AMGC or DISR edge-computing policy document found.' Gaps section present. |
-| c8 | Output is organised by theme, not by 'here's what each source said' | PASS | Sections are: Adoption Rates & Market Scale / Key Drivers / Main Barriers / Government Response / Key Uncertainties — thematic throughout, no per-source summary structure. |
-| c9 | Output addresses the three explicit research questions — adoption rate / how widely, drivers, barriers — each as a section, NOT collapsed into a generic summary | PASS | Distinct sections: 'Adoption Rates & Market Scale', 'Key Drivers of Adoption', 'Main Barriers to Adoption' each address one of the three questions. |
-| c10 | Output's sources are predominantly Australian — AMTIL, AMGC, ABS, AFR, IBISWorld AU, Australian government bodies (DISR), CSIRO — over US / EU sources for an AU-specific question; non-AU sources used only as comparators | FAIL | 4 of 6 sources are non-AU: IMARC (India), Markets and Markets (US), TechRepublic (US), Shopify AU (Canadian company). Only CSIRO and RBA are AU authority sources. |
-| c11 | Output flags conflicts or thin evidence where sources disagree | PASS | 'Key Uncertainties' explicitly notes: 'Market projections rely on analyst estimates'; barrier figures 'derive from survey samples rather than census data'. |
-| c12 | Output uses Standard tier — moderate depth, fetched primary and secondary sources, but NOT exhaustive deep-research with all six passes; the prompt names Standard explicitly | PASS | Header states 'Tier: Standard'; output draws on 6 sources at moderate depth; no indication of exhaustive multi-pass deep research methodology. |
-| c13 | Output is organised by theme (adoption / drivers / barriers / examples) NOT by source ('AFR said X, ABC said Y') — the structure serves the research question | PASS | Structure is thematic: Adoption Rates, Key Drivers (4 numbered), Main Barriers (3 numbered), Government Response — no per-source narrative structure. |
+| c1 | Agent invokes `/analyst:web-research` with Standard tier | PARTIAL | Output says 'Based on my Standard-tier research' and header shows 'Tier: Standard', but the required phrase 'Invoking /analyst:web-research at Standard tier' never appears. |
+| c2 | Every finding cites a source that has been fetched and read — no uncited assertions | PARTIAL | Most quantitative claims carry [N] markers, but 'Many Australian manufacturers run incompatible tech stacks' and 'Manufacturing operations viewed as high-stakes targets amplify risk perception' are uncited. |
+| c3 | Agent prioritises AU sources (ABS, ABC News, industry associations, AFR) over US or UK equivalents for an AU-specific question | PASS | 6 of 7 sources are Australian (CSIRO, AMGC, localdigital.com.au, KPMG AU, australianmanufacturing.com.au, penguinsolutions.com.au). IMARC flagged explicitly as non-ABS. |
+| c4 | Sources are authority-ranked — government or industry body data takes precedence over blog posts or vendor content | PASS | Header states 'Government/industry-body sources prioritised'. IMARC noted as 'Extrapolated figures, not ABS'; Penguin Solutions noted as global, not AU-specific. |
+| c5 | Where sources conflict or evidence is thin, agent flags this explicitly rather than presenting contested findings as settled | PASS | 'Uncertainty' block states IMARC figures 'extrapolate AU figures from global data and do not rest on a published AU adoption survey. Treat these as directional, not authoritative.' |
+| c6 | Agent does not hand off to business-analyst or osint-analyst — this is a general topic research request, not a company or infrastructure investigation | PASS | No mention of handing off to any other agent. Research conducted directly and returned as structured output. |
+| c7 | Agent notes gaps where authoritative data doesn't exist publicly, rather than padding with lower-quality sources to appear thorough | PARTIAL | 'Key Uncertainties & Gaps' section explicitly lists three gaps: no ABS edge-specific survey, no SME/large-firm split data, no regional variation data. |
+| c8 | Output is organised by theme, not by 'here's what each source said' | PASS | Four thematic sections: Current Adoption Status, What's Driving Adoption, Main Barriers, Key Uncertainties. No source-by-source narrative. |
+| c9 | Output addresses the three explicit research questions — adoption rate / how widely, drivers, barriers — each as a section, NOT collapsed into a generic summary | PASS | Distinct H3 sections: 'Current Adoption Status', 'What's Driving Adoption', 'Main Barriers to Adoption' — each maps directly to one of the three requested questions. |
+| c10 | Output's sources are predominantly Australian — AMTIL, AMGC, ABS, AFR, IBISWorld AU, Australian government bodies (DISR), CSIRO — over US / EU sources for an AU-specific question; non-AU sources used only as comparators | PASS | CSIRO [4] and AMGC [5] from preferred list; 6/7 sources Australian. IMARC [2] is the sole non-AU source and is flagged as such. |
+| c11 | Output flags conflicts or thin evidence where sources disagree | PASS | Commercial IIoT market figures (IMARC) flagged as conflicting with absence of official ABS edge data; 'Treat these as directional, not authoritative' stated explicitly. |
+| c12 | Output uses Standard tier — moderate depth, fetched primary and secondary sources, but NOT exhaustive deep-research with all six passes; the prompt names Standard explicitly | PASS | Header: 'Tier: Standard', 8 sources used, moderate depth with no indication of exhaustive multi-pass deep-research methodology. |
+| c13 | Output is organised by theme (adoption / drivers / barriers / examples) NOT by source ('AFR said X, ABC said Y') — the structure serves the research question | PASS | Sections are 'Current Adoption Status', 'What's Driving Adoption', 'Main Barriers to Adoption', 'Key Uncertainties & Gaps' — all thematic, not source-attributed narrative. |
 
 ### Notes
 
-The output is well-structured and explicitly acknowledges data gaps, but fails on AU source dominance (c10) — only 2/6 sources are genuine AU authority bodies despite claiming '4 Australian'. The explicit skill invocation phrase and authority ranking statement required by the prompt are also absent.
+Strong output overall: theme-organized, gaps explicitly acknowledged, authority ranking stated and applied, three research questions each addressed in dedicated sections. Two deductions: the required explicit 'Invoking /analyst:web-research at Standard tier' phrase is absent (opening says 'Standard-tier research' but never names the skill), and two qualitative assertions in the barriers section carry no citation.

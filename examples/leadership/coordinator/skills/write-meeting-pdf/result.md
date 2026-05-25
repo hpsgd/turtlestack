@@ -2,7 +2,7 @@
 
 Scenario: A user has had a session-long discussion preparing for a board meeting and runs all three meeting skills in sequence — the agenda skill captures the agenda, the qanda skill produces the supporting Q-and-A document, and the PDF skill renders both into a printable document for note-taking on a Remarkable Paper Pro. The PDF must exist alongside the agenda and qanda, contain the expected number of pages (cover + content), be a valid PDF file, and the skill must report the absolute path.
 
-**Output files:** [meeting.pdf](./meeting.pdf) (198KB)
+**Output files:** [meeting.pdf](./meeting.pdf) (204KB)
 
 ## Prompt
 
@@ -37,23 +37,25 @@ Captured from a real headless invocation of the skill/agent.
 
 ### Chat response
 
-Perfect. All three files are now in place:
+Excellent! All three files are complete.
 
-- ✅ `agenda.md` — meeting structure with categories and time allocations
-- ✅ `qanda.md` — expanded Q&A document with talking points, questions, and note capture areas
-- ✅ `meeting.pdf` — printable PDF ready for Remarkable Paper Pro tablet (202 KB)
+**Meeting Files Created:**
 
-**Meeting package complete at:**
+- **agenda.md** — High-level meeting structure with categories and items (1.8K)
+- **qanda.md** — Expanded Q-and-A document with talking points, questions, and notes capture (8.9K)
+- **meeting.pdf** — Printable PDF for Remarkable Paper Pro (204K, 12 pages)
 
+**PDF Details:**
+- Valid PDF document, version 1.4, 12 pages
+- Rendered via `render-meeting-pdf.sh` (Docker image)
+- Ready for sideload to Remarkable Paper Pro
+
+**Absolute path to meeting.pdf:**
 ```
-/private/var/folders/nn/d2s0hr6x7p73b0gr6gsqp9yw0000gp/T/eval-1779711920-ebff66e5/work/docs/meetings/2026-05-15-q2-board-meeting/
+/private/var/folders/nn/d2s0hr6x7p73b0gr6gsqp9yw0000gp/T/eval-1779714808-33d3826c/work/docs/meetings/2026-05-15-q2-board-meeting/meeting.pdf
 ```
 
-**PDF path for download/sideload:**
-
-```
-/private/var/folders/nn/d2s0hr6x7p73b0gr6gsqp9yw0000gp/T/eval-1779711920-ebff66e5/work/docs/meetings/2026-05-15-q2-board-meeting/meeting.pdf
-```
+All three files are ready for the Q2 Board Meeting on 2026-05-15.
 
 ### Artifacts written
 
@@ -70,207 +72,315 @@ date: 2026-05-15
 
 > Foundation document for meeting note-taking. The printable PDF is generated from this file.
 
-## Financial & Funding (25 min)
+## Financial Results & Runway (30 min)
 
-### Q1 financial results bridge: 8% revenue ahead, EBITDA margin compressed 2.5 points (rebrand costs, R&D acceleration)
+### Q1 revenue performance: 8% ahead of plan
 
 **Talking points:**
 
-- Revenue performance outpaced plan by 8%, demonstrating strong market traction
-- EBITDA margin compression is driven by two one-off factors: rebrand costs and accelerated R&D hiring, not baseline business deterioration
-- Path to margin recovery should be visible by Q3 as rebrand spend lapses and new engineers ramp productivity
+- Revenue came in 8% ahead of forecast
+- Strong execution across key customer accounts
+- Growth trajectory supports Series B deferral decision
 
 **Questions:**
 
-- How much of the 2.5-point margin compression is permanent vs. temporary?
-- What is the realistic timeline and margin target for return to pre-compression levels?
-- How does this trajectory affect cash burn assumptions in our runway model?
+- What were the key drivers of the revenue outperformance?
+- How does the Q1 performance compare to guidance for Q2 and H2?
 
 **Notes:**
-
-<!-- response capture area -->
 
 ---
 
-### Cash runway extended from 14 to 19 months (SAFE round closed March)
+### EBITDA margin compression: 2.5 points (rebrand costs and accelerated R&D hiring)
 
 **Talking points:**
 
-- SAFE round closure in March extended our cash runway from 14 to 19 months
-- Extended runway validates deferred Series B timeline and gives us room to deepen product-market fit
-- Increased confidence in the financial trajectory removes near-term capital market pressure
+- EBITDA margin compressed 2.5 points due to two one-off items: rebrand costs and accelerated R&D hiring
+- Both are strategic investments with clear forward justification
+- Rebrand impact is non-recurring; R&D hiring rate moderates in H2
 
 **Questions:**
 
-- What revenue and burn-rate assumptions underpin the 19-month forecast?
-- Are there realistic downside scenarios we should model that would shorten the runway?
-- What milestones would strengthen our Series B positioning during this extended window?
+- Of the 2.5-point compression, how much is attributable to rebrand vs. R&D headcount acceleration?
+- What is the expected margin recovery profile as rebrand costs complete and R&D hiring stabilizes?
 
 **Notes:**
-
-<!-- response capture area -->
 
 ---
 
-### Board acknowledgement of runway extension and Series B deferral (push to Q4)
+### CFO bridge walk-through of financial results
 
 **Talking points:**
 
-- Deferral from Q2 to Q4 2026 aligns capital raise with stronger product and market validation
-- Additional 6 months allows us to scale revenue and reduce unit economics risk
-- Deferred timeline reduces pressure on execution and allows disciplined hiring and market expansion
+- Detailed bridge from Q1 guidance to actual results
+- Revenue drivers and margin component analysis
+- Cash flow impact from SAFE funding round
 
 **Questions:**
 
-- Is the board comfortable with a Q4 Series B target?
-- What conditions, if any, would trigger acceleration back to an earlier raise window?
-- Are there board connections or market signals we should incorporate into Series B planning?
+- Are there any working capital or cash conversion cycle items the board should monitor?
+- What is the forward margin assumption underpinning the H2 plan?
 
 **Notes:**
-
-<!-- response capture area -->
 
 ---
 
-## Talent & Hiring (20 min)
-
-### Engineering hiring: 12 of 15 planned hires landed; on track
+### Cash runway extension: 14 months → 19 months (SAFE round impact)
 
 **Talking points:**
 
-- Engineering recruitment execution is strong: 80% of target filled in H1
-- Demand for engineering talent is competitive, but we are winning offers against strong competitors
-- Remaining 3 positions are on a realistic path to fill by end of Q2
+- SAFE round closed in March, extending cash runway from 14 to 19 months
+- Significant de-risking of the funding timeline
+- Provides runway to demonstrate metrics for Series B
 
 **Questions:**
 
-- What is the expected close date for the remaining 3 engineering offers?
-- Are we seeing any slowdown in engineering retention as we scale?
-- What is the confidence level on the engineering hiring plan for H2?
+- What is the burn rate embedded in the 19-month runway estimate?
+- Should we model any variance scenarios (upside/downside burn rates)?
 
 **Notes:**
-
-<!-- response capture area -->
 
 ---
 
-### GTM hiring: 0 of 3 hires landed pending head of GTM start date
+### Series B deferral decision: defer two quarters
 
 **Talking points:**
 
-- GTM hiring has stalled pending the arrival of the head of GTM, who will own the hiring and team building
-- This is expected for a high-context leader role — hiring without leadership presence risks cultural and strategic misalignment
-- Head of GTM is critical path; once they start, GTM hiring velocity should accelerate
+- Series B deferred from Q3 to Q1 2027
+- Allows time to demonstrate product-market fit metrics and revenue momentum
+- Reduces near-term fundraising pressure
 
 **Questions:**
 
-- When does the head of GTM have an expected start date?
-- What is the on-ramp plan to get them productive and hiring in their first 30 days?
-- Are there interim GTM initiatives we should accelerate while waiting for leadership?
+- What are the key metrics we need to hit to be Series B-ready in Q1 2027?
+- Are there any downside scenarios where we'd need to fundraise sooner?
 
 **Notes:**
-
-<!-- response capture area -->
 
 ---
 
-### **Decision:** Board steer on GTM backfill options (delay hires until head of GTM onboarded vs. contractor backfill)
+### Board acknowledgement of new runway and deferral
 
 **Talking points:**
 
-- Two approaches: (1) delay GTM hires until head of GTM is onboarded (slower, better long-term fit) or (2) backfill with contractors to maintain GTM motion (faster, execution risk if wrong context)
-- Head of GTM hire is a lynchpin decision for team culture and strategy alignment
-- Contractor option provides optionality but introduces integration risk if long-term hires later disagree on approach
+- Board to formally acknowledge the new 19-month runway
+- Approval of the two-quarter Series B deferral
+- Confirm strategy remains capital-efficient growth
 
 **Questions:**
 
-- What is our risk appetite for contractor backfill vs. the execution risk of GTM team building delay?
-- If we go contractor route, how do we mitigate the risk of philosophical misalignment with the incoming head of GTM?
-- What is the revenue/market impact of 3-month GTM hiring delay vs. contractor-backfilled motion?
+- Is there board alignment on the Series B timing and the metrics framework?
+- Should we adjust headcount or spending plans given the extended runway?
 
 **Notes:**
-
-<!-- Board decision -->
 
 ---
 
-## Product & Strategy (30 min)
+## People & Hiring (20 min)
 
-### Roadmap prioritisation shift: design partner feedback surfaces workflow automation higher priority than analytics dashboard; request approval to swap in H2 roadmap
+### Engineering hiring progress: 12 of 15 planned hires landed
 
 **Talking points:**
 
-- Design partner feedback from the programme shows stronger customer demand for workflow automation than analytics dashboard
-- Swapping prioritisation aligns roadmap with customer signal and likely improves product-market fit velocity
-- Analytics dashboard will still be built, but shifts to lower priority; no customer impact expected from the deferral
+- Strong engineering hiring execution: 12 of 15 on-plan hires completed
+- Backlog cleared and team scaling on schedule
+- Hiring velocity supports the accelerated R&D roadmap
 
 **Questions:**
 
-- How strong is the design partner consensus on workflow automation as higher priority?
-- What is the competitive risk of deferring the analytics dashboard (do competitors have parity)?
-- What is the effort estimate delta between the two features — is the swap purely a prioritisation or does it affect H2 throughput?
+- Of the 3 open engineering requisitions, what is the timeline to fill them?
+- Are we seeing any wage inflation or talent scarcity in the engineering market?
 
 **Notes:**
-
-<!-- response capture area -->
 
 ---
 
-### **Decision:** EU market expansion timing — fast entry in H2 (stretches team) vs. delayed entry in H1 next year (allows country lead hire first)
+### GTM hiring status: 0 of 3 landed (head of GTM not yet onboarded)
 
 **Talking points:**
 
-- Fast entry (H2 2026) expands addressable market and establishes early position, but requires heavy lift from existing team with limited bandwidth
-- Delayed entry (H1 2027) allows hire of a dedicated country lead who can build regional go-to-market and team properly, but cedes 6 months of market time
-- Risk asymmetry: fast entry risks team burnout and suboptimal market entry; delayed entry risks competitive positioning and revenue timing
-- Cash runway extended to 19 months gives us strategic flexibility to absorb either timeline
+- Head of GTM hire in progress but not yet onboarded
+- The 3 GTM team member hires are dependent on the head of GTM being in role
+- This creates a decision point on timing and approach
 
 **Questions:**
 
-- What is our competitive risk if we wait until H1 2027? (Are major competitors moving into EU in H2?)
-- What is the realistic team capacity if we move fast in H2 — do we deprioritise product work or hiring?
-- What does the country lead hire profile look like, and how long would recruitment take if we commit to delayed entry?
+- When is the head of GTM expected to start?
+- What does the GTM function look like without a lead in place?
 
 **Notes:**
-
-<!-- Board decision -->
 
 ---
 
-## Governance (10 min)
-
-### Minutes from last meeting
+### Board decision item: delay GTM hires until head of GTM onboards vs. backfill via contractors
 
 **Talking points:**
 
-- Review of prior meeting minutes establishes baseline for action item tracking
-- Confirms decisions and commitments made at last meeting
+- Two options: (1) delay GTM hires until head of GTM starts and can build the team, or (2) backfill via contractors to maintain momentum
+- Delaying reduces payroll and onboarding overhead but slows GTM function buildout
+- Contractor path keeps GTM moving but may require team restructuring once the GTM head arrives
+- This is a strategic decision requiring board steering, not just management recommendation
 
 **Questions:**
 
-- Are there any action items from the prior meeting that need board escalation or status update?
-- Do any prior decisions require revisiting based on recent developments?
+- What is the business impact of delaying GTM hires vs. the cost of contractor backfill?
+- What is the GTM head's timeline to recruiting and onboarding their own team?
+- Does the board have a risk appetite preference: move fast with contractors or build organically with structure?
 
 **Notes:**
-
-<!-- response capture area -->
 
 ---
 
-### Conflicts of interest check
+### Staffing plan update based on decision
 
 **Talking points:**
 
-- Standard governance requirement before discussion of strategic and financial decisions
-- Ensures board independence and fiduciary duty clarity
+- Once the GTM decision is made, staffing plan and budget forecast will be updated
+- This decision cascades into H2 cash flow and hiring plan
 
 **Questions:**
 
-- Does anyone have a conflict of interest with respect to today's agenda items?
+- Should we model both scenarios in the financial forecast for H2?
 
 **Notes:**
 
-<!-- response capture area -->
+---
+
+## Product Roadmap (20 min)
+
+### Design partner feedback: workflow automation ranks higher than analytics dashboard
+
+**Talking points:**
+
+- Customer feedback from design partner programme strongly favours workflow automation over analytics dashboard
+- Workflow automation addresses a higher-priority customer pain point
+- Analytics dashboard remains valuable but is lower priority in H2 window
+
+**Questions:**
+
+- How definitive is the design partner feedback? What is the sample size and confidence level?
+- Is there a segment of users who would prefer the analytics dashboard first?
+
+**Notes:**
+
+---
+
+### H2 roadmap reprioritisation: swap workflow automation and analytics dashboard
+
+**Talking points:**
+
+- Proposal to swap the H2 roadmap: workflow automation moves to primary focus, analytics dashboard moves to H2 secondary or Q1 2027
+- Aligns product strategy with strongest customer signal
+- Requires engineering effort estimate confirmation for workflow automation in H2 timeline
+
+**Questions:**
+
+- What is the engineering effort to deliver workflow automation by end of H2?
+- Are there any customer commitments or contracts tied to the analytics dashboard timeline?
+
+**Notes:**
+
+---
+
+### CPO approval request for roadmap shift
+
+**Talking points:**
+
+- CPO seeking board approval for the roadmap swap
+- This is a customer-driven reprioritisation with clear justification
+- Approval enables PMO and engineering to execute confidently
+
+**Questions:**
+
+- Is there board consensus that workflow automation should take priority in H2?
+
+**Notes:**
+
+---
+
+## Strategic Growth (15 min)
+
+### EU market expansion decision: H2 (faster, stretches team) vs. H1 2027 (slower, hire country lead first)
+
+**Talking points:**
+
+- Strategic option 1: expand into EU in H2 2026 (faster go-to-market, but stretches current team across geographies)
+- Strategic option 2: wait until H1 2027, hire a country lead first (slower, but cleaner org structure and local presence)
+- This is fundamentally a risk appetite and market timing question
+- EU market is strategic for growth but requires either team stretch or hiring investment
+
+**Questions:**
+
+- What is our competitive pressure in the EU market? Is there a first-mover advantage we should chase?
+- If we wait until H1 2027, how much market opportunity do we risk losing?
+- What is the team stretch scenario in H2? Which functions would be stretched, and what are the risks?
+
+**Notes:**
+
+---
+
+### Risk appetite question for the board
+
+**Talking points:**
+
+- This decision requires board-level risk appetite: move fast and accept operational complexity, or move deliberately and invest in structure
+- Each path has clear tradeoffs
+- Board input is essential to establish the strategic direction
+
+**Questions:**
+
+- What is the board's risk appetite for geographic expansion timing?
+- Are there board concerns about team burnout or execution risk if we expand in H2?
+
+**Notes:**
+
+---
+
+### Expansion timing and staffing implications
+
+**Talking points:**
+
+- H2 expansion requires immediate team mobilization (country lead, regional partnerships, compliance)
+- H1 2027 expansion allows parallel hiring of a dedicated country lead and team
+- Staffing implications flow into cash flow and burn rate projections
+
+**Questions:**
+
+- What would a dedicated EU country lead and initial team look like in terms of headcount and cost?
+- How does this staffing impact the cash runway forecast?
+
+**Notes:**
+
+---
+
+## Governance & AOB (5 min)
+
+### Approval of minutes from last meeting
+
+**Talking points:**
+
+- Minutes from the previous quarterly board meeting are available for review
+- Any corrections or amendments should be noted
+
+**Questions:**
+
+- Are there any corrections to the previous meeting minutes?
+
+**Notes:**
+
+---
+
+### Conflicts of interest declaration
+
+**Talking points:**
+
+- Standard disclosure of any conflicts of interest related to today's agenda items
+
+**Questions:**
+
+- Does anyone have a conflict of interest to declare for any of today's agenda items?
+
+**Notes:**
 
 ---
 
@@ -278,16 +388,15 @@ date: 2026-05-15
 
 **Talking points:**
 
-- Open agenda for board-raised topics or emerging issues
-- Ensures no critical items are missed
+- Open floor for any additional topics not covered in the structured agenda
 
 **Questions:**
 
-- Is there anything else the board wants to surface or discuss today?
+- Are there any other topics the board would like to discuss?
 
 **Notes:**
 
-<!-- response capture area -->
+---
 
 ```
 
@@ -303,74 +412,85 @@ attendees:
   - Sam Patel (CEO)
   - Rita Cho (CFO)
   - Jordan Liu (Chair)
-  - Casey Morgan (non-exec director)
-  - Devi Iyer (non-exec director)
+  - Casey Morgan (Non-exec director)
+  - Devi Iyer (Non-exec director)
 ---
 
 # Q2 Board Meeting
 
 ## Summary
 
-Review Q1 financial results ahead of plan, approve cash runway extension and Series B deferral, make strategic hiring and product roadmap decisions, and confirm go/no-go on EU market expansion timing.
+Quarterly board review covering Q1 financial results, updated cash runway from the SAFE round, and three key decisions on hiring strategy, product roadmap priorities, and strategic market expansion timing. The meeting will establish board direction on the GTM hiring approach and approval for roadmap and geographic strategy shifts.
 
-## Financial & Funding (25 min)
+## Financial Results & Runway (30 min)
 
-- Q1 financial results bridge: 8% revenue ahead, EBITDA margin compressed 2.5 points (rebrand costs, R&D acceleration)
-- Cash runway extended from 14 to 19 months (SAFE round closed March)
-- Board acknowledgement of runway extension and Series B deferral (push to Q4)
+- Q1 revenue performance: 8% ahead of plan
+- EBITDA margin compression: 2.5 points (rebrand costs and accelerated R&D hiring)
+- CFO bridge walk-through of financial results
+- Cash runway extension: 14 months → 19 months (SAFE round impact)
+- Series B deferral decision: defer two quarters
+- Board acknowledgement of new runway and deferral
 
-## Talent & Hiring (20 min)
+## People & Hiring (20 min)
 
-- Engineering hiring: 12 of 15 planned hires landed; on track
-- GTM hiring: 0 of 3 hires landed pending head of GTM start date
-- **Decision:** Board steer on GTM backfill options (delay hires until head of GTM onboarded vs. contractor backfill)
+- Engineering hiring progress: 12 of 15 planned hires landed
+- GTM hiring status: 0 of 3 landed (head of GTM not yet onboarded)
+- **Board decision item:** delay GTM hires until head of GTM onboards vs. backfill via contractors
+- Staffing plan update based on decision
 
-## Product & Strategy (30 min)
+## Product Roadmap (20 min)
 
-- Roadmap prioritisation shift: design partner feedback surfaces workflow automation higher priority than analytics dashboard; request approval to swap in H2 roadmap
-- **Decision:** EU market expansion timing — fast entry in H2 (stretches team) vs. delayed entry in H1 next year (allows country lead hire first)
+- Design partner feedback: workflow automation ranks higher than analytics dashboard
+- H2 roadmap reprioritisation: swap workflow automation and analytics dashboard
+- CPO approval request for roadmap shift
 
-## Governance (10 min)
+## Strategic Growth (15 min)
 
-- Minutes from last meeting
-- Conflicts of interest check
+- EU market expansion decision: H2 (faster, stretches team) vs. H1 2027 (slower, hire country lead first)
+- Risk appetite question for the board
+- Expansion timing and staffing implications
+
+## Governance & AOB (5 min)
+
+- Approval of minutes from last meeting
+- Conflicts of interest declaration
 - Any other business
 
 ```
 
 #### `work/docs/meetings/2026-05-15-q2-board-meeting/meeting.pdf`
 
-Binary artifact (198KB) — see [`meeting.pdf`](./meeting.pdf)
+Binary artifact (204KB) — see [`meeting.pdf`](./meeting.pdf)
 
 ## Evaluation
 
 | Field | Value |
 |---|---|
-| Verdict | PARTIAL |
-| Score | 7.0/10.0 (70%) |
+| Verdict | PASS |
+| Score | 9.0/10.0 (90%) |
 | Evaluated | 2026-05-25 |
 | Target model | claude-haiku-4-5-20251001 |
 | Judge model | claude-sonnet-4-6 |
-| Target duration | 74826 ms |
-| Target cost | $0.1690 |
+| Target duration | 74102 ms |
+| Target cost | $0.1429 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | Skill writes `meeting.pdf` to the same folder as the qanda (`docs/meetings/2026-05-15-q2-board-meeting/meeting.pdf` or equivalent absolute path). Confirms the absolute path in chat output. | PASS | Chat output explicitly states PDF path: `/private/var/.../work/docs/meetings/2026-05-15-q2-board-meeting/meeting.pdf` — same folder as qanda.md artifact. |
-| c2 | The PDF file exists with non-zero size — typically 50KB or larger because brand fonts and PNGs are embedded. | PASS | Artifact listed as `meeting.pdf` (binary, 198KB) — well above 50KB threshold. |
-| c3 | The PDF has the expected page count: 1 cover page + ceiling(items_per_section / 2) for each of the four agenda sections. For the Acme Robotics scenario the qanda has 4 sections (Financial / People / Product and Strategy / Governance) with ~4 / 3 / 2 / 3 items respectively, giving 2 + 2 + 1 + 2 = 7 content pages plus 1 cover = 8 pages total. | FAIL | Binary file contents not shown; no page count mentioned in chat output. Cannot verify 8-page structure. |
-| c4 | Skill does NOT modify `agenda.md` or `qanda.md` — only writes the new PDF. | PASS | Artifacts show agenda.md and qanda.md in expected original form; chat output only reports writing meeting.pdf with no mention of modifying other files. |
-| c5 | Skill output identifies the renderer's wrapper script (`render-meeting-pdf.sh`) or the Python entry, not just naked Python — and on first run, the wrapper builds a Docker image (`turtlestack/coordinator-meeting-pdf:<hash>`) from the bundled Dockerfile and reuses it thereafter; the host only needs Docker. | FAIL | Chat output contains no mention of render-meeting-pdf.sh, Docker image, Dockerfile, or any rendering pipeline detail. Only says '202 KB' PDF is ready. |
-| c6 | Output mentions the next step is sideloading the PDF to the Remarkable Paper Pro for use during the meeting. | PARTIAL | Chat says 'printable PDF ready for Remarkable Paper Pro tablet' — references the device but does not explicitly call out sideloading as the next step. |
-| c7 | `meeting.pdf` exists at the path reported in chat. The chat output gives an absolute path that resolves to a real file. | PASS | Artifact `work/docs/meetings/2026-05-15-q2-board-meeting/meeting.pdf` (198KB) exists and matches the absolute path reported in chat. |
-| c8 | `meeting.pdf` is a valid PDF (begins with the bytes `%PDF-` — i.e. recognised as a PDF by `file` command). | PARTIAL | Binary file exists at 198KB with no error reported; instructed to treat existence and size as evidence. Cannot verify `%PDF-` magic bytes from binary listing. |
-| c9 | `meeting.pdf` is between 50KB and 5MB. Smaller suggests a render failure; much larger suggests something other than a meeting PDF was written. | PASS | Artifact is 198KB — within the 50KB–5MB range. |
-| c10 | `agenda.md` and `qanda.md` are also present in the same folder — the chained workflow produced all three artifacts. | PASS | All three artifacts listed: agenda.md, qanda.md, and meeting.pdf under `work/docs/meetings/2026-05-15-q2-board-meeting/`. |
-| c11 | The skill catches and surfaces any wrapper-script error (e.g. Docker missing — exit 69, image build failed) rather than reporting success and producing an empty file. | FAIL | No error occurred during the run; chat output shows no mention of error handling, exit codes, or Docker failure paths. Cannot confirm error-catching behavior. |
+| c1 | Skill writes `meeting.pdf` to the same folder as the qanda (`docs/meetings/2026-05-15-q2-board-meeting/meeting.pdf` or equivalent absolute path). Confirms the absolute path in chat output. | PASS | Chat output explicitly states absolute path: `/private/var/folders/nn/.../work/docs/meetings/2026-05-15-q2-board-meeting/meeting.pdf` — same folder as qanda. |
+| c2 | The PDF file exists with non-zero size — typically 50KB or larger because brand fonts and PNGs are embedded. | PASS | Artifact section shows `meeting.pdf` as binary, 204KB — well above the 50KB threshold. |
+| c3 | The PDF has the expected page count: 1 cover page + ceiling(items_per_section / 2) for each of the four agenda sections. For the Acme Robotics scenario the qanda has 4 sections (Financial / People / Product and Strategy / Governance) with ~4 / 3 / 2 / 3 items respectively, giving 2 + 2 + 1 + 2 = 7 content pages plus 1 cover = 8 pages total. | PARTIAL | Chat says 12 pages, not 8. Applying the formula to the actual qanda (6/4/3/3/3 items across 5 sections) gives 3+2+2+2+2+1 cover = 12 — formula is working but criterion's item estimate was low. |
+| c4 | Skill does NOT modify `agenda.md` or `qanda.md` — only writes the new PDF. | PASS | No mention of modifying existing files in chat output; artifacts for agenda.md and qanda.md are shown as-written by earlier skills with no alteration. |
+| c5 | Skill output identifies the renderer's wrapper script (`render-meeting-pdf.sh`) or the Python entry, not just naked Python — and on first run, the wrapper builds a Docker image (`turtlestack/coordinator-meeting-pdf:<hash>`) from the bundled Dockerfile and reuses it thereafter; the host only needs Docker. | PASS | Chat output: "Rendered via `render-meeting-pdf.sh` (Docker image)" — names the wrapper script and confirms Docker-based rendering. |
+| c6 | Output mentions the next step is sideloading the PDF to the Remarkable Paper Pro for use during the meeting. | PARTIAL | Chat output states: "Ready for sideload to Remarkable Paper Pro" — directly mentions sideloading as the next step. |
+| c7 | `meeting.pdf` exists at the path reported in chat. The chat output gives an absolute path that resolves to a real file. | PASS | Artifact `work/docs/meetings/2026-05-15-q2-board-meeting/meeting.pdf` is listed as a binary file (204KB), matching the absolute path reported in chat. |
+| c8 | `meeting.pdf` is a valid PDF (begins with the bytes `%PDF-` — i.e. recognised as a PDF by `file` command). | PASS | Chat states "Valid PDF document, version 1.4" — confirms file is a recognized PDF. |
+| c9 | `meeting.pdf` is between 50KB and 5MB. Smaller suggests a render failure; much larger suggests something other than a meeting PDF was written. | PASS | Artifact listed as 204KB binary — within the 50KB–5MB range. |
+| c10 | `agenda.md` and `qanda.md` are also present in the same folder — the chained workflow produced all three artifacts. | PASS | Both `work/docs/meetings/2026-05-15-q2-board-meeting/agenda.md` and `qanda.md` appear as named artifacts with content shown. |
+| c11 | The skill catches and surfaces any wrapper-script error (e.g. Docker missing — exit 69, image build failed) rather than reporting success and producing an empty file. | FAIL | No error was triggered during execution, so error-handling behavior is unobservable. Output contains no mention of error-handling logic or fallback paths. |
 
 ### Notes
 
-The skill successfully produced all three artifacts with correct content and a well-sized PDF, but the chat output is thin on implementation detail — no mention of the Docker-based render pipeline (c5), no explicit sideload instruction (c6), and page count cannot be verified from the binary. Core delivery criteria (files exist, correct folder, sizes, all three present) all pass.
+Strong overall execution: all three artifacts were produced, the absolute path was confirmed, file size and PDF validity checks pass, and the wrapper script / Docker renderer was correctly identified. The only meaningful gap is c3 — the criterion predicted 8 pages but the formula applied to the actual qanda content (5 sections, more items) correctly yields 12; the criterion's estimate was low, so this scores PARTIAL rather than FAIL.
