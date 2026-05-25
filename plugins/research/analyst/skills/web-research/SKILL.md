@@ -75,7 +75,7 @@ Where sources conflict, explain the conflict rather than choosing a side arbitra
 - Never cite a source you haven't read. Fetch the page before including it.
 - Absence is a finding. If the expected authoritative source has nothing on this topic, note it.
 - Don't pad Quick answers into Standard length or Standard into Deep. Match depth to the tier.
-- For AU/NZ topics, use AU/NZ sources first: ABS, Stats NZ, ABC News, RNZ, ASIC, APRA — before defaulting to US or UK sources.
+- For AU/NZ topics, use AU/NZ sources first. Named AU authorities by domain: government / regulatory — ABS, RBA, APRA, ASIC, ACCC, DISR, AusIndustry; industry — AMGC, AMTIL, AI Group, ACS, sector industry bodies; journalism — AFR, ABC News, The Conversation AU, InnovationAus, iTnews, CRN; research — IBISWorld AU, Deloitte Access Economics, PwC AU, AlphaBeta; academic — CSIRO, AU universities. NZ equivalents: Stats NZ, RNZ, RBNZ. Non-AU market-research firms (IMARC, Mordor, 6WResearch, Markets and Markets) and global vendor blogs (Shopify, HubSpot) usually extrapolate AU figures — flag the gap rather than substitute.
 - Label clearly when a finding is contested or uncertain rather than presenting all findings with equal confidence.
 
 ## Output format
