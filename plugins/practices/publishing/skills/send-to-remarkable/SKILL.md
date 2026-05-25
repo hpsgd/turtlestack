@@ -1,6 +1,6 @@
 ---
 name: send-to-remarkable
-description: "Upload a PDF to a reMarkable device (Paper Pro, rM2) wirelessly via the reMarkable cloud, using the ddvk/rmapi community CLI. Requires rmapi installed and paired once. Falls back to a manual-upload instruction if rmapi is missing or the upload fails."
+description: "Upload a PDF to a reMarkable device (Paper Pro, rM2) wirelessly via the reMarkable cloud. Wraps the ddvk/rmapi CLI inside a Docker image — Docker is the only host requirement. Requires a one-time interactive pairing (--pair) before normal uploads work. Falls back to a manual-upload instruction if upload fails."
 argument-hint: "<path to pdf> [<remote folder, default />]"
 user-invocable: true
 allowed-tools: Bash
@@ -16,7 +16,7 @@ This is a separate skill on purpose. Render with `/practices:write-document-pdf`
 
 When the user has a PDF on disk and wants it on their reMarkable device without plugging in a USB cable. The device must be online (Wi-Fi connected to the reMarkable cloud) for the upload to land — rmapi pushes to the cloud immediately, but the device only sees it on its next sync.
 
-Don't use this for the first-time setup of rmapi itself — that needs an interactive `rmapi` invocation by the user to pair with a one-time device code.
+Don't use this for the first-time setup of rmapi itself — pairing needs an interactive run. Tell the user to run `"${CLAUDE_PLUGIN_ROOT}/scripts/send-to-remarkable.sh" --pair` from their own terminal, where they can paste the one-time device code.
 
 ## Step 1: Resolve the PDF path to absolute
 
@@ -42,7 +42,7 @@ Optional second argument. Default is `/` (root of My Files on the device). If th
 "${CLAUDE_PLUGIN_ROOT}/scripts/send-to-remarkable.sh" <abs pdf path> [<remote folder>]
 ```
 
-The wrapper checks `rmapi` is on PATH and shells out to `rmapi put`. Capture stdout and stderr — both are useful, since rmapi prints upload progress on stdout and errors on stderr.
+The wrapper builds (on first run) and runs an `rmapi` Docker image, bind-mounting `~/.config/rmapi/` from the host so the auth state persists across invocations. Capture stdout and stderr — both are useful, since rmapi prints upload progress on stdout and errors on stderr.
 
 ## Step 4: Handle failure modes
 
@@ -50,10 +50,11 @@ The fallback in every failure case is the same: tell the user the file is at `<a
 
 Specific exit codes from the wrapper:
 
-- **64** — usage error (wrong number of arguments). Programming bug, fix the call.
+- **64** — usage error (wrong number of arguments, or `--pair` invoked non-interactively). Programming bug, fix the call. For `--pair`, tell the user to run it from their own terminal.
 - **66** — PDF file missing. Stop, report path.
-- **69** — `rmapi` not installed. Surface the install instructions the wrapper prints. The reliable install path is the prebuilt release binary from https://github.com/ddvk/rmapi/releases dropped onto PATH. (`go install` does not work — ddvk's go.mod has replace directives that refuse install. The io41/tap homebrew formula exists but tends to lag upstream, and an outdated rmapi will hit `put` 400 errors against the current sync protocol.) After install, the user must run `rmapi` interactively once to pair the device.
-- **non-zero from rmapi itself** — most likely auth (run `rmapi` interactively to re-pair), sync protocol breakage (the sync15 migration occasionally breaks `put`; check https://github.com/ddvk/rmapi/issues for current state), or network. Surface the rmapi error verbatim, then offer the manual fallback.
+- **69** — Docker not installed. Tell the user to install Docker Desktop (macOS/Windows) or the docker engine (Linux). The wrapper has no offline fallback.
+- **75** — rmapi has not been paired yet. Tell the user to run `"${CLAUDE_PLUGIN_ROOT}/scripts/send-to-remarkable.sh" --pair` from their own terminal and paste the one-time code from https://my.remarkable.com/device/browser.
+- **non-zero from rmapi itself** — most likely auth (re-pair via `--pair`), sync protocol breakage (the sync15 migration occasionally breaks `put`; check https://github.com/ddvk/rmapi/issues for current state), or network. Surface the rmapi error verbatim, then offer the manual fallback.
 
 ## Step 5: Confirm
 
@@ -72,8 +73,8 @@ Never assert "the upload succeeded" or "rmapi was found" without showing the und
 ## Rules
 
 - **Never modify the source PDF.** Read-only.
-- **Don't try to install rmapi automatically.** It's a Go binary external to this plugin so it can be updated independently (download a new release binary, or `brew upgrade` if you're on a tap that's caught up). Auto-install would couple our plugin's release cadence to rmapi's, which is the opposite of what we want.
-- **Don't try to set up rmapi auth in the script.** Pairing requires a one-time code from a browser — needs to be interactive with the user. If unconfigured, surface the manual setup steps and stop.
+- **Don't bump rmapi inside the Dockerfile silently.** The `RMAPI_REF` build-arg pins the upstream version. When the sync protocol breaks, the maintainer publishes a new tag — bump the pin in `scripts/Dockerfile.remarkable` and let the image hash change to trigger a rebuild.
+- **Don't try to set up rmapi auth in the script.** Pairing requires a one-time code from a browser — needs to be interactive with the user. Tell them to run `--pair` from their own terminal and stop.
 - **Don't claim the file is on the device.** Claim it's been uploaded to the cloud. The device picks it up on next sync, which depends on the device being online and on Wi-Fi.
 
 ## Output format
@@ -98,7 +99,7 @@ Manual fallback: open the reMarkable mobile/desktop app and upload <abs pdf path
 
 ## Background
 
-`rmapi` is the community-maintained CLI that talks to the reMarkable cloud. The original juruen/rmapi was archived in July 2024; the active fork is ddvk/rmapi (https://github.com/ddvk/rmapi). reMarkable is mid-migration to a new sync protocol ("sync15") which has occasionally broken uploads — the maintainer turns these around quickly but expect the odd outage where the manual fallback is needed.
+`rmapi` is the community-maintained CLI that talks to the reMarkable cloud. The original juruen/rmapi was archived in July 2024; the active fork is ddvk/rmapi (https://github.com/ddvk/rmapi). reMarkable is mid-migration to a new sync protocol ("sync15") which has occasionally broken uploads — the maintainer turns these around quickly but expect the odd outage where the manual fallback is needed. The Dockerfile builds rmapi from source at a pinned tag so the plugin doesn't depend on the user having a release binary on PATH.
 
 The reasons we use this path rather than alternatives:
 

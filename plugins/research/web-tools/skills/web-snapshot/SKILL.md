@@ -16,25 +16,20 @@ Both tools share an underlying capability (Playwright/Chromium can render JS-hea
 
 ## Prerequisites
 
-The script wraps [shot-scraper](https://shot-scraper.datasette.io). Install once per machine:
+Docker is the only host requirement. The wrapper at `${CLAUDE_PLUGIN_ROOT}/skills/web-snapshot/scripts/web-snapshot.sh` builds a Playwright-based image on first run (Microsoft's official base + [shot-scraper](https://shot-scraper.datasette.io)) and reuses it thereafter.
+
+First run pulls the Playwright base (~1.5GB, a few minutes on a slow link). Subsequent invocations add ~2s of container startup. Confirm Docker is available before running:
 
 ```bash
-pip install shot-scraper
-shot-scraper install      # downloads Chromium
+command -v docker || echo "MISSING — install Docker Desktop or the docker engine"
 ```
 
-Confirm before running:
-
-```bash
-which shot-scraper || echo "MISSING — run: pip install shot-scraper && shot-scraper install"
-```
-
-If shot-scraper isn't installed, stop and tell the user. Don't install dependencies unprompted.
+If Docker isn't installed, stop and tell the user. The wrapper fails fast with exit 69 in that case.
 
 ## Single URL
 
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/skills/web-snapshot/scripts/web-snapshot.py" \
+"${CLAUDE_PLUGIN_ROOT}/skills/web-snapshot/scripts/web-snapshot.sh" \
   --url "https://example.com/page" \
   --name "example-page" \
   --out ./evidence/web-snapshots
@@ -60,7 +55,7 @@ For multiple URLs in one pass, write a JSON file:
 Then:
 
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/skills/web-snapshot/scripts/web-snapshot.py" \
+"${CLAUDE_PLUGIN_ROOT}/skills/web-snapshot/scripts/web-snapshot.sh" \
   --urls sources.json \
   --out ./evidence/web-snapshots
 ```

@@ -1,29 +1,84 @@
 #!/usr/bin/env bash
-# Upload a PDF to a reMarkable device via the cloud, using the community-maintained
-# ddvk/rmapi CLI. The binary is treated as an external dependency so it can be
-# updated independently of this plugin.
+# Upload a PDF to a reMarkable device via the reMarkable cloud, using the
+# community-maintained ddvk/rmapi CLI built inside a Docker image. The only
+# host requirement is Docker.
 #
-# Install: download the prebuilt binary for your platform from
-# https://github.com/ddvk/rmapi/releases and put it on PATH. (`go install
-# github.com/ddvk/rmapi@latest` does not work — ddvk's go.mod has replace
-# directives that go install refuses. The io41/tap homebrew formula exists but
-# tends to lag upstream by several versions, which matters because the cloud
-# sync protocol breaks `put` on older releases.)
+# Auth state lives on the host at ~/.config/rmapi/ — it's bind-mounted into
+# the container so pairing persists. First-time pairing is interactive and
+# requires running the script in --pair mode first:
 #
-# First run requires `rmapi` interactively to pair the device (one-time code
-# from https://my.remarkable.com/device/browser).
+#   send-to-remarkable.sh --pair                  # one-time interactive pairing
+#   send-to-remarkable.sh <pdf-path> [<folder>]   # normal upload
 #
-# Usage: send-to-remarkable.sh <pdf-path> [<remote-folder>]
-#
-# Default remote folder is "/" (root of My Files). Pass "/Meetings" or similar
-# to drop into a sub-folder; the folder must already exist on the device.
+# Default remote folder is "/" (root of My Files). The folder must already
+# exist on the device.
 
 set -euo pipefail
 
-if [ $# -lt 1 ] || [ $# -gt 2 ]; then
-  echo "usage: $(basename "$0") <pdf-path> [<remote-folder>]" >&2
-  exit 64
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+DOCKERFILE="$SCRIPT_DIR/Dockerfile.remarkable"
+CONFIG_DIR="$HOME/.config/rmapi"
+LEGACY_CONFIG_DIR="$HOME/.rmapi"
+
+if ! command -v docker >/dev/null 2>&1; then
+  echo "error: docker not found on PATH. Install Docker Desktop or the docker engine." >&2
+  exit 69
 fi
+
+hash_inputs() {
+  cat "$DOCKERFILE" | shasum -a 256 | cut -c1-12
+}
+
+IMAGE_TAG="turtlestack/remarkable:$(hash_inputs)"
+
+if ! docker image inspect "$IMAGE_TAG" >/dev/null 2>&1; then
+  echo "Building $IMAGE_TAG (one-off, ~60-120s)..." >&2
+  docker build --quiet \
+    -f "$DOCKERFILE" \
+    -t "$IMAGE_TAG" \
+    "$SCRIPT_DIR" >/dev/null
+fi
+
+# Ensure the auth dir exists on the host so the bind-mount creates a directory
+# (not a file) inside the container.
+mkdir -p "$CONFIG_DIR"
+
+# rmapi looks at $HOME/.config/rmapi/ first; map host's config dir there.
+# We deliberately use a fixed in-container HOME (/home/rmapi) so the bind-
+# mount target is stable regardless of host UID.
+common_mounts=(
+  -v "$CONFIG_DIR:/home/rmapi/.config/rmapi"
+  -e HOME=/home/rmapi
+  -u "$(id -u):$(id -g)"
+)
+
+# Surface legacy ~/.rmapi state if the user has an older install — rmapi falls
+# back to it for some commands. Mount only if it exists; harmless otherwise.
+if [ -d "$LEGACY_CONFIG_DIR" ]; then
+  common_mounts+=(-v "$LEGACY_CONFIG_DIR:/home/rmapi/.rmapi")
+fi
+
+case "${1:-}" in
+  --pair)
+    if [ ! -t 0 ]; then
+      echo "error: --pair requires an interactive terminal (stdin must be a TTY)." >&2
+      echo "       Run this in your terminal, then re-run normal uploads non-interactively." >&2
+      exit 64
+    fi
+    echo "Starting interactive pair. Get a one-time code from https://my.remarkable.com/device/browser" >&2
+    # `rmapi ls` requires auth — on an unpaired host it triggers the device-
+    # code prompt; on a paired host it lists files (also fine — confirms auth
+    # still works). Bare `rmapi` with no subcommand just prints help.
+    exec docker run --rm -it "${common_mounts[@]}" "$IMAGE_TAG" ls
+    ;;
+  -h|--help|"")
+    cat <<EOF
+usage: $(basename "$0") --pair                  # interactive device pairing (one-time)
+       $(basename "$0") <pdf-path> [<folder>]   # upload PDF to reMarkable cloud
+EOF
+    exit 64
+    ;;
+esac
 
 PDF="$1"
 DEST="${2:-/}"
@@ -33,29 +88,19 @@ if [ ! -f "$PDF" ]; then
   exit 66
 fi
 
-if ! command -v rmapi >/dev/null 2>&1; then
-  cat >&2 <<'EOF'
-error: rmapi not found on PATH
-
-Install ddvk/rmapi (the active community fork — original juruen/rmapi is archived).
-Download the prebuilt binary for your platform from:
-
-  https://github.com/ddvk/rmapi/releases
-
-Place it on your PATH (e.g. /opt/homebrew/bin on macOS, ~/.local/bin on Linux if
-that's on your PATH).
-
-Then run `rmapi` once interactively to pair with your device using a one-time
-code from https://my.remarkable.com/device/browser. After that this script will
-work non-interactively.
-
-Note: `go install github.com/ddvk/rmapi@latest` does NOT work — ddvk's go.mod
-has replace directives that go install refuses. Use the release binary.
-EOF
-  exit 69
+# Fail fast if pairing hasn't happened yet — otherwise rmapi prints a cryptic
+# auth error and the user blames Docker.
+if [ ! -f "$CONFIG_DIR/rmapi.conf" ] && [ ! -f "$LEGACY_CONFIG_DIR/rmapi.conf" ]; then
+  echo "error: rmapi is not paired with your device yet." >&2
+  echo "       Run: $(basename "$0") --pair" >&2
+  echo "       You'll need a one-time code from https://my.remarkable.com/device/browser" >&2
+  exit 75
 fi
 
-# rmapi's `put` reads from the local PDF and uploads to the cloud. The device
-# syncs next time it's online. Output goes to stdout/stderr from rmapi directly
-# so any failure (auth expired, sync15 protocol mismatch, network) surfaces.
-exec rmapi put "$PDF" "$DEST"
+# Resolve PDF to an absolute path so the bind-mount and the in-container
+# argument refer to the same file.
+PDF_ABS="$(cd "$(dirname "$PDF")" && pwd)/$(basename "$PDF")"
+
+upload_mounts=("${common_mounts[@]}" -v "$PDF_ABS:$PDF_ABS:ro")
+
+exec docker run --rm "${upload_mounts[@]}" "$IMAGE_TAG" put "$PDF_ABS" "$DEST"

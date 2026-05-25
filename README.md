@@ -68,6 +68,10 @@ A plugin marketplace for Claude Code. Agents, skills, rules, and conventions tha
 
 ## Quick start
 
+### Requirements
+
+Most plugins need nothing beyond Claude Code itself. A few — `publishing`, `coordinator`'s meeting PDF skill, and `web-tools` — shell out to native tools (PDF rendering, headless Chromium, `rmapi`). Those wrap the tooling in Docker images that build on first run. If you plan to use any of them, install Docker Desktop (macOS/Windows) or the docker engine (Linux). No other host dependencies — no `pip install`, no `shot-scraper install`, no manual binary downloads.
+
 ### 1. Add the marketplace
 
 ```
@@ -490,7 +494,7 @@ Tools for fetching and archiving web content during research. Used by research s
 | Skill | Description | Example |
 |---|---|---|
 | [content-retrieval](plugins/research/web-tools/skills/content-retrieval/SKILL.md) | Four-tier URL retrieval (WebFetch → curl → Playwright → human escalation) — returns page text/HTML for analysis | [URL retrieval](examples/research/web-tools/skills/content-retrieval/result.md) |
-| [web-snapshot](plugins/research/web-tools/skills/web-snapshot/SKILL.md) | Save a page as a rendered PDF using shot-scraper — for evidence archival in sources registers | — |
+| [web-snapshot](plugins/research/web-tools/skills/web-snapshot/SKILL.md) | Save a page as a rendered PDF using Playwright/Chromium (runs in Docker) — for evidence archival in sources registers | — |
 
 ### Leadership
 

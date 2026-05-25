@@ -1,0 +1,32 @@
+# Image for the ddvk/rmapi CLI — uploads PDFs to a reMarkable device via the
+# reMarkable cloud. Built from source so we're not tied to a release binary
+# (and so the user doesn't have to download one manually).
+#
+# Build context: scripts/ directory (this dir).
+#
+# Build:
+#   docker build -f Dockerfile.remarkable -t turtlestack/remarkable:<tag> .
+
+FROM golang:1.23-alpine AS build
+WORKDIR /src
+
+# Pin the upstream tag here. ddvk publishes semver tags; bump when the cloud
+# sync protocol changes (rmapi's CHANGELOG calls these out as "sync15"
+# protocol bumps that break older releases against the live cloud).
+ARG RMAPI_REF=v0.0.34
+
+RUN apk add --no-cache git ca-certificates
+RUN git clone --depth=1 --branch "$RMAPI_REF" https://github.com/ddvk/rmapi.git . \
+ && CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o /out/rmapi .
+
+FROM alpine:3.20
+RUN apk add --no-cache ca-certificates tzdata
+COPY --from=build /out/rmapi /usr/local/bin/rmapi
+
+# rmapi reads ~/.config/rmapi/rmapi.conf for auth state. The wrapper bind-
+# mounts that path from the host so pairing persists across container
+# invocations. We don't set USER here — the wrapper passes --user with the
+# host UID/GID so files created inside the container (none, in practice)
+# would be owned correctly anyway.
+
+ENTRYPOINT ["rmapi"]

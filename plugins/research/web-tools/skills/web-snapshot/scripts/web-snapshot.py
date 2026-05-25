@@ -29,8 +29,10 @@ Options:
   --landscape  Use landscape orientation
 
 Prerequisites:
-  pip install shot-scraper
-  shot-scraper install
+  Docker (the script normally runs inside the bundled image — see
+  web-snapshot.sh wrapper). When running this script directly outside
+  the container you'll need shot-scraper + Chromium installed locally:
+    pip install shot-scraper && shot-scraper install
 """
 
 import argparse
