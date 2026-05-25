@@ -43,14 +43,7 @@ When scope is unclear, ask before starting.
 | Company / product | Official documentation, press releases |
 | Community / opinion | Blogs, forums, social media |
 
-Work from the top down. For AU/NZ-specific questions:
-
-- **Hard rule:** ≥ 60% of your sources must be AU/NZ-anchored (ABS, Stats NZ, ABC News, RNZ, AFR, AMGC, DISR, IBISWorld AU, CSIRO, RBA, sector industry bodies, AU government departments, AU universities). Count the ratio before finalising.
-- **Comparator framing required:** non-AU sources may only appear when explicitly framed as comparators (e.g. "for context, in the US…"). A non-AU source standing alone for an AU-specific claim is a defect, not a substitute.
-- **Reject non-AU market-research aggregators for AU headline statistics.** IMARC, Markets and Markets, Mordor Intelligence, Allied Market Research, Grand View Research and similar firms are low-authority for AU-specific data — they typically resell or extrapolate. If the only "AU" data you can find is from one of these, treat it as a gap to flag, not as a finding to cite.
-- **Headline statistics from vendor blogs (Shopify, HubSpot, etc.) are flagged, not cited.** A 46% / 52% / 49% figure from a payment-processor blog is marketing content. If the underlying study isn't an AU government / industry-body / academic source, the figure doesn't make the report.
-
-State your AU-source ratio in the output (e.g. "5 of 7 sources Australian — CSIRO, RBA, AFR, ABS, AMGC; ITU and McKinsey used as international comparators only").
+Work from the top down. For AU/NZ-specific questions, AU/NZ sources should predominate (ABS, Stats NZ, ABC News, RNZ, AFR, IBISWorld AU, CSIRO, sector industry bodies); non-AU sources are used only as comparators.
 
 ## Failure caps
 
