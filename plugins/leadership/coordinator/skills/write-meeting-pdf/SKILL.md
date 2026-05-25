@@ -53,9 +53,28 @@ Don't pass `--refresh-assets` from this skill. The flag re-downloads brand SVGs 
 
 The script prints the output path on success and exits non-zero on failure. Capture stderr so any rendering errors surface back to the user.
 
-## Step 4: Confirm path
+## Step 4: Verify and report
 
-Output the absolute path to the generated PDF. Do not claim success without verifying the file exists and has non-zero size — `[ -s <path> ]`.
+Don't claim success without running these checks:
+
+```bash
+# File exists and is non-empty
+[ -s <path> ] || { echo "render failed: empty or missing output"; exit 1; }
+
+# Valid PDF and page count
+file <path>
+```
+
+`file <path>` reports something like `PDF document, version 1.4, 8 pages`. Surface that line in your chat reply alongside the absolute path so the page count and PDF magic are visible to the user. Name the wrapper (`render-meeting-pdf.sh`) so the user knows what fired, and note that the next step is sideloading the PDF to the Remarkable Paper Pro for use during the meeting.
+
+## Output Format
+
+```
+PDF: /Users/.../docs/meetings/2026-05-15-q2-board-meeting/meeting.pdf
+Verified: PDF document, version 1.4, 8 pages
+Rendered via render-meeting-pdf.sh (Docker image turtlestack/coordinator-meeting-pdf).
+Next step: sideload to the Remarkable Paper Pro for the meeting.
+```
 
 ## Rules
 
@@ -64,14 +83,6 @@ Output the absolute path to the generated PDF. Do not claim success without veri
 - **Don't re-render if nothing has changed.** If `meeting.pdf` exists and is newer than both `qanda.md` and `agenda.md`, ask the user before overwriting.
 - **Don't substitute fonts or colours.** The renderer chooses brand-consistent typography and a colour palette tuned for e-ink. If the user wants a variant, they can fork the script — don't adjust ad-hoc per invocation.
 - **Surface bootstrap delays.** First run on a fresh machine builds the Docker image (~30-60s). Subsequent runs add ~1-2s of container startup. If the wrapper hangs longer than that, something is wrong — investigate, don't silently retry. If Docker is missing, the wrapper fails fast with exit 69 — tell the user to install Docker.
-
-## Output Format
-
-A single line: the absolute path to the generated PDF.
-
-```
-/Users/.../docs/meetings/2026-05-15-q2-board-meeting/meeting.pdf
-```
 
 ## Layout reference
 
