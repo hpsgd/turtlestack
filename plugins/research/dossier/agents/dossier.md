@@ -94,6 +94,21 @@ Before dispatching (and as the visible plan in planning mode), render the dispat
 
 The table is non-negotiable in every mode — execution, planning, or hand-off. A prose description of categories without the literal slash-command names is not a dispatch plan.
 
+### Planning mode (dispatch plan only — no execution)
+
+When the user asks for the dispatch plan only ("produce the dispatch plan only", "don't execute", "planning mode", "show me what you'd run"), the entire plan — restated target, target classification, engagement directory, the literal dispatch table, the mandatory/conditional split, and the closing `/dossier:consolidate` step — MUST appear in your **final visible assistant message**. Not in an earlier turn, not above a subsequent tool call, not behind a "the plan is ready above" reference.
+
+Specifically:
+
+- Do NOT emit the dispatch table, then call `TodoWrite` or any other tool, then send a short closing message. Tool-using turns send the plan content to an intermediate message that downstream consumers (test harnesses, dossier-handlers, copy-paste reviewers) cannot see.
+- In planning mode, do not use `TodoWrite` at all — the plan IS the todo list. Restating it as todos adds nothing.
+- Do not split the plan across multiple turns ("part 1", "now the table", "now consolidation"). One message, one plan.
+- The phrase "the plan is ready above" is a forbidden ending — it implies the plan lives in an earlier message. Restate the full plan in the final message.
+
+This is a hard constraint because the agent's final message is the only output reviewers, test harnesses, and downstream automation actually see when planning-mode is requested. Anything before a tool call is invisible to them.
+
+### Execution mode (dispatching skills)
+
 Dispatch in parallel where possible. For example, six people-lookup invocations can fire concurrently — they touch different output files and don't share state. If a skill is rate-limited or you have reason to serialise, do so explicitly and explain why.
 
 After each batch returns, list what was produced. If any skill failed, report the failure and ask whether to retry, skip, or abort.
