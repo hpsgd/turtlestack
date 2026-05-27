@@ -12,244 +12,174 @@ Captured from a real headless invocation of the skill/agent.
 
 ### Chat response
 
-I'll work through the test strategy framework step by step.
+Now I have everything I need. Let me build the full strategy.
+
+---
 
 ## Test Strategy: Notifications Microservice
 
+| Field | Value |
+|---|---|
+| **Version** | 1.0 |
+| **Date** | 2026-05-27 |
+| **Status** | Draft |
+
+---
+
+### Scope & Objectives
+
+The notifications microservice is an internal platform service. Internal services submit notification requests via a REST API; the service enqueues them for async processing, evaluates per-user per-channel preferences and opt-outs, and delivers through three provider adapters: Sendgrid (email), Twilio (SMS), and Firebase Cloud Messaging (push). It must scale from ~50k to ~500k notifications/day within 12 months.
+
+**Quality Goals**
+- Zero opt-out compliance violations in production (legal obligation under CAN-SPAM, TCPA, GDPR)
+- Zero silent drops — every accepted notification is either delivered, retried, or lands in a dead-letter queue with an observable record
+- No notification delivered to the wrong user
+- p95 delivery acceptance latency < 200ms at peak load (500k/day)
+- p95 end-to-end delivery time < 30 seconds per channel under normal conditions
+- 80%+ coverage on changed code; 90%+ on the preference/opt-out and routing modules
+
+---
+
 ### Risk Assessment
 
-**Risk profile:** Data integrity + Privacy (HIGH)
-
-**Critical flows:**
-1. Notification received → queued → delivered via correct channel
-2. User opt-out respected before delivery
-3. Duplicate request handled idempotently
-4. Provider failure → retry without data loss
-
-**Failure modes (by risk):**
-| Failure Mode | Risk | Impact |
-|---|---|---|
-| Notification lost (queued but never delivered) | HIGH | User never receives message, no audit trail |
-| Notification sent to opted-out user | HIGH | Privacy violation, user trust damage |
-| Duplicate delivery on same channel | MEDIUM | User annoyance, potential SMS/email charges |
-| Preference lookup returns stale data | HIGH | Wrong opt-out decision made |
-| Queue overflow under load (500k/day) | HIGH | Dropped notifications, system collapse |
-| Provider timeout → notification stuck | MEDIUM | Recovered by retry, but adds latency |
-| Audit trail gaps | HIGH | Cannot prove delivery or diagnose failures |
-
-**External dependencies:**
-- Sendgrid, Twilio, Firebase (delivery)
-- Internal preference service (opt-out data — freshness critical)
-- Queue system (durability critical)
-- Database (audit/state tracking)
-
----
-
-### Test Levels & Allocation
-
-Risk shift from default pyramid: **55% unit, 25% integration, 15% E2E, + contract + performance**
-
-| Level | What it tests | Tools | Coverage | Est. Tests |
+| Failure Mode | Likelihood | Impact | Risk Level | Test Priority |
 |---|---|---|---|---|
-| **Unit** | Preference evaluation, message building, deduplication, retry logic | Vitest / pytest | 90%+ on core modules | 60–80 |
-| **Integration** | API request → queue, queue consumer → preference check → delivery, database consistency | Testcontainers + Supertest | All critical paths | 25–35 |
-| **E2E** | Full journey: API → queue → delivery; opt-out respected; retry on failure | Playwright (sync test against running service) | Top 5 flows | 5–8 |
-| **Contract** | Request schema, preference service response, provider API mocks | OpenAPI validation | All public contracts | 10–15 |
-| **Performance** | Throughput at 50k/day and 500k/day; p50/p95/p99 latency; queue backpressure | k6 / Locust | SLA: p95 < 2s delivery | 3–5 load profiles |
-| **Security** | Input validation, SQL injection, PII in logs, auth on API | SAST + manual | Public-facing code | 8–12 |
+| Opt-out not respected (sends after user opted out) | Medium | High | **Critical** | Test first, exhaustively |
+| Notification delivered to wrong user | Low | High | **Critical** | Test first |
+| Silent drop — notification accepted but never delivered or DLQ'd | Medium | High | **High** | Thorough |
+| PII exposed in logs | Medium | High | **High** | Thorough |
+| Duplicate delivery (sent twice to same user) | Medium | Medium | **High** | Thorough |
+| Internal service auth bypass (unauthenticated caller submits) | Low | High | **High** | Thorough |
+| Queue overflow under 10x growth load | Medium | High | **High** | Load test explicitly |
+| Provider credential leaked (Sendgrid/Twilio/FCM keys) | Low | High | **High** | Security review |
+| Transient provider failure causes permanent drop (no retry) | Medium | High | **High** | Thorough |
+| Content injection (XSS/phishing in email body) | Low | High | **High** | Thorough |
+| Stale preference cache — opt-out not reflected | Medium | Medium | **Medium** | Basic |
+| Rate limit breach on provider (Twilio TCPA compliance) | Medium | Medium | **Medium** | Basic |
+| One provider failure cascades to block others | Low | Medium | **Medium** | Basic |
+| Idempotency failure — same notification ID re-queued | Low | Low | **Low** | Defer |
+
+**Risk-based prioritisation:**
+
+1. **Opt-out compliance and routing logic** — legal exposure is high; test every combination of channel × preference state × notification type
+2. **Delivery reliability (queue → provider)** — silent drops are invisible; test retry, DLQ, and provider error classification exhaustively
+3. **User-targeting correctness** — wrong-user delivery is a data breach; test ID propagation end-to-end
+4. **Auth/authz on the inbound API** — unauthed callers could spam users; test before anything else is wired up
+5. **Load and queue behaviour at 500k/day** — model the burst, test queue drain rate and backpressure
 
 ---
 
-### Test Coverage Detail
+### Test Pyramid Allocation
 
-#### Unit Tests (core logic)
-```
-preference/
-  ✓ Evaluate opt-out: user opted out of email → skip sendgrid
-  ✓ Evaluate opt-out: user not opted out → include channel
-  ✓ Stale preference cache: cache expired → re-fetch
-  ✓ Preference missing → default to opt-in (confirm this is the rule)
+Given the concentration of Critical/High risk items:
 
-message-builder/
-  ✓ Build email: template + user data → valid sendgrid payload
-  ✓ Build SMS: template + user data → valid twilio payload
-  ✓ Build push: template + user data → valid firebase payload
-  ✓ Sanitise PII from logs: email content → masked in audit trail
+- **55% Unit** — preference evaluation, routing logic, provider error classification, content sanitisation, serialisation
+- **30% Integration** — API contracts, queue integration, provider adapter error handling, DLQ behaviour
+- **15% E2E** — compliance flows, full delivery paths through provider sandboxes
 
-deduplication/
-  ✓ Duplicate request (same idempotency key) → skip, return existing ID
-  ✓ New request (new key) → queue normally
-  ✓ Dedup TTL expired → treat as new
+This is a meaningful shift from the default 70/20/10. The justification: the preference/opt-out module and the provider adapter layer are both HIGH-risk and non-trivial; over-mocking them at unit level would mask the failure modes we care about most.
 
-retry-backoff/
-  ✓ First failure → backoff 1s
-  ✓ Third failure → backoff 32s (exponential)
-  ✓ Max retries (5) exceeded → dead letter queue
-```
+---
 
-#### Integration Tests (boundaries & state)
-```
-api/notifications POST
-  ✓ Valid request → 202 Accepted, notification queued with ID
-  ✓ Missing required fields → 400, clear error
-  ✓ Unknown channel → 400 (validate against whitelist: email|sms|push)
-  ✓ Duplicate ID (idempotency) → 202, returns same notification ID
+### Test Levels
 
-queue-consumer
-  ✓ Poll queue → fetch notification, check preferences, build message
-  ✓ Preference service unavailable (timeout) → exponential backoff, retry
-  ✓ Sendgrid delivery succeeds → mark as delivered, audit log
-  ✓ Sendgrid delivery fails (4xx) → dead letter (don't retry)
-  ✓ Sendgrid delivery fails (5xx) → retry queue with backoff
-  ✓ Twilio rate limit (429) → respect retry-after header, requeue
-  ✓ Firebase fails silently (device offline) → mark delivered (async delivery ok)
+| Level | Scope | Tools | Coverage Target |
+|---|---|---|---|
+| **Unit** | Preference evaluation, routing decisions, retry backoff, message serialisation, content sanitisation, error classification | Jest / Vitest / pytest / xUnit (match your service stack) | 90%+ on preference and routing modules; 80%+ elsewhere |
+| **Integration** | REST API endpoints, queue message schema, provider adapters (with stubs), DLQ handling, preference persistence | Testcontainers (real DB + real queue), WireMock / Nock for provider APIs | All API endpoints, all adapter error paths |
+| **E2E** | Full delivery flows through provider test/sandbox modes, opt-out suppression, multi-channel, retry | Service deployed to CI environment; Sendgrid sandbox, Twilio test credentials, FCM test tokens | Top 8 flows (listed below) |
+| **Contract** | REST API schema consumed by internal callers | OpenAPI validator, Pact (consumer-driven) if callers can provide pact files | All public endpoints |
+| **Performance** | Acceptance latency, queue drain rate, throughput at 500k/day | k6 or Artillery | p95 < 200ms API acceptance; p95 < 30s e2e delivery; 0 drops at 10x burst |
+| **Security** | Auth/authz, input validation, PII in logs, credential storage, injection | SAST (Semgrep/Snyk), manual review on auth + content rendering | OWASP Top 10 for API surface |
 
-database/audit-trail
-  ✓ Every notification: created → queued → delivered (or failed)
-  ✓ No gaps in audit trail across concurrent writes (ACID)
-  ✓ Retry record preserved in audit for debugging
+---
 
-preference-cache
-  ✓ Cache hit → serve from cache (< 10ms)
-  ✓ Cache miss → fetch from service, populate cache
-  ✓ Cache invalidation: preference updated → propagate within 30s
-```
+### Critical User Flows (E2E coverage required)
 
-#### E2E Tests (complete flows, mocked providers)
-```
-Happy path
-  ✓ POST /notifications (email) → queued → sendgrid mock called → delivered
-  
-Opt-out respected
-  ✓ User opted out of SMS → POST /notifications (sms) → filtered, not queued
-  
-Retry on transient failure
-  ✓ Sendgrid fails with 503 → retried → succeeds on 2nd attempt
-  
-Concurrent to same user
-  ✓ 3 notifications queued to same user on 3 channels → all delivered in parallel
-  
-Duplicate handling
-  ✓ POST /notifications (id=X) → queued
-  ✓ POST /notifications (id=X) again → returns same notification ID, no duplicate in queue
-```
-
-#### Performance Tests
-```
-Load profile 1: 50k notifications/day (launch)
-  ✓ Sustained throughput: 578 notifs/sec
-  ✓ p50 latency (API → queued): < 100ms
-  ✓ p95 latency (queued → delivered): < 2s
-  ✓ p99 latency: < 5s
-  ✓ Queue depth never exceeds 1000
-
-Load profile 2: 500k notifications/day (12 months)
-  ✓ Sustained throughput: 5,787 notifs/sec
-  ✓ Same latency targets
-  ✓ Queue backpressure: if delivery slows, API returns 429 instead of queuing
-
-Spike test
-  ✓ 2x load for 5 min → recovers to baseline
-```
-
-#### Security Tests
-```
-Input validation
-  ✓ Oversized request body → 413
-  ✓ Invalid channel enum → 400
-  ✓ SQL injection in notification content → sanitised, not injected
-  ✓ XSS in template variables → escaped for each channel
-
-Authentication
-  ✓ Missing API key → 401
-  ✓ Invalid API key → 403
-  ✓ Request signed by different service → 403
-
-Logging
-  ✓ User email not in logs
-  ✓ Phone number not in logs
-  ✓ API response bodies not logged in full (only status + ID)
-```
+1. **Happy path — single channel:** Internal service submits notification → queued → delivered via Sendgrid
+2. **Happy path — multi-channel:** Notification targeting email + push → both delivered independently
+3. **Opt-out respected — email:** User has opted out of email; notification submitted → email suppressed, push still delivered
+4. **Opt-out respected — all channels:** User opted out everywhere; notification submitted → nothing delivered, no error to caller
+5. **Retry on transient failure:** Provider returns 503 → notification retried with backoff → delivered on second attempt
+6. **DLQ after exhausted retries:** Provider consistently returns 500 → retries exhausted → notification in DLQ with observable metadata
+7. **Unauthenticated caller rejected:** Request with no/invalid credentials → 401, nothing enqueued
+8. **Idempotency:** Same notification ID submitted twice → second submission is a no-op, not re-enqueued
 
 ---
 
 ### Quality Gates
 
-#### Pre-Merge (MUST pass)
-- [ ] 90%+ line coverage on `preference/`, `deduplication/`, `message-builder/`
-- [ ] 80%+ line coverage on remaining code
-- [ ] All unit + integration tests pass
-- [ ] No new lint or type-check errors
-- [ ] No new security vulnerabilities (run SAST)
-- [ ] Performance regression test: p95 latency increase < 10%
+**Pre-Merge (every PR)**
+- [ ] All unit tests pass (exit 0)
+- [ ] All integration tests pass against containerised dependencies
+- [ ] 90%+ line coverage on `preference/` and `routing/` modules; 80%+ on changed code elsewhere
+- [ ] OpenAPI contract validation passes (no breaking changes to internal API schema)
+- [ ] No new critical/high SAST findings
+- [ ] No new lint or type errors
+- [ ] Preference/opt-out module: 100% branch coverage on the suppression decision
 
-#### Pre-Release (MUST pass)
-- [ ] E2E tests pass on staging against sandbox Sendgrid/Twilio/Firebase
-- [ ] Load test: 50k/day sustained without latency regression
-- [ ] Audit trail: sampled 100 notifications, 0 delivery gaps
-- [ ] Monitoring & alerting wired up: alerts for queue depth, delivery errors, provider timeouts
-- [ ] Run-book: on-call guide for queue backlog, provider outages, manual retry
-- [ ] Documentation: API contract (OpenAPI), preference service dependency, retry strategy
-
----
-
-### Key Questions Before Building
-
-These must be answered and codified in code/config before development starts:
-
-1. **Deduplication strategy:** What identifies a duplicate? (request ID, idempotency key passed by caller, content hash?) How long does the duplicate window last? (1 hour? 24 hours?)
-
-2. **Preference cache freshness:** How stale can the opt-out data be? (must be < 30 seconds? < 5 minutes?) Who invalidates the cache, and how?
-
-3. **Retry strategy:** Max retries per provider? Backoff formula? Should a provider 4xx (user not found) retry, or go straight to dead letter?
-
-4. **Dead letter handling:** After max retries, what happens? (stored for manual review, discarded with alert, sent to another queue?)
-
-5. **Notification order:** If 3 notifications queue for the same user, must they be delivered in order? (affects delivery parallelism)
-
-6. **Provider quota limits:** What if we hit Sendgrid's daily email limit? (queue backpressure or discard?) Same for SMS?
-
-7. **Audit trail retention:** How long do delivery records stay in the database? (affects schema sizing for 500k/day growth)
-
-8. **Notification content:** Can callers pass HTML templates, or only plain text? (affects sanitisation/XSS risk)
-
-9. **User identification:** Caller passes user ID, we look up contact details. What if user not found? (error, skip, store for manual review?)
-
-10. **Multi-channel conflict:** If user requests notification on all 3 channels but is opted out of 2, do we queue 1 message (for push only) or 3 (email/sms/push) with filters applied later?
+**Pre-Release**
+- [ ] E2E suite passes on staging using provider sandbox/test modes
+- [ ] k6 performance test: p95 < 200ms acceptance at 600 req/min (500k/day burst modelled at 5× average)
+- [ ] k6 performance test: 0 accepted notifications dropped under 10-minute sustained load
+- [ ] Security review signed off for any auth, content rendering, or credential-handling changes
+- [ ] PII log audit: grep for known PII fields (email, phone, device token) in structured log output — 0 hits outside masked fields
+- [ ] No open Critical or High defects
+- [ ] Smoke test passes post-deploy (submit notification → confirm delivery via provider receipt)
 
 ---
 
-### Critical Gaps (for spec clarification)
+### Environment Requirements
 
-Before the architect finalizes the API contract:
+| Environment | Purpose | Data | Provider Integration |
+|---|---|---|---|
+| Local | Unit tests only | Fixtures | Mocked |
+| CI | Unit + integration | Seeded via Testcontainers | WireMock stubs for Sendgrid/Twilio/FCM |
+| Staging | E2E, performance, security | Anonymised production-like data | Sendgrid sandbox mode, Twilio test credentials, FCM test tokens |
+| Production | Smoke tests, monitoring | Real | Live — smoke only post-deploy |
 
-| Gap | Why it matters |
+---
+
+### Performance Budgets
+
+| Scenario | Target |
 |---|---|
-| Idempotency key format & lifespan | Affects duplicate handling; if caller doesn't pass one, service must generate it |
-| Preference service SLA | If it's slow (1s), queue consumer becomes bottleneck; affects retry strategy |
-| Batch vs single notifications | API accepts 1 notif or N? Affects queue throughput design |
-| Notification priority/urgency | Should high-priority bypass queue and go straight to providers? |
-| User contact data lookup | Service owns user DB, or calls another service? Failure modes change |
+| API acceptance latency p50 | < 50ms |
+| API acceptance latency p95 | < 200ms at 600 req/min |
+| End-to-end delivery p95 | < 30 seconds (normal load) |
+| Queue drain after 10-minute burst | < 5 minutes |
+| Preference lookup latency p95 | < 10ms (it's on every notification path) |
+| Throughput at 500k/day | Zero drops; queue does not grow unboundedly |
+
+Run performance tests at both launch scale (50k/day) and growth scale (500k/day) so you have a baseline and can detect regression before it becomes an incident.
 
 ---
 
-### Recommendations (prioritized)
+### Gaps to Address Before First Sprint
 
-1. **Define deduplication + retry strategy** (Week 1 spec). These are load-bearing decisions that affect database schema and queue consumer logic.
-
-2. **Contract test against preference service** (Week 1). Preference lookups are critical path; must mock reliably or hit real test environment.
-
-3. **Load test at 50k/day before release** (Week 3). Don't guess at queue size, database pool, or consumer concurrency. Measure under realistic load.
-
-4. **Implement audit trail as event stream** (not CRUD logs). Easier to reconstruct delivery state, debug gaps, and audit retries.
-
-5. **Mock all 3 providers in test suite**. Don't hit real Sendgrid/Twilio/Firebase in CI. Use sandbox credentials only in staging.
-
-6. **Dead letter queue visibility**. Surface dead letters (notifications that failed after max retries) as alerts + dashboard. On-call needs to see them immediately.
+1. **Provider sandbox coverage** — confirm Sendgrid sandbox mode, Twilio test credentials, and FCM test tokens are available and wired into CI before integration tests are written. Discovering this at test-writing time adds delay.
+2. **Opt-out API surface** — the preference/opt-out system needs acceptance criteria before tests can be written. Specifically: who sets opt-outs (user self-service? admin? internal service?), are they per-notification-type or per-channel, and is there a global "unsubscribe all"? These drive the branching logic in the suppression module.
+3. **Queue DLQ observability** — define now what a dead-lettered notification looks like (schema, metadata, alerting). The E2E test needs a way to assert DLQ state; if the DLQ is opaque at test time, that test can't be written.
+4. **Auth mechanism for inbound API** — confirm the auth approach (API key, mTLS, internal JWT) before security tests are written. This is also a prerequisite for consumer-driven contract tests.
+5. **Idempotency key contract** — is the caller responsible for supplying an idempotency key, or does the service generate one? If the caller supplies it, this needs to be in the API contract; if the service generates it, duplicate detection needs a strategy.
 
 ---
 
-**Next step:** Use this strategy to write acceptance criteria (Given/When/Then) for each critical flow, then generate unit + integration tests. Once tests are written (but failing), implement.
+### Metrics & Reporting
+
+| Metric | Target | Cadence |
+|---|---|---|
+| Test pass rate | 100% on main | Per CI run |
+| Coverage — preference/routing modules | 90%+ | Per PR |
+| Coverage — all changed code | 80%+ | Per PR |
+| Flaky test rate | < 2% | Weekly |
+| Defect escape rate | < 5% to production | Per release |
+| Opt-out compliance violations in production | 0 | Continuous (alert on first occurrence) |
+| DLQ depth | Alert at > 100 unprocessed | Continuous |
+
+---
+
+**Next step:** Before sprint 1, resolve the five gaps above — particularly the opt-out acceptance criteria and auth mechanism. Both block test-writing on the highest-risk paths. Once those are defined, I'd suggest using `/qa-lead:write-acceptance-criteria` per story to keep the test strategy grounded in specific story scope.
 
 ## Evaluation
 
@@ -257,35 +187,37 @@ Before the architect finalizes the API contract:
 |---|---|
 | Verdict | PASS |
 | Score | 18.0/18.0 (100%) |
-| Evaluated | 2026-05-04 |
-| Target duration | 56633 ms |
-| Target cost | $0.0677 |
+| Evaluated | 2026-05-27 |
+| Target model | claude-sonnet-4-6 |
+| Judge model | claude-sonnet-4-6 |
+| Target duration | 104727 ms |
+| Target cost | $0.2322 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | Agent operates as the definition of WHAT to test — does not write implementation test code (that is the QA Engineer's job) | PASS | All test cases are written as descriptive specifications (e.g., '✓ Evaluate opt-out: user opted out of email → skip sendgrid') — no actual test framework code (no describe/it/def test_ blocks). The closing line explicitly says 'Once tests are written (but failing), implement,' deferring implementation to the QA Engineer. |
-| c2 | Agent assesses the risk profile before defining test levels — identifies financial/reputational risk (sending duplicate notifications, ignoring opt-outs) | PASS | Risk Assessment section appears first with a 7-row risk table. 'Notification sent to opted-out user' is rated HIGH with 'Privacy violation, user trust damage.' 'Duplicate delivery on same channel' is rated MEDIUM with 'User annoyance, potential SMS/email charges.' Risk profile leads the entire strategy. |
-| c3 | Agent defines test levels covering unit, integration (internal API contract, external API boundaries), and E2E | PASS | Test Levels & Allocation table explicitly names Unit (preference evaluation, deduplication, retry logic), Integration (API request → queue, queue consumer → preference → delivery, Testcontainers + Supertest), and E2E (full journey: API → queue → delivery, Playwright). Contract and Performance levels are additionally included. |
-| c4 | Agent applies the 3 amigos framing — identifies questions the product owner and architect must answer before development starts | PASS | 'Key Questions Before Building' section lists 10 numbered questions that must be answered before development. Includes PO concerns (notification content, multi-channel conflict, dead letter handling) and architect concerns (deduplication strategy, retry strategy, preference cache freshness, notification order, provider quota limits). |
-| c5 | Agent identifies edge cases in the edge case checklist: concurrency (duplicate send race condition), opt-out timing, channel fallback when one provider is down | PASS | Concurrency: E2E test 'Concurrent to same user → 3 notifications queued to same user on 3 channels → all delivered in parallel' and deduplication tests. Opt-out timing: risk row 'Preference lookup returns stale data \| HIGH' and integration test 'Cache invalidation: preference updated → propagate within 30s.' Provider failure: integration tests cover Sendgrid 4xx (dead letter), Sendgrid 5xx (retry queue), Twilio 429 (respect retry-after). |
-| c6 | Agent sets specific, measurable quality gates for pre-merge and pre-release | PASS | Quality Gates section has Pre-Merge checklist (90%+ line coverage on core modules, 80%+ remaining, all unit + integration tests pass, no new lint/type errors, no new SAST vulnerabilities, p95 latency regression < 10%) and Pre-Release checklist (E2E on staging, load test 50k/day sustained, audit trail sample of 100 with 0 gaps, monitoring wired up, runbook, documentation). |
-| c7 | Agent flags testability concerns — e.g. external providers must be fakeable in integration tests, not called live | PASS | Recommendations #5 explicitly states: 'Mock all 3 providers in test suite. Don't hit real Sendgrid/Twilio/Firebase in CI. Use sandbox credentials only in staging.' E2E section labels scenarios as 'mocked providers.' Integration tests reference provider failure simulation without live calls. |
-| c8 | Agent assigns test levels to specific criteria with rationale (unit vs integration vs E2E reasoning) | PARTIAL | The table states 'Risk shift from default pyramid: 55% unit, 25% integration, 15% E2E, + contract + performance' and the 'What it tests' column explains what each level covers. Coverage Detail sections group tests by level. However, explicit per-test reasoning (e.g., 'this is unit rather than integration because it has no external dependencies') is not provided — the rationale is implied by category description rather than stated for individual test assignments. |
-| c9 | Output includes Risk Assessment, Test Levels table, Quality Gates, and at minimum one identified gap | PASS | All four required sections present: Risk Assessment (7-row table with failure modes), Test Levels & Allocation (6-row table with tools and coverage targets), Quality Gates (Pre-Merge and Pre-Release checklists), and Critical Gaps (5-row table with gaps like idempotency key format, preference service SLA, batch vs single API design). |
-| c10 | Output's risk assessment names duplicate-send (financial/reputational), opt-out violations (legal/regulatory — TCPA / GDPR / spam laws), and provider outage as the top risks for a notifications service — not generic 'data quality' | PASS | Risk table names 'Notification sent to opted-out user \| HIGH \| Privacy violation, user trust damage' (opt-out violations), 'Duplicate delivery on same channel \| MEDIUM \| User annoyance, potential SMS/email charges' (duplicate-send with financial framing), and 'Provider timeout → notification stuck \| MEDIUM \| Recovered by retry.' These are notification-service-specific risks, not generic data quality framing. TCPA/GDPR are not named explicitly, but the framing goes well beyond generic quality concerns. |
-| c11 | Output's test levels table covers unit (logic, preference resolution), integration (internal REST API contract + external Sendgrid/Twilio/Firebase boundaries), and E2E (full request → queue → delivery → callback), with tools/coverage targets per level | PASS | Unit: 'Preference evaluation, message building, deduplication, retry logic \| Vitest/pytest \| 90%+ on core modules.' Integration: 'API request → queue, queue consumer → preference check → delivery, database consistency \| Testcontainers + Supertest.' E2E: 'Full journey: API → queue → delivery; opt-out respected; retry on failure \| Playwright \| Top 5 flows.' All three levels have tools and coverage targets. |
-| c12 | Output identifies the integration test pattern — fakes/contract tests at the Sendgrid/Twilio/Firebase boundaries, never live calls in CI — and names this as a testability requirement | PASS | Recommendations #5: 'Mock all 3 providers in test suite. Don't hit real Sendgrid/Twilio/Firebase in CI. Use sandbox credentials only in staging.' Contract tests are a dedicated row in the Test Levels table: 'Request schema, preference service response, provider API mocks \| OpenAPI validation.' E2E tests explicitly use 'mocked providers.' |
-| c13 | Output's edge case checklist covers concurrency (same notification dispatched twice in parallel), opt-out timing (preference change between queue-up and delivery), and channel fallback (one provider down — does the service queue, fail, or skip?) | PASS | Concurrency: E2E 'Duplicate handling' test and 'Concurrent to same user' test. Opt-out timing: Risk row 'Preference lookup returns stale data \| HIGH' plus integration test 'Cache invalidation: preference updated → propagate within 30s.' Channel/provider down: Integration tests define behavior for Sendgrid 4xx (dead letter), Sendgrid 5xx (retry queue), Twilio 429 (respect retry-after), Firebase silent failure (mark delivered). Behavior is explicitly defined. |
-| c14 | Output applies the 3 amigos lens — names specific questions for the product owner (what does delivery confirmation mean? what's the SLA on opt-out?) and architect (queue technology, retry strategy) | PASS | 'Key Questions Before Building' section contains PO-relevant questions (dead letter handling, notification order, provider quota limits, multi-channel conflict, notification content type) and architect-relevant questions (deduplication strategy, preference cache freshness/SLA, retry strategy, user contact data lookup). Retry strategy is question #3; preference cache freshness ('How stale can opt-out data be?') is question #2. Questions are not role-labeled but the content maps clearly. |
-| c15 | Output sets specific quality gates pre-merge (coverage threshold, contract tests pass, lint/type clean) and pre-release (load test at 50K/day, opt-out audit query returns zero violations, provider failure simulation) | PASS | Pre-Merge: 90%+ coverage on core modules, 80%+ remaining, unit + integration tests pass, no new lint/type errors, SAST gate, p95 latency regression < 10%. Pre-Release: load test at 50k/day sustained, 'Audit trail: sampled 100 notifications, 0 delivery gaps,' E2E on staging against sandbox providers (provider failure simulation implied). Opt-out-specific audit query is not explicitly named but delivery gap audit covers it. |
-| c16 | Output addresses scaling from 50K to 500K notifications/day in the test strategy — load tests must validate the 10x growth path, not just the launch volume | PASS | Performance Tests section has two distinct load profiles: 'Load profile 1: 50k notifications/day (launch) — 578 notifs/sec' and 'Load profile 2: 500k notifications/day (12 months) — 5,787 notifs/sec' with the same latency targets applied to both and a spike test. Both profiles are explicitly scoped. |
-| c17 | Output stays at strategy level — does NOT include implementation test code or specific test method names, leaving that to the QA Engineer | PASS | All test cases use descriptive specification format (e.g., '✓ Evaluate opt-out: user opted out of email → skip sendgrid') — no test method implementations, no test framework syntax, no import statements. The closing sentence explicitly defers to QA: 'Use this strategy to write acceptance criteria... then generate unit + integration tests. Once tests are written (but failing), implement.' |
-| c18 | Output identifies at least one specific gap — e.g. no fake Twilio/Sendgrid available yet, no preference-change-during-flight test scenario in scope, or no contract tests with the calling internal services | PASS | 'Critical Gaps (for spec clarification)' section is a dedicated 5-row table naming: idempotency key format and lifespan, preference service SLA, batch vs single notification API design, notification priority/urgency, and user contact data lookup ownership. Each gap explains why it matters for testability. |
-| c19 | Output addresses observability requirements as a testability concern — tests need to assert delivery state, not just request acceptance, which requires hooks into the queue and provider callbacks | PARTIAL | E2E tests assert delivery state ('sendgrid mock called → delivered'), integration tests check 'mark as delivered, audit log,' and Recommendation #4 says 'Implement audit trail as event stream (not CRUD logs)' with Recommendation #6 requiring 'Dead letter queue visibility... On-call needs to see them immediately.' However, the output does not explicitly frame observability as a testability prerequisite — it does not call out that asserting delivery (vs. request acceptance) requires deliberate queue/callback hooks to be designed in. |
+| c1 | Agent operates as the definition of WHAT to test — does not write implementation test code (that is the QA Engineer's job) | PASS | Output contains zero code snippets, no describe()/it()/test() blocks, no test method names — entirely strategy and specification throughout. |
+| c2 | Agent assesses the risk profile before defining test levels — identifies financial/reputational risk (sending duplicate notifications, ignoring opt-outs) | PASS | Risk Assessment table appears before Test Levels; names 'Duplicate delivery' (High) and 'Opt-out not respected' (Critical) explicitly as top risks. |
+| c3 | Agent defines test levels covering unit, integration (internal API contract, external API boundaries), and E2E | PASS | Test Levels table covers Unit, Integration (REST API + provider adapter stubs), E2E, Contract, Performance, Security — all with scope, tools, targets. |
+| c4 | Agent applies the 3 amigos framing — identifies questions the product owner and architect must answer before development starts | PASS | 'Gaps to Address Before First Sprint' lists PO questions (who sets opt-outs, per-type vs per-channel) and architect questions (auth approach, DLQ schema, idempotency key responsibility). |
+| c5 | Agent identifies edge cases in the edge case checklist: concurrency (duplicate send race condition), opt-out timing, channel fallback when one provider is down | PASS | E2E flow #8 covers idempotency/duplicate-send; risk table lists 'Stale preference cache' (opt-out timing) and 'One provider failure cascades to block others' (channel fallback). |
+| c6 | Agent sets specific, measurable quality gates for pre-merge and pre-release | PASS | Quality Gates section has explicit pre-merge checklist (90%+ coverage on preference/routing, contract validation, lint/type clean) and pre-release checklist (k6 p95 < 200ms, 0 drops at 10-minute sustained load). |
+| c7 | Agent flags testability concerns — e.g. external providers must be fakeable in integration tests, not called live | PASS | CI environment specifies 'WireMock stubs for Sendgrid/Twilio/FCM'; Gap #1 explicitly says confirm sandbox/test credentials before writing integration tests. |
+| c8 | Agent assigns test levels to specific criteria with rationale (unit vs integration vs E2E reasoning) | PARTIAL | Test Pyramid Allocation gives overall rationale ('over-mocking at unit level would mask the failure modes we care about most') but does not map rationale per individual criterion. |
+| c9 | Output includes Risk Assessment, Test Levels table, Quality Gates, and at minimum one identified gap | PASS | All four elements present: Risk Assessment table, Test Levels table, Quality Gates (pre-merge + pre-release checklists), and 'Gaps to Address Before First Sprint' with 5 items. |
+| c10 | Output's risk assessment names duplicate-send (financial/reputational), opt-out violations (legal/regulatory — TCPA / GDPR / spam laws), and provider outage as the top risks for a notifications service — not generic "data quality" | PASS | 'Opt-out not respected' rated Critical with 'legal obligation under CAN-SPAM, TCPA, GDPR'; 'Duplicate delivery' rated High; 'Transient provider failure causes permanent drop' rated High. |
+| c11 | Output's test levels table covers unit (logic, preference resolution), integration (internal REST API contract + external Sendgrid/Twilio/Firebase boundaries), and E2E (full request → queue → delivery → callback), with tools/coverage targets per level | PASS | Unit: 'Preference evaluation, routing decisions' with 90%+ coverage target; Integration: 'provider adapters (with stubs)' + Testcontainers/WireMock; E2E: 'Top 8 flows' via provider sandbox modes. |
+| c12 | Output identifies the integration test pattern — fakes/contract tests at the Sendgrid/Twilio/Firebase boundaries, never live calls in CI — and names this as a testability requirement | PASS | Environments table: CI uses 'WireMock stubs for Sendgrid/Twilio/FCM'. Gap #1: 'confirm Sendgrid sandbox mode, Twilio test credentials, and FCM test tokens are available and wired into CI'. |
+| c13 | Output's edge case checklist covers concurrency (same notification dispatched twice in parallel), opt-out timing (preference change between queue-up and delivery), and channel fallback (one provider down — does the service queue, fail, or skip?) | PASS | E2E #8 covers same-ID-twice; risk table lists 'Stale preference cache — opt-out not reflected' and 'One provider failure cascades to block others' (Medium risk). |
+| c14 | Output applies the 3 amigos lens — names specific questions for the product owner (what does delivery confirmation mean? what's the SLA on opt-out?) and architect (queue technology, retry strategy) | PASS | Gaps name PO questions ('who sets opt-outs, per-notification-type or per-channel, global unsubscribe all?') and architect questions ('confirm auth approach (API key, mTLS, internal JWT)', idempotency key responsibility). |
+| c15 | Output sets specific quality gates pre-merge (coverage threshold, contract tests pass, lint/type clean) and pre-release (load test at 50K/day, opt-out audit query returns zero violations, provider failure simulation) | PASS | Pre-merge: 90%+ branch coverage on suppression, OpenAPI validation, no lint/type errors. Pre-release: k6 at 600 req/min, 0 drops sustained load, PII log audit (grep for email/phone/device token → 0 hits). |
+| c16 | Output addresses scaling from 50K to 500K notifications/day in the test strategy — load tests must validate the 10x growth path, not just the launch volume | PASS | 'Run performance tests at both launch scale (50k/day) and growth scale (500k/day) so you have a baseline and can detect regression before it becomes an incident.' |
+| c17 | Output stays at strategy level — does NOT include implementation test code or specific test method names, leaving that to the QA Engineer | PASS | No code blocks anywhere in the output; all content is tables, checklists, descriptions, and rationale — no test function signatures or method names. |
+| c18 | Output identifies at least one specific gap — e.g. no fake Twilio/Sendgrid available yet, no preference-change-during-flight test scenario in scope, or no contract tests with the calling internal services | PASS | Gap #1: 'confirm Sendgrid sandbox mode, Twilio test credentials, and FCM test tokens are available and wired into CI before integration tests are written' — directly matches the criterion example. |
+| c19 | Output addresses observability requirements as a testability concern — tests need to assert delivery state, not just request acceptance, which requires hooks into the queue and provider callbacks | PARTIAL | Gap #3: 'The E2E test needs a way to assert DLQ state; if the DLQ is opaque at test time, that test can't be written.' DLQ observability is named but provider callback hooks are not explicitly addressed. |
 
 ### Notes
 
-This is an exceptionally thorough test strategy output. It correctly leads with risk assessment, defines six test levels with tools and coverage targets, provides 10 pre-development clarification questions, sets measurable pre-merge and pre-release gates, and explicitly calls out both the 50K and 500K/day load profiles. The provider-mocking requirement is named explicitly and placed as a recommendation. The only areas falling short of full marks are both at their PARTIAL ceiling by design: c8 assigns tests to levels but doesn't provide per-test rationale for the assignment decision; c19 shows observability in practice (delivery state assertions, audit trail recommendations) but never explicitly frames it as a testability architectural requirement. The absence of TCPA/GDPR naming in the risk table is a minor gap but does not prevent PASS on c10 since the risks are otherwise correctly identified and framed beyond generic data quality. Overall the output is production-quality.
+An exceptionally thorough strategy document that covers every major criterion: risk-first ordering, explicit legal/regulatory callouts (TCPA/GDPR/CAN-SPAM), a well-reasoned pyramid shift away from 70/20/10, and five concrete pre-sprint gaps. The only ceiling constraints are the two PARTIAL-capped criteria — per-criterion unit/integration/E2E rationale is given at aggregate level rather than per item, and observability covers DLQ but omits provider callback hooks explicitly.

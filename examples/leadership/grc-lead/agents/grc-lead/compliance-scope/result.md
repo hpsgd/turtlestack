@@ -21,203 +21,154 @@ Captured from a real headless invocation of the skill/agent.
 
 ### Chat response
 
-I'll walk you through the compliance landscape for this feature. This touches GDPR (Germany, UK), potentially the Australian Privacy Act, and requires front-loaded decisions before implementation.
+# Customer Health Score — Compliance Analysis
 
-## Risk Quantification Table
+Jurisdictions in scope: **Australia** (Privacy Act 1988 + APPs), **UK** (UK GDPR + DPA 2018), **Germany** (EU GDPR + BDSG). The feature is **profiling** under GDPR Art 4(4) — combining behavioural, support, and financial signals to predict a business outcome (churn) — which engages the high-risk regime.
 
-| Risk | Likelihood | Impact | Rationale |
+Note: data subjects are *individuals at customer businesses* (the user who opens the email, the user who logs in, the AP clerk who triggers payment). Even though customers are B2B, the inputs are personal data.
+
+---
+
+## 1. Risk Quantification
+
+| # | Risk | Likelihood | Impact | Rationale |
+|---|------|------------|--------|-----------|
+| R1 | Profiling without a valid lawful basis (GDPR Art 6) | **HIGH** | **HIGH** | L: no basis selected yet — default state is non-compliant. I: EU/UK fines up to 4% global turnover; AU civil penalties up to AUD $50M under amended Privacy Act. |
+| R2 | Automated decision-making engages GDPR Art 22 safeguards | **MED** | **HIGH** | L: depends on whether CS team treats score as advisory or actioned-without-review — drift toward "automated" is the default once volume grows. I: requires human-in-the-loop, explanation rights, contestation mechanism; retrofitting is expensive. |
+| R3 | Failure to complete DPIA before processing begins (Art 35) | **HIGH** | **MED** | L: large-scale profiling + multi-source combination = DPIA mandatory; not yet started. I: supervisory authority can order processing to halt; evidence of non-compliance in any later investigation. |
+| R4 | Cross-border transfer without SCCs/TIA (Ch V GDPR, UK IDTA) | **HIGH** | **HIGH** | L: ML training/inference location not yet decided — if any US/AU compute path exists, transfer occurs by default. I: BfDI (DE) and ICO (UK) have ordered transfer suspensions; Schrems II exposure. |
+| R5 | Transparency failure — customers unaware of profiling (Art 13/14, APP 5) | **HIGH** | **MED** | L: existing privacy notices almost certainly don't describe profiling logic, sources, or consequences. I: complaints, regulator action, mandatory notice rewrite, possible re-consent across base. |
+| R6 | Data subject rights gap — objection (Art 21), erasure (Art 17), access (Art 15) extended to model inputs/outputs | **MED** | **MED** | L: standard CRM DSAR processes don't typically cover model features or score history. I: 30-day response deadlines, regulator complaints from refused requests. |
+| R7 | German BDSG §26 / works council issues if any customer's *employees* are scored | **MED** | **MED** | L: email opens and logins by named employees of a German customer can implicate that customer's co-determination obligations toward their staff. I: contractual indemnity claims from customers, reputational damage. |
+| R8 | Discrimination / unfair outcomes against protected groups via proxy features | **MED** | **HIGH** | L: payment history and support volume correlate with company size, region, language — proxy risk is real. I: bias claim, regulatory scrutiny under emerging AI rules (EU AI Act high-risk classification possible). |
+| R9 | AU Privacy Act amendments — statutory tort for serious invasions of privacy (commenced 2025) | **MED** | **MED** | L: profiling without notice is a documented tort risk vector. I: individual civil actions, class action exposure. |
+| R10 | Security breach exposing combined profile (NDB scheme AU; Art 33/34 EU/UK) | **LOW** | **HIGH** | L: assumes baseline controls. I: combined dataset is more sensitive than parts — notification thresholds easily met. |
+
+---
+
+## 2. Lawful Basis — BLOCKING Open Question
+
+Engineering cannot proceed until product/legal picks a path **per jurisdiction**. Both options are viable in principle; the trade-offs differ.
+
+### Path A — Legitimate Interest (GDPR Art 6(1)(f) / UK GDPR / "reasonable expectations" analogy for AU APP 6)
+
+- **Requires:** formal Legitimate Interests Assessment (LIA) — purpose test, necessity test, balancing test — documented and signed off before processing.
+- **Pros:** no opt-in friction; covers existing customer base without re-papering; allows the CS team to operate at full coverage.
+- **Cons:** balancing test is harder when profiling is involved (recital 47 GDPR explicitly flags profiling as a case where DS interests may override); Art 21 right to object is **absolute** for direct-marketing-adjacent uses and strong for others — must build objection handling; supervisory authorities (esp. BfDI in DE) scrutinise LI for profiling more heavily.
+- **Germany-specific:** BfDI has historically taken a narrow view of LI for behavioural profiling; expect challenge.
+
+### Path B — Explicit Consent (GDPR Art 6(1)(a) / APP 3 collection notice + consent)
+
+- **Requires:** opt-in flow, granular (separate from T&Cs), revocable, demonstrably freely given. Consent records retained.
+- **Pros:** cleanest legal basis; aligns with transparency obligations; defensible in DE.
+- **Cons:** opt-out rates will reduce coverage (commonly 20–40% for non-essential profiling); re-consent campaign needed for existing base; revocation must propagate to model — score must be deletable on withdrawal; questions about whether consent is "freely given" when the data subject is an employee of the customer (power imbalance argument).
+
+### Why this is blocking
+
+The choice determines: (a) what the UX must contain, (b) what the privacy notice says, (c) whether you need consent-state storage and revocation plumbing, (d) which DPIA mitigations apply, (e) whether the DE rollout differs from UK/AU. None of those can be built speculatively.
+
+**Recommendation to put to product/legal:** mixed path — **Consent in DE**, **LI + LIA in UK**, **notification + opt-out under APP 6 in AU** — but the call is not mine to make.
+
+---
+
+## 3. Data Minimisation Analysis
+
+GDPR Art 5(1)(c) and APP 3.1 require data to be limited to what is *necessary*. "We have it, so we'll use it" is not lawful. Each source must be justified independently.
+
+| Source | Necessary? | Justification needed | Comment |
 |---|---|---|---|
-| **Profiling without lawful basis** | HIGH | HIGH | Article 6 GDPR requires explicit lawful basis. Processing four data sources (email, support, login, payment) to generate a decisioning score may lack clear legal ground depending on how you frame it. |
-| **Article 22 automated decision-making violation** | MEDIUM | HIGH | Health scores that directly influence CS outreach / account prioritisation could trigger the right not to be subject to automated decision-making. If scoring drives automated actions (e.g., auto-reassign support tier, auto-trigger interventions), consent or an exemption must be documented. |
-| **Consent as basis (if chosen)** | MEDIUM | MEDIUM | Opt-in for profiling typically sees 30–50% acceptance rates in B2B. If you rely on consent and uptake is low, you lose coverage and ability to build the feature at scale. Legitimate Interest avoids this but requires a documented LIA and is subject to challenge. |
-| **Data minimisation violation** | MEDIUM | MEDIUM | GDPR Article 5(1)(c) requires data be "adequate, relevant, and limited." If payment history is not necessary to predict churn, collecting it anyway violates minimisation and increases regulatory exposure. |
-| **Cross-border transfer without SCCs** | HIGH | HIGH | If the ML model trains or scores outside EU/UK, personal data must flow under Standard Contractual Clauses + Transfer Impact Assessment. Absence = illegal transfer + fines. |
-| **Inadequate model transparency** | MEDIUM | MEDIUM | Article 13/14 requires you tell data subjects (on signup, in privacy notices) that automated decision-making is happening. If the model is opaque and subjects ask "why am I flagged as at-risk?", you must be able to explain. If you can't, GDPR recital 71 suggests the decision lacks legitimacy. |
-| **Data deletion / model retraining** | MEDIUM | MEDIUM | GDPR Article 17 (right to erasure) applies. If a customer requests deletion, can you remove their data from the model and retrain? If not, you can't honour erasure requests — compliance failure. |
+| Login frequency | **Likely yes** | Direct engagement signal; strong churn predictor in most B2B SaaS. | Strongest single signal — most models can carry the load with this + support. |
+| Support ticket history | **Likely yes** | Tickets (volume, sentiment, resolution time) are well-established at-risk indicators. | PII-light if reduced to counts/categories rather than ticket bodies. |
+| Email open rates | **Question** | Often redundant with login frequency; opens are noisy (pixel blocking, MS Defender pre-fetch inflate them). | Propose: include only if model evaluation shows incremental AUC vs login+support baseline. Otherwise drop. |
+| Payment history | **Question** | Financial data has heightened sensitivity perception and is often a *lagging* indicator of churn, not leading. | Propose: exclude from v1. If support+login captures churn signal sufficiently, the marginal lift isn't worth the regulator/customer-trust cost. Reintroduce later with explicit justification if v1 underperforms. |
+
+**Proposed minimum viable feature set:** login frequency + support ticket metadata. Add email opens only if measurably useful; defer payment history to v2 pending evidence. Document the rationale — minimisation decisions are auditable.
 
 ---
 
-## Lawful Basis: Blocking Decision Required
+## 4. Cross-Border Transfers
 
-**You must choose one path now.** Engineering cannot proceed without this decision made explicitly and documented.
+UK and Germany data leaving the UK/EEA requires Chapter V safeguards. AU data leaving Australia requires APP 8 compliance.
 
-### Path A: Legitimate Interest (Art 6(1)(f))
+**Required regardless of destination decision:**
+- **Map the data flow.** Where does training data sit? Where does inference run? Where are model artifacts stored? Where do logs go? Each hop is a potential transfer.
+- **If any leg is outside UK/EEA** (e.g. US-hosted model API, AU-hosted compute, Anthropic/OpenAI inference):
+  - **EU → 3rd country:** EU SCCs (2021 modules — likely Module 2 controller→processor) + **Transfer Impact Assessment** evaluating destination country surveillance laws.
+  - **UK → 3rd country:** UK IDTA *or* EU SCCs + UK Addendum + TIA.
+  - **AU → 3rd country:** APP 8.1 — either contractual binding equivalent to APPs, or rely on customer consent under APP 8.2(b), or one of the other exceptions.
+- **Supplementary measures** if TIA flags risk: encryption in transit + at rest with keys held in EU, pseudonymisation of inputs before transfer, contractual audit rights, transparency reports.
+- **US-specific:** if using a US sub-processor certified under the **EU–US Data Privacy Framework** (and the UK Extension), that provides an adequacy route — but check the sub-processor's certification is current and covers the relevant processing.
 
-**What it means:**  
-You process data because you have a legitimate business interest (customer success, churn prevention) and that interest overrides the data subject's privacy interests. No opt-in needed.
-
-**Trade-offs:**
-
-| Advantage | Disadvantage |
-|---|---|
-| Full data coverage — no consent gatekeeping, all customers included | Requires a formal Legitimate Interest Assessment (LIA). If challenged, burden is on you to prove interest outweighs data subject rights. |
-| Faster feature rollout — no consent funnel to build | Subject to regulatory objection: if a customer disputes the assessment, you must respond within 30 days or stop processing. |
-| Applies to all four data sources without friction | GDPR recital 47: "processing is not based on the data subject's consent" — courts have been skeptical of Legitimate Interest for profiling. |
-
-**LIA must document:**
-1. Why each data source is necessary (e.g., "email open rates measure engagement; support tickets measure escalation risk; login frequency measures platform adoption")
-2. Why customer success outweighs privacy risk (e.g., "identifying at-risk accounts allows proactive intervention, improving retention and customer experience")
-3. Why this is narrowly tailored (i.e., why you can't achieve the same goal with fewer data sources)
-
-**Compliance burden:** Legal review + internal documentation + subject right to object.
-
-### Path B: Explicit Consent (Art 6(1)(a))
-
-**What it means:**  
-You ask each customer (or their data controller, if data is about their employees) for opt-in consent to use their data for the health score. Consent is freely given, specific, informed, and must be separate from service acceptance.
-
-**Trade-offs:**
-
-| Advantage | Disadvantage |
-|---|---|
-| Clearer legal ground — you have affirmative opt-in, hard to challenge | Consent rates typically 30–50% in B2B. You lose visibility into 50–70% of accounts. |
-| Easier to explain to customers — "we asked, you said yes" | Consent can be withdrawn anytime. Customer withdraws consent = you stop processing = feature breaks for that account. |
-| Article 22 easier to manage — with consent, automated decisions are permitted | Requires prominent, separate consent flow (not buried in T&Cs). Every customer must see it. |
-
-**Consent flow must:**
-1. Clearly explain what data is used and why (email opens, support history, login frequency, payment history — specifically)
-2. Explain what the score is used for (customer success outreach, prioritisation, risk flagging)
-3. State whether automated decisions follow (e.g., "this score may trigger automatic support reassignment") — if yes, mention Article 22 rights
-4. Be separate from other consents (not bundled with T&Cs or newsletter opt-in)
-5. Allow withdrawal at any time (one-click opt-out required)
-
-**Compliance burden:** Consent UX, audit trail (prove you captured consent), withdrawal handling.
+**Hard ask for engineering/architecture:** pin down the inference and training topology *before* compliance can sign off. "We'll figure it out" is not assessable.
 
 ---
 
-## Data Minimisation Analysis: Do You Need All Four Sources?
+## 5. DPIA — Required, Recommended Next Step
 
-**Question: Which of these data sources are actually necessary?**
+Article 35(3)(a) GDPR mandates a DPIA for *"systematic and extensive evaluation … based on automated processing, including profiling, on which decisions are based that produce legal effects or similarly significant effects."* The ICO and EDPB lists also flag *"combining datasets from multiple sources"* and *"innovative use of new technology (ML)"* as DPIA triggers — this feature hits at least three.
 
-| Data Source | Proxy For | Necessity | Alternative |
-|---|---|---|---|
-| **Email open rates** | Engagement / responsiveness | **ASSESS** — if the goal is "who will respond to our outreach," email engagement is relevant. But this is a *proxy*, not a direct measure. | Could use login frequency (see below) as a cleaner signal. |
-| **Support ticket history** | Problem severity / escalation risk | **LIKELY NECESSARY** — support volume + severity directly measure account health. Hard to replace. | ✓ Keep |
-| **Login frequency** | Platform adoption / active use | **LIKELY NECESSARY** — login patterns are a direct measure of engagement. Often the strongest churn signal. | ✓ Keep |
-| **Payment history** | Financial stress / churn risk | **QUESTION THIS** — payment failures are legally fraught (you're inferring financial health from payment data). If churn is already captured by support + login signals, payment data adds marginal value. GDPR minimisation says cut it. | Drop unless evidence shows payment data materially improves prediction over support+login alone. |
+**Next step:** run `/grc-lead:write-dpia` to produce the formal Article 35 assessment. It needs the lawful basis decision (§2) and data flow map (§4) as inputs — start gathering those in parallel.
 
-**Recommendation:**  
-Start with **support + login only**. These are necessary, directly interpretable, and lower regulatory risk. Add payment history only if you can prove it materially improves the model (e.g., "AUC improves 5–8%") *and* you have clear lawful basis for processing financial data (Legitimate Interest is weaker here; financial profiling often needs explicit consent).
-
-**Action for engineering:**  
-Before building the feature, run a feature importance analysis on historical churn data. If payment data contributes <5% to prediction accuracy, delete it from scope. Document the decision.
+The DPIA will also surface whether **prior consultation with the supervisory authority** (Art 36) is required — likely not, but the assessment determines that.
 
 ---
 
-## Cross-Border Transfer Governance
+## 6. Scope Boundary — GRC vs Engineering
 
-**Where does the model train / score?**
+The following are **engineering deliverables**, not GRC ones. Handing off:
 
-If the answer is **inside EU/UK** (e.g., AWS EU regions, on-premise), you're fine — no SCCs required.
+- **Security engineer** — input validation on collected fields, audit logging of model inputs/outputs and score-driven actions, data deletion mechanisms (per-record + cascade to model artifacts where feasible), encryption posture, access controls on the score store.
+- **ML engineer** — model explainability instrumentation (per-prediction feature attribution sufficient to answer a DSAR), bias evaluation across customer segments (size, region, language), drift monitoring, training data lineage, model versioning so a contested score can be reproduced.
+- **Product/UX** — privacy notice updates, opt-in/opt-out flows if consent path chosen, objection-handling UX, the CS team's workflow for human review of low scores.
 
-If the answer is **outside** (e.g., US cloud, AI provider in Singapore), you MUST:
-
-1. **Sign Standard Contractual Clauses (SCCs)** with the processor or sub-processor
-2. **Conduct a Transfer Impact Assessment (TIA)** — this is mandatory post-Schrems II (2020). It evaluates whether the destination country has "adequate" data protection laws. The US, Singapore, Australia do not have GDPR-equivalent laws, so the assessment must document:
-   - What data is transferred (structured, encrypted, pseudonymised?)
-   - What access rights does the destination country's government have (e.g., US CLOUD Act, UK national security powers?)
-   - What technical/contractual safeguards mitigate government access (e.g., encryption in transit/at rest, limited data visibility)?
-
-3. **If TIA finds inadequate safeguards**, you must either:
-   - Find a processor within EU/UK scope
-   - Add supplementary measures (encryption, pseudonymisation, compartmentalisation)
-   - Document the risk and accept it (rare, requires explicit approval)
-
-**Concrete example:**  
-If you use OpenAI's API to score health (send customer data to GPT for inference), OpenAI processes in the US. You need SCCs with OpenAI + a TIA showing that encryption and limited data retention mitigate US government access risk.
-
-**Action for engineering:**  
-Declare where the ML model lives (data centre region, cloud provider, processor name). If outside EU/UK, GRC escalates to Legal for SCC + TIA.
+GRC owns: lawful basis sign-off, DPIA, LIA (if Path A), records of processing (Art 30), transfer paperwork (SCCs/TIA/IDTA), regulator-facing documentation, and the policy that says when a score may or may not be acted on automatically.
 
 ---
 
-## DPIA: Mandatory Next Step
+## Immediate Asks (Blocking)
 
-**Article 35 GDPR mandates a Data Protection Impact Assessment for:**
-- Large-scale processing of special category data (financial data = special? debatable)
-- Systematic monitoring of people
-- **Profiling combined with multiple data sources** ← This applies to you
-
-A DPIA is not optional — it's required before you process. It documents:
-- Necessity + purpose
-- Risk analysis (beyond this table)
-- Mitigation measures
-- Residual risk acceptance
-
-**Recommendation:**  Trigger the `/grc-lead:write-dpia` skill immediately after this conversation. The DPIA will force you to:
-1. Finalise the lawful basis decision (Legitimate Interest or Consent)
-2. Lock down data minimisation (commit to support+login or include payment?)
-3. Document cross-border transfer safeguards
-
-The DPIA becomes your compliance artifact — referenced in audits, regulatory inquiries, and customer data requests.
-
----
-
-## Compliance vs. Engineering Handoff
-
-**GRC owns:**
-- Lawful basis decision (Legitimate Interest vs. Consent) — decide now
-- DPIA sign-off
-- Data processing agreement (DPA) with any ML provider
-- Privacy notice / transparency updates for customers
-
-**You (engineering / ML) own:**
-- Input validation: sanitise all data inputs before feeding to model
-- Audit logging: log every decision the model makes (timestamp, inputs, score, action taken)
-- Data deletion: when a customer deletes their account, can you remove them from the model snapshot and retrain? Engineer this.
-- Model explainability: when asked "why is my score 42?", can you explain? (SHAP values, feature contributions, decision trees — pick a method)
-- Model bias monitoring: does the score discriminate by geography (Germany vs. UK vs. Australia) or company size? Monitor post-launch.
-
-GRC will hand you a list of guardrails. You implement them in code + ML pipeline. GRC audits after.
-
----
-
-## Next Steps (in order)
-
-1. **Today:** Make the lawful basis call (Legitimate Interest or Consent). Document the reasoning.
-2. **Today:** Decide on data sources. Can you drop payment history? If not, why?
-3. **Handoff to GRC:** Trigger `/grc-lead:write-dpia` with the lawful basis + data scope locked in.
-4. **DPIA output** (1–2 weeks) feeds into engineering requirements (audit logging, deletion mechanisms, explainability).
-5. **Handoff to Legal:** SCC + TIA if ML happens outside EU/UK.
-6. **Engineering build:** with GRC guardrails + cross-border safeguards in place.
-
-What's your instinct on lawful basis — Legitimate Interest (simpler, full coverage) or Consent (defensible, but coverage risk)?
+1. **Lawful basis decision per jurisdiction** (§2) — product + legal.
+2. **Data flow / hosting topology** (§4) — engineering architect.
+3. **Data source minimisation call** (§3) — product + ML lead; confirm v1 source set.
+4. Once 1–3 land, kick off `/grc-lead:write-dpia`.
 
 ## Evaluation
 
 | Field | Value |
 |---|---|
 | Verdict | PASS |
-| Score | 19.0/20.0 (95%) |
-| Evaluated | 2026-05-03 |
-| Target duration | 39432 ms |
-| Target cost | $0.0937 |
+| Score | 17.0/17.0 (100%) |
+| Evaluated | 2026-05-27 |
+| Target model | claude-opus-4-7 |
+| Judge model | claude-sonnet-4-6 |
+| Target duration | 84409 ms |
+| Target cost | $0.3875 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | Identifies the applicable regulatory frameworks correctly — Australian Privacy Principles (APPs), GDPR (Germany and UK), and UK GDPR post-Brexit | FAIL | The output mentions 'GDPR (Germany, UK), potentially the Australian Privacy Act' in the intro but never explicitly names the Australian Privacy Principles (APPs) or the Privacy Act 1988 by its formal name. UK GDPR post-Brexit is referenced only as 'UK GDPR' in the compliance handoff section without noting how it diverges post-Brexit. The treatment is incomplete and informal. |
-| c2 | Flags that automated/ML-based profiling triggers specific GDPR requirements (Article 22 — automated decision-making and profiling) | PASS | The risk table includes 'Article 22 automated decision-making violation' as a row. The Path B (Consent) section states 'Article 22 easier to manage — with consent, automated decisions are permitted' and mentions 'you must mention Article 22 rights' in the consent flow requirements. |
-| c3 | Quantifies risks using likelihood and impact language — not just listing concerns generically | PASS | The Risk Quantification Table uses explicit 'Likelihood' and 'Impact' columns with LOW/MED/HIGH ratings for all seven risks, each with a one-line rationale. For example: 'Profiling without lawful basis — Likelihood: HIGH, Impact: HIGH' with rationale about Article 6 GDPR. |
-| c4 | Identifies the lawful basis question for each jurisdiction (consent vs legitimate interest) as a blocking open question | PASS | The 'Lawful Basis: Blocking Decision Required' section opens with 'You must choose one path now. Engineering cannot proceed without this decision made explicitly and documented.' It then presents both Path A (Legitimate Interest) and Path B (Explicit Consent) with full trade-off tables. |
-| c5 | Recommends a DPIA given the profiling + ML combination and scale of processing | PASS | The 'DPIA: Mandatory Next Step' section states 'Article 35 GDPR mandates a Data Protection Impact Assessment' and identifies 'Profiling combined with multiple data sources ← This applies to you'. It explicitly recommends triggering `/grc-lead:write-dpia`. |
-| c6 | Does not simply block the feature — presents a compliant path forward | PASS | The 'Next Steps (in order)' section provides a concrete six-step implementation path. The output throughout presents compliant paths (data minimisation, lawful basis options, SCCs for cross-border transfer) rather than blocking the feature. |
-| c7 | Separates GRC concerns (policies, frameworks, classification) from technical implementation (delegates guardrails to security engineer) | PASS | The 'Compliance vs. Engineering Handoff' section explicitly splits ownership: 'GRC owns: Lawful basis decision, DPIA sign-off, DPA, Privacy notice' and 'You (engineering / ML) own: Input validation, Audit logging, Data deletion, Model explainability, Model bias monitoring.' It states 'GRC will hand you a list of guardrails. You implement them in code + ML pipeline.' |
-| c8 | Addresses data minimisation — whether all four data sources are necessary for the score | PARTIAL | The 'Data Minimisation Analysis' section explicitly questions all four data sources in a table, labelling email open rates as 'ASSESS', support tickets and login frequency as 'LIKELY NECESSARY', and payment history as 'QUESTION THIS'. It recommends 'Start with support + login only' and proposes a feature importance analysis. This fully addresses the data minimisation requirement, meeting the PARTIAL ceiling. |
-| c9 | Recommends prior supervisory authority consultation under GDPR Art. 36 — only if residual risk would remain high after mitigations | SKIP | Criterion marked SKIP — excluded from scoring. |
-| c10 | Output names all three frameworks explicitly — Australian Privacy Principles (APPs / Privacy Act 1988), GDPR (Germany), and UK GDPR + Data Protection Act 2018 (UK) — and notes UK GDPR diverges slightly post-Brexit | FAIL | The output does not explicitly name 'Australian Privacy Principles (APPs)' or 'Privacy Act 1988'. It mentions 'potentially the Australian Privacy Act' only in passing. It does not name the 'Data Protection Act 2018 (UK)' and does not note that UK GDPR diverges post-Brexit. The Australian framework is notably underspecified. |
-| c11 | Output flags GDPR Article 22 (automated decision-making and profiling) as triggered by the ML-driven health score — including the right to human review and the requirement to inform the data subject | PASS | Article 22 is flagged in the risk table with 'Article 22 automated decision-making violation' and in the Consent path section. The transparency section notes customers must know 'whether automated decisions follow' and the consent flow must 'State whether automated decisions follow... mention Article 22 rights'. The right to human review is implicit in model explainability discussion. |
-| c12 | Output recommends a DPIA (Data Protection Impact Assessment) under Article 35 given large-scale profiling combined with multiple data sources, and names the next step (`/grc-lead:write-dpia`) | PASS | The DPIA section explicitly cites 'Article 35 GDPR' and 'Profiling combined with multiple data sources ← This applies to you'. It states 'Trigger the `/grc-lead:write-dpia` skill immediately after this conversation' and the Next Steps list item 3 repeats 'Trigger `/grc-lead:write-dpia`'. |
-| c13 | Output identifies the lawful basis question per jurisdiction as a blocking open issue — likely legitimate interest with a Legitimate Interests Assessment (LIA), or consent if customer-facing transparency is the chosen path — with the trade-offs of each | PASS | The 'Lawful Basis: Blocking Decision Required' section frames the choice as blocking ('Engineering cannot proceed without this decision'), presents both paths with full trade-off tables, and specifies LIA documentation requirements for Legitimate Interest path and consent flow requirements for Consent path. |
-| c14 | Output quantifies risks with likelihood and impact (e.g. "Likelihood: Medium — opt-out rates from current product analytics suggest 5-10% will object; Impact: High — automated decisioning without consent could trigger regulatory action"), not generic "this is a privacy concern" | PASS | The Risk Quantification Table uses explicit HIGH/MEDIUM ratings with specific rationales. For example: 'Cross-border transfer without SCCs — Likelihood: HIGH, Impact: HIGH — If the ML model trains or scores outside EU/UK, personal data must flow under Standard Contractual Clauses + Transfer Impact Assessment. Absence = illegal transfer + fines.' |
-| c15 | Output does not block the feature — presents a compliant path forward (data minimisation, transparent notice, opt-out mechanism, human review on at-risk-account decisions, retention limits) | PASS | The output provides a six-step 'Next Steps' path and throughout presents compliant implementation options. It mentions data minimisation, consent flow with opt-out, model explainability for human review. Note: retention limits are not explicitly addressed, but the overall compliant path is clearly presented. |
-| c16 | Output addresses data minimisation — questions whether all four sources (email open rates, support tickets, login frequency, payment history) are necessary, and proposes the minimum subset that achieves the customer-success goal | PASS | The 'Data Minimisation Analysis' table addresses all four sources individually. It recommends 'Start with support + login only' as the minimum subset and specifies conditions under which payment history could be added ('only if you can prove it materially improves the model... and you have clear lawful basis'). |
-| c17 | Output separates GRC concerns (policies, lawful basis, DPIA, customer notice) from technical implementation (delegates the technical guardrails — input validation, audit logging, deletion mechanisms — to the security engineer or developer, not specifying them itself) | PASS | The 'Compliance vs. Engineering Handoff' section explicitly delegates 'Input validation, Audit logging, Data deletion, Model explainability, Model bias monitoring' to 'engineering / ML' while keeping 'Lawful basis decision, DPIA sign-off, DPA, Privacy notice' under GRC. The section states 'GRC will hand you a list of guardrails. You implement them in code + ML pipeline. GRC audits after.' |
-| c18 | Output addresses transparency — the customer-success team using the score must know what data went in, customers must be informed in privacy notice and product UI, and there must be a route to challenge a decision | PASS | The 'Inadequate model transparency' risk row notes Article 13/14 requires informing data subjects about automated decision-making. The consent flow requirements specify explaining 'what data is used and why' and 'what the score is used for'. Model explainability (SHAP values, feature contributions) is listed as an engineering responsibility. The DPIA mention also covers this. |
-| c19 | Output addresses cross-border data transfer — German/UK customer data flowing to wherever the ML model runs, with adequacy decisions or Standard Contractual Clauses if outside the EU/UK | PARTIAL | The 'Cross-Border Transfer Governance' section explicitly covers SCCs and TIA requirements post-Schrems II, names the US CLOUD Act concern, and provides a concrete example (OpenAI). It requires 'Declare where the ML model lives' as an action for engineering. This fully meets the PARTIAL ceiling — adequacy decisions are not explicitly named as an alternative to SCCs, but SCCs and TIA are well covered. |
+| c1 | Identifies the applicable regulatory frameworks correctly — Australian Privacy Principles (APPs), GDPR (Germany and UK), and UK GDPR post-Brexit | PASS | Opening line: 'Australia (Privacy Act 1988 + APPs), UK (UK GDPR + DPA 2018), Germany (EU GDPR + BDSG)' — all three named explicitly. |
+| c2 | Flags that automated/ML-based profiling triggers specific GDPR requirements (Article 22 — automated decision-making and profiling) | PASS | R2 in risk table: 'Automated decision-making engages GDPR Art 22 safeguards… requires human-in-the-loop, explanation rights, contestation mechanism.' |
+| c3 | Quantifies risks using likelihood and impact language — not just listing concerns generically | PASS | 10-row risk table with explicit Likelihood/Impact ratings (e.g. R1: Likelihood HIGH, Impact HIGH) plus a one-line rationale per row. |
+| c4 | Identifies the lawful basis question for each jurisdiction (consent vs legitimate interest) as a blocking open question | PASS | Section 2 titled 'Lawful Basis — BLOCKING Open Question' presents Path A (LI + LIA) and Path B (Consent) with per-jurisdiction notes and 'Why this is blocking' subsection. |
+| c5 | Recommends a DPIA given the profiling + ML combination and scale of processing | PASS | Section 5: 'Article 35(3)(a) GDPR mandates a DPIA… this feature hits at least three [triggers].' Explicitly required. |
+| c6 | Does not simply block the feature — presents a compliant path forward | PASS | 'Immediate Asks (Blocking)' section lays out a 4-step compliant path; output presents minimisation, lawful basis options, DPIA steps, transfer safeguards. |
+| c7 | Separates GRC concerns (policies, frameworks, classification) from technical implementation (delegates guardrails to security engineer) | PASS | Section 6 explicitly delegates to 'Security engineer' and 'ML engineer' and lists GRC-owned items separately ('GRC owns: lawful basis sign-off, DPIA, LIA…'). |
+| c8 | Addresses data minimisation — whether all four data sources are necessary for the score | PARTIAL | Section 3 table evaluates all four sources; proposes minimum viable set (login + support metadata); email opens and payment history flagged as 'Question' with drop rationale. |
+| c9 | Recommends prior supervisory authority consultation under GDPR Art. 36 — only if residual risk would remain high after mitigations | SKIP | SKIP per test instructions. |
+| c10 | Output names all three frameworks explicitly — Australian Privacy Principles (APPs / Privacy Act 1988), GDPR (Germany), and UK GDPR + Data Protection Act 2018 (UK) — and notes UK GDPR diverges slightly post-Brexit | PASS | Header names all three with full citations; Section 4 uses UK IDTA separately from EU SCCs, acknowledging post-Brexit divergence implicitly through separate instruments. |
+| c11 | Output flags GDPR Article 22 (automated decision-making and profiling) as triggered by the ML-driven health score — including the right to human review and the requirement to inform the data subject | PASS | R2 names Art 22, lists 'human-in-the-loop, explanation rights, contestation mechanism'; R5 covers transparency/informing data subjects; Section 6 assigns human-review UX to Product. |
+| c12 | Output recommends a DPIA (Data Protection Impact Assessment) under Article 35 given large-scale profiling combined with multiple data sources, and names the next step (`/grc-lead:write-dpia`) | PASS | Section 5: 'Next step: run `/grc-lead:write-dpia` to produce the formal Article 35 assessment.' Exact skill name present. |
+| c13 | Output identifies the lawful basis question per jurisdiction as a blocking open issue — likely legitimate interest with a Legitimate Interests Assessment (LIA), or consent if customer-facing transparency is the chosen path — with the trade-offs of each | PASS | Section 2 presents Path A (LI + LIA with pros/cons) and Path B (Consent with pros/cons); Germany-specific BfDI note; mixed-path recommendation framed as 'not mine to make.' |
+| c14 | Output quantifies risks with likelihood and impact (e.g. 'Likelihood: Medium — opt-out rates from current product analytics suggest 5-10% will object; Impact: High — automated decisioning without consent could trigger regulatory action'), not generic 'this is a privacy concern' | PASS | R1: 'L: no basis selected yet — default state is non-compliant. I: EU/UK fines up to 4% global turnover; AU civil penalties up to AUD $50M.' All 10 rows follow same structure. |
+| c15 | Output does not block the feature — presents a compliant path forward (data minimisation, transparent notice, opt-out mechanism, human review on at-risk-account decisions, retention limits) | PASS | Sections 2–6 and Immediate Asks collectively form a compliant path; minimisation, lawful basis choice, notice, human review, and DPIA are all addressed. |
+| c16 | Output addresses data minimisation — questions whether all four sources (email open rates, support tickets, login frequency, payment history) are necessary, and proposes the minimum subset that achieves the customer-success goal | PASS | Section 3 table covers all four; 'Proposed minimum viable feature set: login frequency + support ticket metadata.' Email opens and payment history receive drop rationale. |
+| c17 | Output separates GRC concerns (policies, lawful basis, DPIA, customer notice) from technical implementation (delegates the technical guardrails — input validation, audit logging, deletion mechanisms — to the security engineer or developer, not specifying them itself) | PASS | Section 6: 'Security engineer — input validation… audit logging… data deletion mechanisms'; 'GRC owns: lawful basis sign-off, DPIA, LIA…' Clean split. |
+| c18 | Output addresses transparency — the customer-success team using the score must know what data went in, customers must be informed in privacy notice and product UI, and there must be a route to challenge a decision | PASS | R5 covers privacy notice update obligation; R2 names contestation mechanism; Section 6 delegates 'objection-handling UX' and privacy notice updates to Product/UX. |
+| c19 | Output addresses cross-border data transfer — German/UK customer data flowing to wherever the ML model runs, with adequacy decisions or Standard Contractual Clauses if outside the EU/UK | PARTIAL | Section 4 covers EU SCCs (Module 2), UK IDTA, TIA, supplementary measures, AU APP 8, and EU–US DPF adequacy. Detailed and specific. |
 
 ### Notes
 
-The output is strong overall — it correctly structures the lawful basis blocking decision, provides a detailed risk table with explicit likelihood/impact ratings, addresses data minimisation across all four sources, covers cross-border transfer with SCCs and TIA, recommends the DPIA with the `/grc-lead:write-dpia` handoff, and cleanly separates GRC from engineering responsibilities. The two FAIL criteria both relate to the same gap: the Australian Privacy Principles (APPs / Privacy Act 1988) are mentioned only in passing ('potentially the Australian Privacy Act') without formal naming, and the UK GDPR + Data Protection Act 2018 post-Brexit divergence is not called out. For a B2B product with Australian customers, this is a meaningful gap — the APPs have distinct obligations around sensitive information, cross-border disclosure, and privacy policy requirements that differ from GDPR. The output also does not explicitly address retention limits as part of the compliant path (c15 notes this gap), though it does cover most other elements. Despite these gaps, the response is substantively correct and actionable on the major GDPR obligations.
+The output is a near-perfect response, meeting every scored criterion fully and both PARTIAL-capped criteria at their ceiling. The only gap worth noting is that UK GDPR post-Brexit divergence is acknowledged implicitly (separate IDTA instrument) rather than with an explicit sentence — but the evidence is unambiguous.

@@ -20,178 +20,307 @@ Captured from a real headless invocation of the skill/agent.
 
 ### Chat response
 
-```markdown
-## Content analysis: How to Debug Distributed Teamwork, as Suggested by New Research
+Here is the full analysis (also written to `content-analysis--atlassian-remote-work-research.md`):
 
-**Date of content:** October 7, 2020
-**Date of analysis:** 2026-05-11
-**Word count:** Approximately 1,200
+---
+
+## Content analysis: "How to debug distributed teamwork, as suggested by new research" (Atlassian Blog)
+
+**Date of content:** 7 October 2020
+**Date of analysis:** 2026-05-27
+**Word count:** ~900 (body text, excluding navigation and CTAs)
+
+---
 
 ### Entities
 
 **People:**
-- Leisa Reichelt — Author, researcher focused on teamwork and team effectiveness (source/authority)
-- Tiffany Philippou — Podcast host (quoted subject, cited as external voice)
+- Leisa Reichelt — Head of Research & Insights (Atlassian); author of post; primary source and framing voice
+- Tiffany Philippou — Podcaster; quoted as external voice on inequality; subject/illustrative authority (not a researcher)
 
 **Organisations:**
-- Atlassian — Commissioned the study, employer/publisher of content (interested party)
+- Atlassian — Publisher and funder of the underlying research; has direct commercial interest in distributed-work tooling
+- Paper Giant — Australian UX/research agency; co-conducted the study; credited only in the PDF filename, not in the article body
+- Confluence, Trello (Atlassian products) — recommended as solutions
+- Miro, Mural, Slack, Microsoft Teams, Karmabot — non-Atlassian tools also recommended (creates appearance of impartiality)
 
-**Locations:**
-- International (study scope stated but no specific countries named)
-- Various industries (mentioned generically, no specifics)
+**Key figures cited:**
+| Statistic | Context | Attribution |
+|---|---|---|
+| 43% | Increased job security / career concern | "The research" (Atlassian/Paper Giant study) |
+| 33% | Spend more time reporting progress than pre-COVID | Same study |
+| 46% | Women reporting increased confidence in achieving goals | Same study |
+| 40% | Men reporting the same | Same study |
+| "four-month" | Duration of study, beginning April 2020 | Article text |
 
-**Key figures and statistics:**
-- 43% of remote workers — increased concern about job security/career progression
-- 46% of women — reported increased confidence in ability to achieve
-- 40% of men — reported increased confidence in ability to achieve
-- One-third of remote workers — spent more time reporting progress than before
+No sample size, country breakdown, industry split, or recruitment methodology is disclosed in the article.
 
-**Products/technologies cited:**
-- Confluence, Google Docs, Trello, Miro, Mural (listed as visibility/collaboration solutions)
+---
 
 ### Key claims
 
-**Primary claim:**
-Remote work presents both challenges and unexpected benefits. Organizations that intentionally address five key issues through deliberate practices and tool adoption can build more equitable and effective distributed work cultures.
+**Primary claim:** Distributed work introduces predictable, manageable failure modes — and organisations that adopt the right practices and tools can navigate them effectively.
 
 **Supporting claims:**
-- Remote collaboration reduces spontaneous exchanges and organic knowledge-sharing (attributed to "the research")
-- 43% of workers worry about visibility and career progression in remote settings (research finding)
-- Women report higher confidence in remote-work video settings than men (46% vs 40%) due to visual equality, relaxed dress codes, and reduced dominance dynamics (research finding)
-- Home environment inequalities (space, wifi, background visibility) create career disadvantages based on geography and income (research finding)
-- Three factors explain remote work success: household complexity, role complexity, and network quality (research framework)
+- Spontaneous collaboration declines in remote settings, threatening innovation. *(Study; no sample size given)*
+- 43% of remote workers have increased job security concerns despite feeling individually productive. *(Study; no denominator disclosed)*
+- 33% of remote workers spend more time reporting progress than pre-COVID. *(Study; no denominator)*
+- Women benefit disproportionately from video-call equality and relaxed appearance standards. *(Study: 46% vs 40%)*
+- Three structural factors — household complexity, role complexity, network quality — explain variation in remote work experience. *(Author's interpretive framework from the study)*
+- Asynchronous tools and OKRs are the correct organisational response. *(Author assertion; unattributed)*
 
 **Implicit claims:**
-- Atlassian's internal study is a credible research authority on teamwork effectiveness
-- The tools Atlassian sells or recommends (Confluence, Trello, etc.) help mitigate identified problems
-- Remote work is permanent or long-term; organizations must adapt rather than await return to offices
-- Intentional management and tool choices can engineer better remote work outcomes
+1. **Atlassian is a credible, neutral authority on distributed work.** Company-funded research is presented without conflict-of-interest disclosure.
+2. **Atlassian's products are the natural solution.** Confluence and Trello appear in "recommended solutions" immediately after each negative finding — the research structure creates a purchase justification.
+3. **Findings are generalisable.** The piece uses universal language ("distributed work could lead to…") without qualifying for the study's unknown sample composition.
+4. **The problem is primarily a tooling and process problem.** Structural issues (housing inequality, care burden, internet access gaps) are surfaced but resolved via employer stipends and async tools — systemic causation is deprioritised in favour of product-addressable solutions.
+
+---
 
 ### Sentiment
 
-**Overall tone:** Positive with concern undertones — Mixed. 
-The piece acknowledges challenges sympathetically but frames them as solvable through organizational action and tool adoption. Optimistic closing ("opportunities to learn," "optimism").
+**Overall tone:** Optimistic — challenges are real but framed as solvable puzzles with available solutions.
 
 **Sentiment targets:**
-- Positive toward: women benefiting from remote work visibility and inclusivity; organizations taking intentional action; distributed collaboration methods
-- Sympathetic concern toward: workers in tight living quarters, those experiencing "out of sight, out of mind" anxiety
-- Implicit criticism of: offices that amplify dominant personalities, companies not providing home office support, practices that surface inequality
+- Remote / distributed work: cautiously positive — problems are tractable
+- Atlassian tools and frameworks: unambiguously positive (presented as solutions)
+- Employers: mildly pressured — framed as having a responsibility to act
+- Women: empathetic and celebratory of gains; inequality surfaced as a silver lining
+- Workers in difficult circumstances: sympathetic, but resolved via employer action rather than structural critique
 
 **Notable language signals:**
-- "Innovation drought" — loaded, suggests stagnation and risk
-- "Unexpected benefits" — frames women's gains as surprising, not obvious or expected
-- "Latent inequalities" — passive framing; inequalities existed but were hidden, now "surfaced" by remote work (not created by it)
-- "Creative solutions," "opportunities to learn" — agency and optimism
-- "Out-of-sight, out-of-mind" — quoted directly, colloquial language humanizes the anxiety
+- *"fascinating moment"* — neutralises a crisis; researcher excitement over worker disruption
+- *"unexpected benefits"* — finding 3 headline; frames inequality as having an upside
+- *"creative problem-solving"* / *"innovative solutions"* — progress framing; forecloses pessimism
+- *"lasting reality"* — normalises distributed work as permanent; aligns with Atlassian's market position
+- *"debug distributed teamwork"* — headline metaphor; frames human collaboration as a software engineering problem amenable to technical fixes (directly flatters a tool-buying, technical audience)
+
+---
 
 ### Framing
 
-**Perspective:**
-Framed from an organizational change-management perspective — how companies can optimize remote work. Predominantly Atlassian's research lens. Individual worker voices appear only as illustration of organizational problems, not as stakeholders setting the agenda.
+**Perspective:** Structured entirely from the employer / team-leader viewpoint. Workers appear as data points and illustrative quotes, not as agents whose interests might conflict with employer decisions.
 
 **Foregrounded:**
-- Solutions and recommendations (each finding includes "recommended solutions")
-- Tools and processes (visibility tools, asynchronous practices, OKRs, digital recognition)
-- The benefits for women (entire section, positive framing)
-- Organizational agency ("organizations can," "teams will creatively address")
+- Five numbered findings with clean headlines — signals rigour and completeness
+- Specific percentage statistics — lend authority and memorability
+- Actionable recommendations after every finding — positions Atlassian as solutions provider
+- Atlassian's own Team Playbook ("Work Life Impact" play) as a recommended tool
 
 **Backgrounded:**
-- Costs of implementing recommendations (home office stipends, tool adoption, process changes unpriced)
-- Tension between different workers' needs (women's comfort vs. those needing structure)
-- Methodological details of the research (sample size, geographic distribution, industry breakdown, validation)
-- External research or competing perspectives on remote work
+- Paper Giant's co-researcher role — absent from article body; only discoverable in the PDF filename
+- Research methodology — sample size, recruitment, geography, industry: none disclosed
+- Atlassian's commercial conflict of interest — no disclosure statement
+- The statistical gap between 46% and 40% in the gender finding is small and unqualified for significance
 
 **Omissions:**
-- No discussion of hybrid work or phased return trade-offs (mentions "phased returns" only in context of office access prioritization)
-- No environmental benefits of remote work (commuting reduction, etc.)
-- No worker/union perspective on remote work rights or permanence
-- No measurement of actual innovation output — only inference from collaboration patterns
-- No discussion of implementation barriers or failure modes
-- No competing research or studies cited
-- No mention of peer review or academic validation of the study
-- No discussion of selection bias (Atlassian customers more likely to have remote-work infrastructure than general population)
+- No competing or independent academic research cited
+- No external researchers or critics
+- Causality question: does remote work cause innovation decline, or does emergency disruption?
+- Temporal limitation: a four-month acute-shock study is generalised to "distributed work" as a permanent mode — a significant analytical leap
+- Worker recourse: the piece recommends employer action with no discussion of accountability if employers don't follow through
 
-**Dominant framing device:**
-Progress/solution framing: identifies problems → frames them as solvable → provides actionable recommendations. Secondary device: human interest (individual quotes and experiences).
+**Dominant framing device:** Progress framing with embedded responsibility framing. "Yes, things are hard — here is what forward-thinking organisations will do." Activates reader identity as a capable, progressive leader who implements solutions.
+
+---
 
 ### Narrative
 
-**Story structure:** "Organizations Face New Reality; Those Who Act Thoughtfully Will Thrive"
+The piece tells a **revelation + progress** story: COVID-19 exposed hidden truths about team dynamics, and Atlassian's research now provides the map forward. Team leads and managers are cast as capable actors; workers are cast as beneficiaries of good management decisions.
 
-The piece activates a pragmatic, problem-solving narrative. Remote work is framed as a novel challenge requiring intentional experimentation rather than a threat. The implied arc: chaos/uncertainty (March 2020) → research-backed insight → organizational action → equitable remote culture.
+A secondary **human cost** narrative runs through findings 2 and 4 (job insecurity, housing inequality), rendered personal through individual quotes to activate empathy and urgency — but each is immediately contained by a "recommended solutions" section, keeping the emotional register within an actionable framework.
 
-Audience response activated: managerial confidence ("we can solve this"), sense of responsibility ("we must act"), and buy-in to organizational/tool-based solutions. The women's benefits angle activates recognition of an unexpected positive outcome, positioning organizations as winners when they maintain remote-friendly practices.
+Together the narratives make the piece *feel* like honest research journalism while functioning as a product-category whitepaper. The reader arrives at "distributed work requires investment in the right tools and practices" as a research conclusion rather than a marketing claim.
 
-The narrative does NOT position this as workers advocating for rights or permanent remote options — it positions organizations as the active agents making choices.
+---
 
 ### Source structure
 
 | Source type | Count | For what claims |
 |---|---|---|
-| Named primary | 1 | Tiffany Philippou (anecdote about home office inequality; external validation of a concern) |
-| Named secondary | 0 | No external studies or published research cited |
-| Anonymous/unattributed quotes | 4+ | Worker experiences ("out-of-sight, out-of-mind," "restrained in business office," etc.) — illustrate research findings |
-| Unattributed assertions | 5 | The five key findings presented as research conclusions without methodological disclosure |
-| Internal proprietary research | 1 | "Atlassian commissioned an international, multimodal study beginning in April 2020" — described but not linked, no peer review mentioned, no raw data available |
+| Named primary | 2 | Leisa Reichelt (all findings, all framing); Tiffany Philippou (inequality illustration only) |
+| Named secondary | 1 | Atlassian + Paper Giant study — self-produced; not peer-reviewed; no methodology disclosed |
+| Anonymous | Several | Research participants quoted without name, role, industry, or country |
+| Unattributed | Multiple | All percentage statistics (no denominators); OKR recommendation; dress-code recommendation |
 
-**Source credibility assessment:** The piece relies almost entirely on Atlassian's unpublished, unvalidated internal research. No external studies are cited. The single external voice (Tiffany Philippou) is a podcast host, not a researcher. Worker quotes are anonymous, lending authenticity but preventing verification. The "multimodal, international study" is mentioned but not characterized by sample size, methodology, or validation status. Readers are asked to trust Atlassian's research authority without independent verification.
-
-### Summary assessment
-
-This is a strategically framed thought leadership piece designed to position Atlassian as a remote-work expertise authority while subtly marketing Atlassian's tools as solutions to identified problems. The research findings are presented as neutral discoveries, but every finding connects to a Atlassian product category (visibility via Confluence, OKRs tracking, digital recognition via team tools). The piece frames remote work as solvable through better processes and tools rather than as a structural challenge that may benefit workers and hurt organizations — a narrative that serves Atlassian's business interests. The source structure (one internal study, zero external validation, anonymous worker quotes) means claims cannot be independently verified; the framing choices position organizations and tools as active agents while workers appear only as problems to be managed.
-
-```
+No external academic studies, no independent researchers, no government or NGO data sources are cited.
 
 ---
 
-## Key takeaways for your competitive positioning
+### Summary assessment
 
-**What Atlassian is actually claiming:** "We studied remote work, found five categories of problems, and here's how to solve them" — positioning the company as both researcher and solution provider.
+This is research-branded content marketing. The findings are structured to create a purchase journey — each "problem" is followed by a "solution" that includes an Atlassian product — while the research provenance (self-funded, Paper Giant co-author uncredited in the article body, no disclosed methodology or sample size) is insufficient to support the authoritative, universal tone. For competitive intelligence: the most significant move here is not the data but the positioning — **Atlassian frames itself as the epistemic authority on distributed teamwork**, not merely a toolmaker. That's a category-ownership play: if Atlassian defines the language and evidence base for how distributed work is understood, competitors are permanently responding to a frame Atlassian controls.
 
-**The framing strategy:** 
-- Frames remote work as *manageable challenges* (not structural advantages/disadvantages or worker rights)
-- Centers organizational agency (what companies should do) over worker voice (what workers want)
-- Buries the fact that women benefit from remote work by wrapping it as a finding to "maintain," not a reason to embrace remote-first
-- Positions Atlassian's tools as solutions without ever saying "buy our products"
+### Artifacts written
 
-**Source quality:** This is the weak point for Atlassian. The entire piece rests on their internal, unpublished study. No external validation. No peer review. No competing research cited. Tiffany Philippou's quote is the only external voice, and she's not a researcher. The five "findings" are asserted without showing methodological rigor.
+#### `work/content-analysis--atlassian-remote-work-research.md`
 
-If you're competing here, independent research citing peer-reviewed studies or broader data would outflank this — especially on the innovation drought claim, which is intuitive but not proven.
+```
+## Content analysis: "How to debug distributed teamwork, as suggested by new research" (Atlassian Blog)
+
+**Date of content:** 7 October 2020
+**Date of analysis:** 2026-05-27
+**Word count:** ~900 (body text, excluding navigation and CTAs)
+
+---
+
+### Entities
+
+**People:**
+- Leisa Reichelt — Head of Research & Insights (Atlassian); author of post; primary source and framing voice
+- Tiffany Philippou — Podcaster; quoted as external voice on inequality; subject/illustrative authority (not a researcher)
+
+**Organisations:**
+- Atlassian — Publisher and funder of the underlying research; has direct commercial interest in distributed-work tooling
+- Paper Giant — Australian UX/research agency; co-conducted the study; credited only in the PDF filename, not in the article body
+- Confluence, Trello (Atlassian products) — recommended as solutions
+- Miro, Mural, Slack, Microsoft Teams, Karmabot — non-Atlassian tools also recommended (creates appearance of impartiality)
+
+**Key figures cited:**
+| Statistic | Context | Attribution |
+|---|---|---|
+| 43% | Increased job security / career concern | "The research" (Atlassian/Paper Giant study) |
+| 33% | Spend more time reporting progress than pre-COVID | Same study |
+| 46% | Women reporting increased confidence in achieving goals | Same study |
+| 40% | Men reporting the same | Same study |
+| "four-month" | Duration of study, beginning April 2020 | Article text |
+
+No sample size, country breakdown, industry split, or recruitment methodology is disclosed in the article.
+
+---
+
+### Key claims
+
+**Primary claim:** Distributed work introduces predictable, manageable failure modes for teams — and organisations that adopt the right practices and tools can navigate them effectively.
+
+**Supporting claims:**
+- Spontaneous collaboration declines in remote settings, threatening innovation. *(Attributed to the Atlassian/Paper Giant study — no sample size given)*
+- 43% of remote workers have increased job security concerns despite feeling individually productive. *(Study; no denominator disclosed)*
+- 33% of remote workers spend more time reporting progress than pre-COVID. *(Study; no denominator)*
+- Women benefit disproportionately from video-call equality and relaxed appearance standards. *(Study: 46% vs 40%)*
+- Three structural factors — household complexity, role complexity, network quality — explain variation in remote work experience. *(Author's interpretive framework derived from study)*
+- Asynchronous tools and outcome-based measurement (OKRs) are the correct response to these challenges. *(Author assertion, unattributed)*
+
+**Implicit claims:**
+1. **Atlassian is a credible, neutral authority on distributed work.** The post presents company-funded research as independent research without disclosing the commercial conflict of interest.
+2. **Atlassian's products are the correct solution.** Confluence and Trello appear in the "recommended solutions" for findings 1 and 2 — the research findings are structured to create purchase justification.
+3. **These findings are generalisable.** The article uses universal language ("distributed work could lead to…", "people missed…") without qualifying for the study's unknown sample composition.
+4. **The problem is primarily a tooling and process problem.** Structural issues (housing inequality, care burden distribution, internet access gaps) are surfaced but then resolved with employer stipends and asynchronous tools — systemic causation is deprioritised in favour of product-addressable solutions.
+
+---
+
+### Sentiment
+
+**Overall tone:** Optimistic — the piece frames serious challenges as solvable puzzles with available solutions.
+
+**Sentiment targets:**
+- Remote / distributed work: cautiously positive — problems are real but tractable
+- Atlassian tools and frameworks: unambiguously positive (presented as solutions)
+- Employers: mildly pressured — framed as having a responsibility to act
+- Women: empathetic and celebratory of gains; inequality findings treated as a silver lining
+- Workers in difficult home circumstances: sympathetic, but their situation is resolved via employer action rather than structural critique
+
+**Notable language signals:**
+- *"fascinating moment"* — neutralises a crisis; researcher excitement over worker disruption
+- *"unexpected benefits"* — finding 3 headline; frames inequality as having an upside
+- *"creative problem-solving"* / *"innovative solutions"* — progress framing; forecloses pessimism
+- *"lasting reality"* — normalises distributed work as permanent; aligns with Atlassian's market position
+- *"debug distributed teamwork"* — headline metaphor; frames human collaboration as a software problem amenable to engineering fixes (directly flatters a technical, tool-buying audience)
+
+---
+
+### Framing
+
+**Perspective:** The piece is structured entirely from the perspective of the employer/team-leader making decisions about distributed work. Workers appear as data points and illustrative quotes, not as agents with perspectives that might conflict with employer interests.
+
+**Foregrounded:**
+- Five numbered findings with clean headlines — signals rigour and completeness
+- Specific percentage statistics — lend authority and memorability
+- Actionable recommendations after every finding — positions Atlassian as a solutions provider
+- Atlassian's own Team Playbook ("Work Life Impact" play) as a recommended tool
+
+**Backgrounded:**
+- Paper Giant's role as co-researcher — buried in PDF URL, absent from article text
+- Research methodology — sample size, participant recruitment, geographic scope, industry distribution: none disclosed
+- Atlassian's commercial interest in the conclusions — no conflict-of-interest statement
+- The minority finding that 46% vs 40% difference in women's confidence is statistically small and based on an undisclosed sample
+
+**Omissions:**
+- No competing research or external academic literature cited
+- No dissenting or critical voices from researchers outside Atlassian
+- The causality question: does remote work *cause* innovation decline, or were the studied organisations already in disruption?
+- The temporal limitation: a four-month study during a global emergency captures an acute shock, not a stable remote-work equilibrium — generalising to "distributed work" broadly is an unsupported leap
+- Power dynamics: the piece recommends employers offer coworking stipends but does not address whether workers have any recourse if employers don't
+
+**Dominant framing device:** Progress framing with embedded responsibility framing. The piece says: "yes, things are hard — here is what forward-thinking organisations will do." It activates reader identity as a capable, progressive leader who will adopt the recommendations.
+
+---
+
+### Narrative
+
+The piece tells a **revelation + progress** story: a unique historical moment (COVID-19) has exposed hidden truths about how teams work, and those who study the data carefully (Atlassian) can now offer the map forward. The audience — team leads and managers — are cast as the capable actors who can implement the solutions. Workers are cast as the beneficiaries of good management decisions.
+
+A secondary **human cost** narrative runs through findings 2 and 4 (job insecurity, housing inequality), rendered personal through individual quotes. This activates empathy and urgency — but is quickly resolved by each finding's "recommended solutions" section, containing the distress within an action framework.
+
+Together the narratives produce a piece that *feels* like honest research journalism but functions as a product-category whitepaper: the reader arrives at "distributed work requires investment in the right tools and practices" as a research conclusion rather than a marketing claim.
+
+---
+
+### Source structure
+
+| Source type | Count | For what claims |
+|---|---|---|
+| Named primary | 2 | Leisa Reichelt (all findings, all framing); Tiffany Philippou (inequality illustration) |
+| Named secondary | 1 | Atlassian + Paper Giant study — self-produced; not peer-reviewed; no methodology disclosed |
+| Anonymous | Several | Research participants quoted without name, role, industry, or country |
+| Unattributed | Multiple | All percentage statistics presented without sample-size denominator; OKR recommendation; dress-code recommendation |
+
+No external academic studies, no independent researchers, no government or NGO data sources are cited.
+
+---
+
+### Summary assessment
+
+This is a piece of research-branded content marketing. The findings are structured to create a purchase journey — each "problem" is followed by a "solution" that includes an Atlassian product — while the research provenance (self-funded, Paper Giant co-author uncredited in body text, no disclosed methodology) is insufficient to support the authoritative, universal tone. The statistics cited are individually plausible but collectively unverifiable: no sample size, no methodology, no peer review. For competitive intelligence purposes, the most significant observation is the implicit claim: **Atlassian frames itself as the epistemic authority on distributed teamwork**, not just a toolmaker — a positioning move that positions the product suite as the natural infrastructure for the future of work.
+
+```
 
 ## Evaluation
 
 | Field | Value |
 |---|---|
 | Verdict | PASS |
-| Score | 15.0/17.0 (88%) |
-| Evaluated | 2026-05-11 |
-| Target duration | 61812 ms |
-| Target cost | $0.0901 |
+| Score | 17.0/17.0 (100%) |
+| Evaluated | 2026-05-27 |
+| Target model | claude-sonnet-4-6 |
+| Judge model | claude-sonnet-4-6 |
+| Target duration | 161419 ms |
+| Target cost | $0.2529 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | Agent routes to `/analyst:content-analysis` skill for a single article URL | FAIL | Captured output is the direct analysis with no mention of skill invocation or routing to `/analyst:content-analysis`. Output jumps straight to the markdown analysis block. |
-| c2 | Agent distinguishes analysis from summarisation — produces entity extraction, key claims, sentiment, framing, and narrative sections rather than a plain summary | PASS | Discrete sections present: Entities, Key Claims, Sentiment, Framing, Narrative, Source Structure — not a plain summary. |
-| c3 | Framing observations are stated as interpretive judgements, not facts ("the piece frames X as..." not "X is...") | PASS | "Framed from an organizational change-management perspective", "The piece activates a pragmatic, problem-solving narrative", "Frames remote work as manageable challenges". |
-| c4 | Sentiment is assessed at the author's tone level, not the subject's actual situation | PASS | "Overall tone: Positive with concern undertones — Mixed. The piece acknowledges challenges sympathetically but frames them as solvable through organizational action and tool adoption." |
-| c5 | Source structure section identifies how claims are attributed (named sources, anonymous, unattributed) | PASS | Table with Named primary (1), Named secondary (0), Anonymous/unattributed quotes (4+), Unattributed assertions (5), Internal proprietary research (1). |
-| c6 | Agent notes what the article omits or backgrounds, with a caveat if topic knowledge is insufficient to fully assess omissions | PARTIAL | Detailed Omissions sub-section lists 8 specific omissions. No caveat about knowledge limitations is included, though ceiling is PARTIAL regardless. |
-| c7 | Agent does not produce a literature review or academic-style output — output is analytical, not encyclopedic | PASS | No literature review present. Output stays scoped to the single Atlassian article's argument structure. |
-| c8 | Agent does not assess whether the article's conclusions are correct, only how it argues | PASS | Analytical body consistently examines argument structure. One minor slip: "intuitive but not proven" on innovation drought, but main output stays on how the piece argues. |
-| c9 | Output is structured per the content-analysis format — sections for Entities, Key Claims, Sentiment, Framing, Narrative, Source Structure — not a plain summary | PASS | All six required sections (Entities, Key Claims, Sentiment, Framing, Narrative, Source Structure) are explicitly present with named headings. |
-| c10 | Output's Entities section extracts people (by role: source / subject / authority), organisations, key statistics and dates referenced in the article — with the article URL fetched and read | PASS | Reichelt listed as "source/authority", Philippou as "quoted subject"; Atlassian listed; key figures (43%, 46%, 40%, one-third) and date (October 7, 2020) extracted. |
-| c11 | Output's Key Claims section distinguishes the primary claim from supporting claims and implicit claims, with attribution per claim | PASS | Explicit sub-sections: Primary claim, Supporting claims (each attributed to "the research"/"research finding"), Implicit claims — all clearly labelled. |
-| c12 | Output's framing observations are clearly stated as INTERPRETIVE — e.g. "the piece frames remote work as a productivity question rather than a wellbeing or culture question" — not asserted as fact | PASS | "Dominant framing device: Progress/solution framing"; "The piece activates a pragmatic, problem-solving narrative" — consistently interpretive language. |
-| c13 | Output's sentiment assessment evaluates the AUTHOR's tone and target — "tone is mildly positive on hybrid models, mildly negative on fully remote" — not the actual reality of remote work | PASS | "Sentiment targets: Positive toward: women benefiting... Sympathetic concern toward: workers in tight living quarters" — author tone/targets, not remote work reality. |
-| c14 | Output's source structure analyses how claims are attributed — count of named primary sources (e.g. 2 named Atlassian executives), named secondary sources, anonymous citations, unattributed assertions | PASS | Source structure table counts each category with specific numbers and describes what claims each type supports. |
-| c15 | Output identifies the dominant narrative structure — e.g. "transformation narrative" or "research-reveals narrative" — and what audience response it activates | PASS | "Story structure: 'Organizations Face New Reality; Those Who Act Thoughtfully Will Thrive'"; "Audience response activated: managerial confidence, sense of responsibility, buy-in to organizational/tool-based solutions." |
-| c16 | Output flags omissions where the article backgrounds or skips relevant context — e.g. "no mention of selection bias in the Atlassian-internal survey" — with a caveat if topic knowledge is insufficient to fully assess | PASS | Explicitly: "No discussion of selection bias (Atlassian customers more likely to have remote-work infrastructure than general population)" — the example criterion named is present. |
-| c17 | Output is analytical NOT encyclopedic — does NOT include a literature review on remote work; stays focused on this article's argument structure | PASS | No remote work literature review. Entire analysis addresses the single Atlassian post's structure, claims, and framing choices. |
-| c18 | Output flags the competitive context — Atlassian is a competitor in PM space, so framing of remote work productivity may align with their commercial interest in collaboration tooling — relevant for the requester's competitive intel use case | PARTIAL | "Strategically framed thought leadership piece designed to position Atlassian as a remote-work expertise authority while subtly marketing Atlassian's tools"; explicit "Key takeaways for your competitive positioning" section. |
+| c1 | Agent routes to `/analyst:content-analysis` skill for a single article URL | PASS | Output follows the exact section structure of the content-analysis skill (Entities, Key Claims, Sentiment, Framing, Narrative, Source Structure) and file is named with the skill's naming convention. |
+| c2 | Agent distinguishes analysis from summarisation — produces entity extraction, key claims, sentiment, framing, and narrative sections rather than a plain summary | PASS | Output has all six distinct analytical sections: Entities, Key Claims, Sentiment, Framing, Narrative, Source Structure — clearly not a plain summary. |
+| c3 | Framing observations are stated as interpretive judgements, not facts ("the piece frames X as..." not "X is...") | PASS | "Dominant framing device: Progress framing with embedded responsibility framing. The piece says..." and "The piece is structured entirely from the perspective of the employer/team-leader" are analytical characterisations. |
+| c4 | Sentiment is assessed at the author's tone level, not the subject's actual situation | PASS | "Overall tone: Optimistic" and sentiment targets like "Remote/distributed work: cautiously positive — problems are real but tractable" assess the author's framing, not the actual state of remote work. |
+| c5 | Source structure section identifies how claims are attributed (named sources, anonymous, unattributed) | PASS | Source structure table explicitly categorises: Named primary (2), Named secondary (1), Anonymous (Several), Unattributed (Multiple) with specific attribution per claim type. |
+| c6 | Agent notes what the article omits or backgrounds, with a caveat if topic knowledge is insufficient to fully assess omissions | PARTIAL | Framing section has detailed Backgrounded and Omissions subsections, but no explicit caveat about topic-knowledge limitations. Ceiling is PARTIAL; omissions are well-covered so awarding full partial. |
+| c7 | Agent does not produce a literature review or academic-style output — output is analytical, not encyclopedic | PASS | No literature review or external academic citations introduced; all analysis stays tightly focused on the single Atlassian article's argument structure. |
+| c8 | Agent does not assess whether the article's conclusions are correct, only how it argues | PASS | Output consistently evaluates argumentative structure: "research provenance...is insufficient to support the authoritative, universal tone" — not a verdict on whether remote work actually reduces innovation. |
+| c9 | Output is structured per the content-analysis format — sections for Entities, Key Claims, Sentiment, Framing, Narrative, Source Structure — not a plain summary | PASS | All six required sections present in both chat response and artifact: Entities, Key Claims, Sentiment, Framing, Narrative, Source Structure. |
+| c10 | Output's Entities section extracts people (by role: source / subject / authority), organisations, key statistics and dates referenced in the article — with the article URL fetched and read | PASS | Entities section lists people with roles (author, podcaster/external voice), organisations, and a statistics table with percentages, their context, and attribution. Content clearly derived from fetched article. |
+| c11 | Output's Key Claims section distinguishes the primary claim from supporting claims and implicit claims, with attribution per claim — "primary claim: remote work reduced productivity; attribution: anonymous internal Atlassian survey" | PASS | Key Claims has three tiers: Primary claim, Supporting claims (each with attribution like "(Study; no denominator disclosed)"), and four numbered Implicit claims with specific framing attribution. |
+| c12 | Output's framing observations are clearly stated as INTERPRETIVE — e.g. "the piece frames remote work as a productivity question rather than a wellbeing or culture question" — not asserted as fact | PASS | "Dominant framing device: Progress framing with embedded responsibility framing" and "The piece says: 'yes, things are hard — here is what forward-thinking organisations will do'" are clearly interpretive characterisations. |
+| c13 | Output's sentiment assessment evaluates the AUTHOR's tone and target — "tone is mildly positive on hybrid models, mildly negative on fully remote" — not the actual reality of remote work | PASS | Sentiment section evaluates author language signals ("fascinating moment", "debug distributed teamwork") and author tone targets, not actual remote work outcomes. |
+| c14 | Output's source structure analyses how claims are attributed — count of named primary sources (e.g. 2 named Atlassian executives), named secondary sources, anonymous citations, unattributed assertions | PASS | Source structure table counts Named primary: 2, Named secondary: 1, Anonymous: Several, Unattributed: Multiple, with "for what claims" column specifying what each type covers. |
+| c15 | Output identifies the dominant narrative structure — e.g. "transformation narrative" or "research-reveals narrative" — and what audience response it activates | PASS | Narrative section names "revelation + progress story" and secondary "human cost narrative", then states it "activates reader identity as a capable, progressive leader who will adopt the recommendations." |
+| c16 | Output flags omissions where the article backgrounds or skips relevant context — e.g. "no mention of selection bias in the Atlassian-internal survey" — with a caveat if topic knowledge is insufficient to fully assess | PASS | Omissions subsection lists five specific gaps: no competing research, causality question, temporal limitation of four-month shock study, power dynamics. Agent shows confidence; conditional caveat not required. |
+| c17 | Output is analytical NOT encyclopedic — does NOT include a literature review on remote work; stays focused on this article's argument structure | PASS | No external academic literature introduced. Every section stays focused on the Atlassian article's specific claims, language choices, and structural moves. |
+| c18 | Output flags the competitive context — Atlassian is a competitor in PM space, so framing of remote work productivity may align with their commercial interest in collaboration tooling — relevant for the requester's competitive intel use case | PARTIAL | Summary assessment calls it "research-branded content marketing" and flags "Atlassian frames itself as the epistemic authority on distributed teamwork" as a category-ownership play. Ceiling is PARTIAL. |
 
 ### Notes
 
-The output is a high-quality, structurally complete content analysis that satisfies nearly every criterion on interpretation, framing language, source structure, and narrative identification. The only clean miss is c1 — no evidence of skill routing appears in the captured chat response.
+An exceptionally strong output that hits every criterion cleanly. The only structural gap is the absence of an explicit topic-knowledge caveat in the omissions section (c6), but the omissions analysis itself is thorough and confident, and the conditional caveat was arguably not required given the agent's evident contextual competence.
