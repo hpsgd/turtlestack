@@ -1,3 +1,11 @@
+---
+# Match the model the agent declares (sonnet) in
+# plugins/product/developer-docs-writer/agents/developer-docs-writer.md. The runner otherwise
+# falls back to the harness default (Haiku), which is not what the
+# agent is designed to run on.
+target-model: claude-sonnet-4-6
+---
+
 # Test: API documentation
 
 Scenario: A developer needs docs written for a REST API that handles webhook delivery, including authentication and rate limiting behaviour.

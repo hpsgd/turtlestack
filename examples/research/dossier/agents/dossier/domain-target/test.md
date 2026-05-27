@@ -1,3 +1,11 @@
+---
+# Match the model the agent declares (sonnet) in
+# plugins/research/dossier/agents/dossier.md. The runner otherwise
+# falls back to the harness default (Haiku), which is not what the
+# agent is designed to run on.
+target-model: claude-sonnet-4-6
+---
+
 # Test: dossier driver categorises a domain target and proposes the right skills
 
 Scenario: A user asks for a dossier on a company they know only by its domain. The dossier agent should restate the target, classify it (domain → Technical + Corporate + OSINT), propose an engagement directory under `{workspace}`, and produce a dispatch plan naming the specific skills it would run per category. It should not execute the investigation itself, and it should not invent findings.

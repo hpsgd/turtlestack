@@ -1,3 +1,11 @@
+---
+# Match the model the agent declares (sonnet) in
+# plugins/product/ux-researcher/agents/ux-researcher.md. The runner otherwise
+# falls back to the harness default (Haiku), which is not what the
+# agent is designed to run on.
+target-model: claude-sonnet-4-6
+---
+
 # Test: Research plan
 
 Scenario: A product team is seeing high drop-off at checkout and needs a research plan to understand why users abandon the flow.

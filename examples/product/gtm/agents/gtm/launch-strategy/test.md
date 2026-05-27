@@ -1,3 +1,11 @@
+---
+# Match the model the agent declares (sonnet) in
+# plugins/product/gtm/agents/gtm.md. The runner otherwise
+# falls back to the harness default (Haiku), which is not what the
+# agent is designed to run on.
+target-model: claude-sonnet-4-6
+---
+
 # Test: Launch strategy
 
 Scenario: A GTM manager needs a go-to-market plan for a new analytics feature being added to a B2B project management tool.

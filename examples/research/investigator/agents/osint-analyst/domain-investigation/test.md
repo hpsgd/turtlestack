@@ -1,3 +1,11 @@
+---
+# Match the model the agent declares (sonnet) in
+# plugins/research/investigator/agents/osint-analyst.md. The runner otherwise
+# falls back to the harness default (Haiku), which is not what the
+# agent is designed to run on.
+target-model: claude-sonnet-4-6
+---
+
 # Test: osint-analyst — domain investigation
 
 Scenario: A user wants to investigate the infrastructure behind a suspicious domain that has been sending phishing emails to their staff.

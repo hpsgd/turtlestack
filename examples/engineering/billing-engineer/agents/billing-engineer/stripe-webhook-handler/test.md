@@ -1,3 +1,11 @@
+---
+# Match the model the agent declares (sonnet) in
+# plugins/engineering/billing-engineer/agents/billing-engineer.md. The runner otherwise
+# falls back to the harness default (Haiku), which is not what the
+# agent is designed to run on.
+target-model: claude-sonnet-4-6
+---
+
 # Test: billing-engineer designs a Stripe subscription-cancellation webhook handler
 
 Scenario: A developer asks the billing-engineer agent to implement a Stripe webhook handler for the `customer.subscription.deleted` event. The agent should ground its design in the non-negotiable rules — idempotency, gateway-as-source-of-truth, immutable audit log, revenue recognition — rather than producing a generic webhook tutorial. It should not write production code (this is a design, not implementation), but it should be specific enough that an implementer could follow it.

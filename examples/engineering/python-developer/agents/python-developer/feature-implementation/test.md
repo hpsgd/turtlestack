@@ -1,3 +1,11 @@
+---
+# Match the model the agent declares (sonnet) in
+# plugins/engineering/python-developer/agents/python-developer.md. The runner otherwise
+# falls back to the harness default (Haiku), which is not what the
+# agent is designed to run on.
+target-model: claude-sonnet-4-6
+---
+
 # Test: Stripe webhook handler implementation
 
 Scenario: User asks the Python developer to implement a webhook handler for Stripe payment events in an existing Django Ninja API. The project uses event sourcing with frozen dataclasses and strict typing.
