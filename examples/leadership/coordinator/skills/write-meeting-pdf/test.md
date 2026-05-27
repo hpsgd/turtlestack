@@ -35,7 +35,7 @@ You are only finished when `meeting.pdf` exists alongside `agenda.md` and `qanda
 - [ ] PASS: The PDF file exists with non-zero size — typically 50KB or larger because brand fonts and PNGs are embedded.
 - [ ] PASS: The PDF has the expected page count: 1 cover page + ceiling(items_per_section / 2) for each of the four agenda sections. For the Acme Robotics scenario the qanda has 4 sections (Financial / People / Product and Strategy / Governance) with ~4 / 3 / 2 / 3 items respectively, giving 2 + 2 + 1 + 2 = 7 content pages plus 1 cover = 8 pages total.
 - [ ] PASS: Skill does NOT modify `agenda.md` or `qanda.md` — only writes the new PDF.
-- [ ] PASS: Skill output identifies the renderer's wrapper script (`render-meeting-pdf.sh`) or the Python entry, not just naked Python — and on first run, the wrapper installs reportlab into a venv at `~/.cache/turtlestack/coordinator-meeting-pdf-venv` (or equivalent override path).
+- [ ] PASS: Skill output identifies the renderer's wrapper script (`render-meeting-pdf.sh`) or the Python entry, not just naked Python — and on first run, the wrapper builds a Docker image (`turtlestack/coordinator-meeting-pdf:<hash>`) from the bundled Dockerfile and reuses it thereafter; the host only needs Docker.
 - [ ] PARTIAL: Output mentions the next step is sideloading the PDF to the Remarkable Paper Pro for use during the meeting.
 
 ## Output expectations
@@ -44,4 +44,4 @@ You are only finished when `meeting.pdf` exists alongside `agenda.md` and `qanda
 - [ ] PASS: `meeting.pdf` is a valid PDF (begins with the bytes `%PDF-` — i.e. recognised as a PDF by `file` command).
 - [ ] PASS: `meeting.pdf` is between 50KB and 5MB. Smaller suggests a render failure; much larger suggests something other than a meeting PDF was written.
 - [ ] PASS: `agenda.md` and `qanda.md` are also present in the same folder — the chained workflow produced all three artifacts.
-- [ ] PARTIAL: The skill catches and surfaces any wrapper-script error (e.g. Python missing, venv creation failed) rather than reporting success and producing an empty file.
+- [ ] PARTIAL: The skill catches and surfaces any wrapper-script error (e.g. Docker missing — exit 69, image build failed) rather than reporting success and producing an empty file.

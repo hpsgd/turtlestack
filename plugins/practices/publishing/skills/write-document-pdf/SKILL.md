@@ -1,6 +1,6 @@
 ---
 name: write-document-pdf
-description: "Render a markdown document as a brand-styled A4 PDF (hps.gd typography and palette). Optional cover page from YAML frontmatter (title, subtitle, metadata). Use --style <name> for a bundled stylesheet (default: report) or --css <path> for a project-specific CSS file. Pure-Python toolchain (xhtml2pdf + python-markdown) — no system libraries required."
+description: "Render a markdown document as a brand-styled A4 PDF (hps.gd typography and palette). Optional cover page from YAML frontmatter (title, subtitle, metadata). Use --style <name> for a bundled stylesheet (default: report) or --css <path> for a project-specific CSS file. Runs inside a Docker image (xhtml2pdf + python-markdown) — Docker is the only host requirement."
 argument-hint: "<path to markdown> [--out <path>] [--style <name>] [--css <path>]"
 user-invocable: true
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
@@ -41,7 +41,9 @@ The bundled `report` style is brand-styled (Mona Sans display, Inter body, hps.g
 
 ## Step 4: Invoke the renderer
 
-The renderer is at `${CLAUDE_PLUGIN_ROOT}/scripts/render-document-pdf.sh` — a wrapper that bootstraps a venv at `~/.cache/turtlestack/publishing-document-pdf-venv` on first run (installs `xhtml2pdf` and `markdown` with `svglib<1.6` constraint, ~15s) and reuses it thereafter.
+The renderer is at `${CLAUDE_PLUGIN_ROOT}/scripts/render-document-pdf.sh` — a wrapper that runs `render-document-pdf.py` inside a Docker image built from `${CLAUDE_PLUGIN_ROOT}/scripts/Dockerfile`. The only host requirement is Docker. The image is built locally on first run (~30-60s) and cached thereafter, keyed by the hash of the Dockerfile, the script, the constraints file, and the bundled assets so it rebuilds automatically when any of those change.
+
+User-supplied paths under `$HOME` and `/tmp` resolve inside the container identically (both are bind-mounted at the same path). For markdown sources or CSS files outside both, set `TURTLESTACK_DOCKER_MOUNTS` to a colon-separated list of extra host paths to bind-mount.
 
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/render-document-pdf.sh" \
@@ -53,9 +55,31 @@ The renderer is at `${CLAUDE_PLUGIN_ROOT}/scripts/render-document-pdf.sh` — a 
 
 The script prints the output path on success and exits non-zero on failure. Capture stderr so any rendering errors surface back to the user.
 
-## Step 5: Confirm path
+## Step 5: Verify the output
 
-Output the absolute path to the generated PDF. Don't claim success without verifying the file exists and has non-zero size — `[ -s <path> ]`.
+Don't claim success without running these checks:
+
+```bash
+# File exists and is non-empty
+[ -s <path> ] || { echo "render failed: empty or missing output"; exit 1; }
+
+# Valid PDF and page count
+file <path>
+
+# Embedded fonts — Mona Sans + Inter should both appear; absence means a silent fallback to Helvetica
+pdffonts <path> 2>/dev/null || grep -ao '/BaseFont [^ ]*' <path> | sort -u
+```
+
+`file <path>` reports something like `PDF document, version 1.4, 2 pages` — copy that line into the chat so the page count and PDF magic are visible. `pdffonts` (or the `grep` fallback when `pdffonts` isn't installed) confirms the brand fonts embedded; if `MonaSans-Regular` and `Inter-Regular` are missing, the render fell back to Helvetica and the user needs to know.
+
+## Step 6: Report what happened
+
+After verification, surface the following in your chat reply:
+
+- The absolute path to the PDF.
+- The mechanism — name the wrapper script (`render-document-pdf.sh`) so the user knows what fired. If this was a first run, mention that the Docker image was built; otherwise note that the cached image was reused.
+- The verification evidence — the `file` output (page count, PDF version) and the embedded font check.
+- A one-line note on typical next steps for a document PDF: sharing with stakeholders, archiving alongside source markdown, or sideloading to a tablet for review. Don't open the PDF.
 
 ## Cover page from frontmatter
 
@@ -84,7 +108,7 @@ If there's no frontmatter or no `title`, no cover is rendered — the document s
 - **Read-only on the markdown source.** Never modify the input.
 - **Don't open the PDF for the user.** Just report the path.
 - **Don't re-render if nothing has changed.** If the output file exists and is newer than both the markdown and the chosen stylesheet, ask before overwriting.
-- **Surface bootstrap delays.** First run on a fresh machine creates a Python venv and installs xhtml2pdf + markdown (~15 seconds). Subsequent runs are sub-second. If the wrapper hangs longer than that, something is wrong — investigate, don't silently retry.
+- **Surface bootstrap delays.** First run on a fresh machine builds the Docker image (~30-60s). Subsequent runs add ~1-2s of container startup. If the wrapper hangs longer than that, something is wrong — investigate, don't silently retry. If Docker isn't installed, the wrapper fails fast with a clear message; tell the user to install Docker rather than try to work around it.
 - **Wide tables (7+ columns) may overflow.** xhtml2pdf has a known weak spot with wide tables. If the source markdown contains wide tables and the output overflows, options are (a) reduce columns, (b) write a custom CSS file with `table-layout: fixed; word-wrap: break-word; font-size: 8pt` for the affected tables, or (c) restructure the data.
 
 ## Output format

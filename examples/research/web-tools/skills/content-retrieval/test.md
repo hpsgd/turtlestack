@@ -18,8 +18,8 @@ Follow the skill's Output Format template strictly. Every mandatory section must
 
 - [ ] PASS: Skill classifies the target before attempting retrieval — identifies JS-rendered SPA as the likely Tier 3 case based on the empty response signal
 - [ ] PASS: Tier 2 (curl with browser headers) is either attempted with the command shown, or explicitly skipped with a stated rationale
-- [ ] PASS: Tier 3 Playwright availability check is shown (`npx playwright --version` or equivalent)
-- [ ] PASS: Tier 3 Playwright command uses `waitForSelector` / `networkidle` to wait for content render — not bare `page.content()`
+- [ ] PASS: Tier 3 invokes the bundled wrapper `fetch-rendered.sh` (Docker-driven Playwright) rather than expecting a local Playwright install. Wrapper availability is confirmed via `command -v docker` or `docker image inspect`.
+- [ ] PASS: Tier 3 Playwright invocation waits for content render (network-idle by default, optionally `--wait-for <selector>`) — not bare `page.content()`
 - [ ] PASS: robots.txt + ToS acknowledgement appears in the Tier 3 Pre-Flight section, before the Tier 3 Execution
 - [ ] PASS: Tier 4 (human escalation) options are listed in the report — at least three actionable options, no silent paid-service invocation
 - [ ] PASS: Retrieved content is reported with structure-preservation notes — headings/paragraphs/tables retained, navigation/footer/chrome stripped
@@ -29,8 +29,8 @@ Follow the skill's Output Format template strictly. Every mandatory section must
 
 - [ ] PASS: Output classifies the target as a likely JS-rendered SPA based on the prompt's signal (empty div from WebFetch) and routes directly to Tier 3 reasoning
 - [ ] PASS: Output documents the Tier 1 attempt as already failed per the prompt, and either runs Tier 2 (curl with browser UA) or explicitly states why it's being skipped
-- [ ] PASS: Output's Tier 3 invocation uses a Playwright command with `waitForSelector` / `networkidle` to wait for content render — not bare `page.content()` immediately after navigation
-- [ ] PASS: Output checks Playwright availability before attempting Tier 3 (`npx playwright --version` or equivalent) and reports the result
+- [ ] PASS: Output's Tier 3 invocation uses the bundled `fetch-rendered.sh` wrapper (or names it explicitly) and waits for content render via network-idle / `--wait-for` selector — not bare `page.content()` immediately after navigation
+- [ ] PASS: Output checks Docker availability before attempting Tier 3 (the wrapper requires Docker) and reports the result
 - [ ] PASS: Output includes the robots.txt + ToS acknowledgement in the Tier 3 Pre-Flight section
 - [ ] PASS: Output's Tier 4 (human escalation) lists at least three actionable options — manual download, alternative format, alternative source — and does NOT silently invoke a paid service
 - [ ] PASS: Output preserves document structure on extraction — headings, paragraphs, tables retained; navigation, footer, and chrome stripped — and reports any lossy steps in Content Quality Notes

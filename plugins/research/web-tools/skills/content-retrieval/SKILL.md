@@ -60,21 +60,20 @@ curl -s -L \
 
 ## Tier 3: Playwright (JavaScript rendering)
 
-For JavaScript-rendered content, use Playwright to render the page fully before extracting content. Always wait for rendering to complete (network-idle or a content selector) before reading the DOM — extracting immediately after navigation returns the empty shell.
+For JavaScript-rendered content, use Playwright/Chromium to render the page fully before extracting content. Always wait for rendering to complete (network-idle or a content selector) before reading the DOM — extracting immediately after navigation returns the empty shell.
 
-```javascript
-const { chromium } = require('playwright');
-(async () => {
-  const browser = await chromium.launch();
-  const page = await browser.newPage();
-  await page.goto('[URL]', { waitUntil: 'networkidle' });
-  const content = await page.content();
-  console.log(content);
-  await browser.close();
-})();
+Use the bundled wrapper, which runs Playwright inside a Docker image so Playwright doesn't have to be installed on the host:
+
+```bash
+"${CLAUDE_PLUGIN_ROOT}/skills/content-retrieval/scripts/fetch-rendered.sh" "[URL]" \
+  [--wait-for "<css-selector>"] \
+  [--timeout 30000] \
+  [--wait-after 0]
 ```
 
-**Prerequisites:** Playwright must be installed (`npm install playwright` or `pip install playwright && playwright install chromium`). Check first — don't assume it's available.
+The wrapper writes the rendered HTML to stdout and exits non-zero on failure. First run pulls the Microsoft Playwright Python base (~1.5GB, several minutes on a slow link) and builds the image — shares layers with the `web-snapshot` image if that's already been built. Subsequent runs add ~2s of container startup.
+
+**Prerequisites:** Docker on the host. The wrapper fails fast with exit 69 if Docker is missing — tell the user to install Docker Desktop or the docker engine.
 
 **Success:** fully rendered HTML returned with content — extract and proceed.
 
@@ -82,7 +81,7 @@ const { chromium } = require('playwright');
 
 - Playwright session is immediately detected and blocked
 - Site uses advanced fingerprinting that defeats headless browsers
-- Tier 3 is unavailable (Playwright not installed, not appropriate in this environment)
+- Docker is unavailable on the host
 
 ## Tier 4: Escalate to human
 
@@ -126,7 +125,7 @@ Existing actors for common targets (LinkedIn, Amazon, social platforms) produce 
 - Start at Tier 1 unless you have a strong reason to skip it.
 - Escalate on failure, not preemptively.
 - Never hardcode credentials. Use environment variables.
-- Confirm Playwright availability before attempting Tier 3.
+- Confirm Docker is available before attempting Tier 3 — the wrapper has no offline fallback.
 - Respect `robots.txt` for Tier 1 and 2. Tiers 3 and 4 bypass these — use only when there is a legitimate purpose and the requester has confirmed compliance with the target site's terms of service.
 - Log the tier used and any errors encountered in the output.
 
@@ -151,23 +150,24 @@ The output MUST follow this exact structure. Every section is mandatory — writ
 
 **Availability check:**
 \`\`\`bash
-$ npx playwright --version
+$ command -v docker
 [paste actual output, or "command not found" if unavailable]
 \`\`\`
 
 **robots.txt + ToS acknowledgement:**
 > Tier 3 (browser automation) bypasses robots.txt; this retrieval has a legitimate research purpose ([restate the purpose]) and the site's ToS does not prohibit automated reading. Confirmed before proceeding.
 
-**Intended Playwright command:**
-\`\`\`javascript
-await page.goto(url, { waitUntil: 'networkidle' });
-await page.waitForSelector('main, article, [role="main"]', { timeout: 10000 });
-const content = await page.content();
+**Intended invocation:**
+\`\`\`bash
+"${CLAUDE_PLUGIN_ROOT}/skills/content-retrieval/scripts/fetch-rendered.sh" \\
+  "[URL]" \\
+  --wait-for "main, article, [role='main']" \\
+  --timeout 30000
 \`\`\`
-(Bare `page.content()` after navigate would miss JS-rendered content.)
+(The wrapper runs Playwright inside its Docker image and waits for network-idle plus the named selector before reading the DOM — bare `page.content()` would miss JS-rendered content.)
 
 ### Tier 3 — Execution
-[Result: extracted content summary / partial extraction with selector that timed out / skipped because Playwright unavailable]
+[Result: extracted content summary / partial extraction with selector that timed out / skipped because Docker unavailable]
 
 ### Tier 4 — Human Escalation Options (REQUIRED — listed even when not used)
 1. Manual download by the user from the URL

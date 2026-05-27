@@ -41,7 +41,7 @@ By default the PDF is written as `<meeting-folder>/meeting.pdf`. The user can ov
 
 ## Step 3: Invoke the renderer
 
-The renderer is a standalone script. Use the wrapper at `${CLAUDE_PLUGIN_ROOT}/scripts/render-meeting-pdf.sh` — it bootstraps a venv at `~/.cache/turtlestack/coordinator-meeting-pdf-venv` on first run (installs `reportlab`) and reuses it thereafter:
+The renderer is a standalone script. Use the wrapper at `${CLAUDE_PLUGIN_ROOT}/scripts/render-meeting-pdf.sh` — it runs `render-meeting-pdf.py` inside a Docker image built from `${CLAUDE_PLUGIN_ROOT}/scripts/Dockerfile` on first run (~30-60s) and reuses it thereafter. The only host requirement is Docker. The image bundles `reportlab` plus the brand fonts and logos from the publishing plugin's `assets/` directory:
 
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/render-meeting-pdf.sh" \
@@ -49,13 +49,32 @@ The renderer is a standalone script. Use the wrapper at `${CLAUDE_PLUGIN_ROOT}/s
   --out <absolute path to output.pdf>
 ```
 
-If `--refresh-assets` is in `$ARGUMENTS`, pass it through. The script fetches the latest brand SVGs from hps.gd when refresh is requested; otherwise it uses the vendored copies (sandbox-safe).
+Don't pass `--refresh-assets` from this skill. The flag re-downloads brand SVGs into `practices/publishing/assets/`, which only makes sense against a writable repo checkout — inside the Docker container the assets are baked into the image and any refresh writes are lost on exit. `--refresh-assets` is a maintainer-only path: run `python plugins/leadership/coordinator/scripts/render-meeting-pdf.py --refresh-assets ...` directly against the marketplace repo to update vendored assets, then commit the result.
 
 The script prints the output path on success and exits non-zero on failure. Capture stderr so any rendering errors surface back to the user.
 
-## Step 4: Confirm path
+## Step 4: Verify and report
 
-Output the absolute path to the generated PDF. Do not claim success without verifying the file exists and has non-zero size — `[ -s <path> ]`.
+Don't claim success without running these checks:
+
+```bash
+# File exists and is non-empty
+[ -s <path> ] || { echo "render failed: empty or missing output"; exit 1; }
+
+# Valid PDF and page count
+file <path>
+```
+
+`file <path>` reports something like `PDF document, version 1.4, 8 pages`. Surface that line in your chat reply alongside the absolute path so the page count and PDF magic are visible to the user. Name the wrapper (`render-meeting-pdf.sh`) so the user knows what fired, and note that the next step is sideloading the PDF to the Remarkable Paper Pro for use during the meeting.
+
+## Output Format
+
+```
+PDF: /Users/.../docs/meetings/2026-05-15-q2-board-meeting/meeting.pdf
+Verified: PDF document, version 1.4, 8 pages
+Rendered via render-meeting-pdf.sh (Docker image turtlestack/coordinator-meeting-pdf).
+Next step: sideload to the Remarkable Paper Pro for the meeting.
+```
 
 ## Rules
 
@@ -63,15 +82,7 @@ Output the absolute path to the generated PDF. Do not claim success without veri
 - **Don't open the PDF for the user.** Just report the path. Whether they sideload to a tablet, open in a viewer, or upload to a cloud service is their call.
 - **Don't re-render if nothing has changed.** If `meeting.pdf` exists and is newer than both `qanda.md` and `agenda.md`, ask the user before overwriting.
 - **Don't substitute fonts or colours.** The renderer chooses brand-consistent typography and a colour palette tuned for e-ink. If the user wants a variant, they can fork the script — don't adjust ad-hoc per invocation.
-- **Surface bootstrap delays.** The first run on a fresh machine creates a Python venv and installs reportlab (~10 seconds). Subsequent runs are sub-second. If the wrapper hangs longer than that, something is wrong — investigate, don't silently retry.
-
-## Output Format
-
-A single line: the absolute path to the generated PDF.
-
-```
-/Users/.../docs/meetings/2026-05-15-q2-board-meeting/meeting.pdf
-```
+- **Surface bootstrap delays.** First run on a fresh machine builds the Docker image (~30-60s). Subsequent runs add ~1-2s of container startup. If the wrapper hangs longer than that, something is wrong — investigate, don't silently retry. If Docker is missing, the wrapper fails fast with exit 69 — tell the user to install Docker.
 
 ## Layout reference
 

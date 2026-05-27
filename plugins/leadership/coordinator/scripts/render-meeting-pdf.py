@@ -38,7 +38,9 @@ try:
     from reportlab.pdfgen.canvas import Canvas
 except ImportError as e:
     sys.stderr.write(
-        f"Missing dependency: {e}. Install with: pip install reportlab\n"
+        f"Missing dependency: {e}. This script normally runs inside the "
+        "bundled Docker image (render-meeting-pdf.sh wrapper); to run it "
+        "directly outside the container: pip install reportlab\n"
     )
     sys.exit(2)
 

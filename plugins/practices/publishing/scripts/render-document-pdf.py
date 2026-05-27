@@ -33,8 +33,10 @@ try:
     from xhtml2pdf import pisa
 except ImportError as e:
     sys.stderr.write(
-        f"Missing dependency: {e}. Install with: "
-        "pip install --constraint constraints.txt xhtml2pdf markdown\n"
+        f"Missing dependency: {e}. This script normally runs inside the "
+        "bundled Docker image (render-document-pdf.sh wrapper); to run it "
+        "directly outside the container: pip install --constraint "
+        "constraints.txt xhtml2pdf markdown\n"
     )
     sys.exit(2)
 
