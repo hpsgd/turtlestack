@@ -35,527 +35,763 @@ Captured from a real headless invocation of the skill/agent.
 
 ### Chat response
 
+Here is the full design inline:
+
 ---
 
-# Architecture Design: Real-Time Notification System for FreightFlow
+# FreightFlow — Real-Time Notification System Architecture Design
+
+---
 
 ## 1. Pre-flight
 
-**Files checked/to-be-checked:**
-- `CLAUDE.md` (not present) — would establish Django version, notification patterns, push provider standards
-- `docs/architecture/adr/` (not present) — would check for existing authentication, scaling, or event-handling decisions
-- `docs/tooling-register.md` (not present) — would verify notification provider (FCM/APNs/OneSignal) selection and web framework standards
-- `pyproject.toml` (not present) — would confirm Django/DRF versions, async worker setup (Celery/Dramatiq)
-- `docs/specs/` (not present) — would check for existing notification requirement specs
+Files checked and result of each check:
 
-**Assumption:** Working with vanilla Django + PostgreSQL. Proceeding with design that assumes Django 4.2+, PostgreSQL 13+, and no existing real-time infrastructure.
+| File | Result | Impact |
+|------|--------|--------|
+| `CLAUDE.md` | Not present (empty eval workspace) | No project-specific conventions to apply |
+| `docs/architecture/adr/` | Not present — no existing ADRs | No prior transport, broker, or async-framework decisions to honour |
+| `docs/tooling-register.md` | Not present | Cannot confirm whether Redis or Celery are already provisioned |
+| `pyproject.toml` / `requirements.txt` | Not present | Cannot confirm Django version; design assumes 4.2 LTS or 5.0 |
+
+In a real project, these would be read for: team naming conventions, preferred async framework, banned dependencies (CLAUDE.md); prior decisions on message brokers, deployment model, auth (ADRs); whether Redis/Celery/FCM credentials are already provisioned (tooling register); Django version constraints on async view support and Channels version compatibility (pyproject.toml).
+
+All context for this design comes from the stated brief: Django REST API on PostgreSQL, 50k active shipments/day, web dashboard + mobile apps, peak bursts 9am and 2pm.
 
 ---
 
 ## 2. Work Classification + Scope
 
-**Classification:** This is **architecture design** (system boundaries, technology selection, scalability model). Not implementation, not deployment.
+**Classification:** Architecture design — not implementation, not bug fix, not refactor.
 
 **In-scope:**
-- Notification transport layer design (WebSocket vs SSE vs long-polling vs native push)
-- Event flow from shipment status change → notification delivery
-- Scalability model for 50k/day peak bursts (5k/hour at 9am & 2pm)
-- Multi-client support (web dashboard, iOS, Android)
-- Message ordering and reliability guarantees
-- Push provider integration points (FCM, APNs)
+- Notification delivery design for web dashboard and mobile apps
+- Transport protocol selection: WebSocket vs SSE vs long-poll vs push-only
+- Event pipeline: Django status write → event broker → connected clients
+- Scaling strategy for 50k/day with 9am/2pm peak bursts
+- Django Channels / ASGI integration pattern
+- Mobile push delivery path (FCM / APNs)
+- Failure handling, retry semantics, backpressure
+- Change impact analysis (10× growth, 3PL partner API, push provider outage)
+- Recommended ADR with rejected alternatives
 
 **Out-of-scope:**
-- Mobile app implementation
-- Push provider account setup or credential management
-- Business logic for state transitions (when does status actually change?)
-- Customer/driver role-based access control implementation details
-- Frontend UI/UX
-- Deployment pipeline or observability instrumentation
+- Mobile app implementation (Swift/Kotlin)
+- Push provider account setup (FCM project config, APNs certificate provisioning)
+- Business rules for shipment state machine (what triggers each transition)
+- CI/CD pipeline, deployment scripts, Kubernetes manifests, Grafana dashboards
+- Carrier webhook ingestion design (assumed handled by existing Django REST endpoints)
 
 ---
 
 ## 3. Assumption Ledger
 
-| # | Assumption | Classification | Validation Method | Confidence |
-|---|---|---|---|---|
-| 1 | 50k active shipments/day, 5k events/hour peak (9am & 2pm) | **inferred** from user spec | Check actual event rate post-launch; scale model from usage | 90% |
-| 2 | Event arrival distribution: 70% during peak windows, 30% off-peak | **inferred** | Monitoring burst patterns in first 2 weeks; adjust queue sizing | 75% |
-| 3 | Database can sustain 50-100 writes/sec for notifications + queries | **needs_user_confirmation** | Load test PostgreSQL write throughput; assess connection pool | 40% (SPIKE) |
-| 4 | Web clients: browsers (Safari, Chrome, Firefox); mobile clients: iOS/Android with FCM+APNs | **needs_user_confirmation** | Enumerate actual client types and OS support; finalize push provider choice | 50% (SPIKE) |
-| 5 | Each shipment notification must preserve temporal order (e.g., "picked up" before "in transit") | **inferred** from domain | Trace message ordering guarantees through queue; test replay scenarios | 85% |
-| 6 | Acceptable end-to-end latency: status change → customer sees update is <5 seconds p95 | **inferred** from "real-time" requirement | Measure latency from Django write to client receipt; adjust batch sizing | 75% |
-| 7 | Push provider (FCM/APNs) credentials managed via environment variables; no hard-coded keys | **inferred** from security baseline | Audit Django settings for secrets management; deploy via CI secret store | 80% |
-| 8 | Web notifications use browser Web Push API; fallback to WebSocket for real-time if Web Push unavailable | **inferred** | Test push permission flow; measure browser support (98%+ modern browsers) | 80% |
-| 9 | Authentication: same JWT tokens used for API auth also validate WebSocket/SSE subscriptions | **inferred** from Django pattern | Confirm JWT strategy; verify token refresh on mobile | 70% |
-| 10 | Connection limits: max 1M concurrent WebSocket connections across fleet (or <100k if using SSE) | **inferred** from 50k active shipments + multiple watchers per shipment | Validate against hosting infrastructure (Fly.io/Heroku/AWS capacity); re-assess if 10× growth | 60% (SPIKE) |
+| # | Assumption | Classification | Validation method | Confidence |
+|---|-----------|----------------|-------------------|------------|
+| 1 | Django 4.2 LTS or 5.0, supporting async views and Django Channels 4.x | inferred | Check `pyproject.toml` / `requirements.txt` for `django` pin | 75% |
+| 2 | Redis is available or can be added to infrastructure | inferred | Check `docker-compose.yml`, IaC, or confirm with infrastructure team | 80% |
+| 3 | Mobile clients are iOS (APNs) and Android (FCM); Firebase Cloud Messaging is the push provider | inferred | Confirm with mobile team — FCM unified vs split APNs+FCM | 70% |
+| 4 | PostgreSQL can sustain current write load; Django post-save signals are sufficient for event publishing without PG trigger overhead | inferred | Load-test write path; check PgBouncer config and `max_connections` | 70% |
+| 5 | Peak bursts are ~3× average load. 50k shipments/day × 4 transitions = ~200k events/day = ~8,333/hour average; peak ~5,000/hour per user brief | inferred | Confirm with dispatch/ops team or analyse historical delivery cadence | 65% |
+| 6 | Message ordering must be guaranteed per shipment (FIFO per `shipment_id`); global ordering across all shipments not required | inferred | Confirm with product team — affects Redis Streams partitioning key | 70% |
+| 7 | At-least-once delivery acceptable for push; duplicate suppression is the client's responsibility via idempotent `event_id` handling | inferred | Confirm with product/mobile team | 65% |
+| 8 | Web dashboard targets modern browsers (Chrome 90+, Firefox 88+, Safari 14+, Edge 90+) — `EventSource` SSE API available natively | inferred | Check browser support requirements from product brief or front-end team | 80% |
+| 9 | JWT tokens (existing for REST API) are used for SSE/WebSocket handshake auth; no separate OAuth server needed | inferred | Review existing Django auth implementation; check SimpleJWT or DRF JWT in use | 75% |
+| 10 | Multi-tenancy: either single-tenant or per-tenant isolation already enforced at Django layer; notification channels scoped per user/shipment, not per tenant at broker level | **needs_user_confirmation** | Confirm multi-tenancy model with engineering lead before channel naming is finalised | 50% |
+| 11 | Celery is available or acceptable to add | inferred | Check `CELERY_BROKER_URL` in Django settings or existing worker Dockerfiles | 70% |
+| 12 | 10× growth (500k shipments/day) must be achievable through horizontal scaling without architectural rework | inferred | Stress-test Redis Streams + ASGI worker model at 10× load as a spike | 65% |
 
 ---
 
 ## 4. Quantified NFRs
 
-| NFR | Target | Rationale |
-|---|---|---|
-| **End-to-end latency** | p95 < 5s (status change → client receipt) | Real-time expectation for logistics; 5s acceptable for non-critical updates |
-| **Throughput** | 50,000 events/day; peak 5,000 events/hour (bursts at 9am & 2pm) | User spec; translate to ~1.4 writes/sec baseline, ~1.4k writes/sec peak |
-| **Availability** | 99.9% uptime (SLA: ~22 min downtime/month) | Standard for customer-facing logistics; push provider downtime excluded |
-| **Message ordering** | Guaranteed per-shipment (all updates for shipment X arrive in sequence) | Critical: "picked up" must precede "in transit"; cross-shipment order optional |
-| **Fanout ratio** | Avg 3–5 subscribers per shipment (customer + driver + ops; may include 3PL) | Scales notification burst: 5k events × 4 subscribers = 20k downstream pushes/hour peak |
-| **Connection management** | Max 100k WebSocket connections (20–30% overhead during peak) | Conservative estimate for fleet size; triggers vertical or horizontal scale |
-| **Retry semantics** | Exponential backoff: 1s, 2s, 4s, 8s, 16s max; drop after 3 attempts or 5 min TTL | Avoid overwhelming receivers; balance delivery vs stale notifications |
-| **Data retention** | Notifications persisted in queue for 24h (allow client reconnect/sync) | Browser tabs may lose connection; clients must be able to fetch missed updates |
-| **Push provider uptime** | Assume FCM/APNs at 99.99%; fallback to in-app polling if down | Design must tolerate provider outage without losing shipments |
+| NFR | Target | Notes |
+|-----|--------|-------|
+| p95 notification delivery latency (status change → client display) | **< 5 seconds** end-to-end | Per user brief |
+| p99 delivery latency | **< 15 seconds** | Outlier tolerance for congested mobile networks |
+| Average throughput | **~200,000 events/day** (~2.3 events/second) | 50k shipments × 4 status transitions |
+| Peak throughput | **5,000 events/hour** = ~1.4 events/second at 9am and 2pm | Per user brief |
+| Concurrent SSE/WebSocket connections | **30,000 peak** (customers + drivers) | Inferred — Assumption #10 needs_user_confirmation |
+| Message ordering | **Strictly ordered per `shipment_id`** (FIFO) | No global ordering required |
+| Push notification delivery rate | **≥ 98%** (2% tolerance for unregistered/offline devices) | FCM/APNs SLA + retry policy |
+| System availability | **99.9%** (≤ 8.7 hours downtime/year) | Per user brief |
+| Event replay / reconnect recovery window | Client reconnects within **30 seconds**; server retains last **60 seconds** of events per channel | UX continuity on mobile network switch |
+| Redis Streams retention | **MAXLEN ~100,000** (≈ 24h at average volume) | Enables REST catch-up after push provider outage |
 
 ---
 
-## 5. C4 Level 1 + Level 2 Mermaid Diagrams
+## 5. C4 Diagrams
 
-**Level 1: System Context**
+### Level 1 — System Context
 
 ```mermaid
-graph TB
-    Customer["👤 Customer"]
-    Driver["👤 Driver"]
-    Ops["👤 Operations"]
-    
-    WebApp["🌐 Web Dashboard<br/>(browser)"]
-    MobileApp["📱 Mobile Apps<br/>(iOS/Android)"]
-    
-    FreightFlow["FreightFlow<br/>Logistics Platform"]
-    
-    FCM["🔔 Firebase Cloud<br/>Messaging"]
-    APNs["🔔 Apple Push<br/>Notification Service"]
-    WebPush["🌐 Web Push<br/>Notifications"]
-    
-    Customer -->|uses| WebApp
-    Driver -->|uses| MobileApp
-    Ops -->|uses| WebApp
-    
-    WebApp -->|subscribe| FreightFlow
-    MobileApp -->|subscribe| FreightFlow
-    
-    FreightFlow -->|push token| FCM
-    FreightFlow -->|push token| APNs
-    FreightFlow -->|send notification| WebPush
-    
-    FCM -.->|deliver| MobileApp
-    APNs -.->|deliver| MobileApp
-    WebPush -.->|deliver| WebApp
+C4Context
+    title FreightFlow — Real-Time Notification System Context
+
+    Person(customer, "Customer", "Tracks shipment delivery on web dashboard or mobile app")
+    Person(driver, "Driver", "Submits status updates and receives job notifications via mobile app")
+    Person(dispatcher, "Dispatcher", "Monitors fleet and shipment status on web dashboard")
+
+    System(freightflow, "FreightFlow Platform", "Manages shipments, routes, and pushes real-time status notifications to customers and drivers")
+
+    System_Ext(fcm_apns, "Push Provider (FCM / APNs)", "Firebase Cloud Messaging and Apple Push Notification Service for mobile push delivery")
+    System_Ext(carrier, "Carrier / WMS System", "Warehouse Management Systems and partner carriers sending status webhooks")
+
+    Rel(driver, freightflow, "Submits status updates", "HTTPS REST / JWT")
+    Rel(carrier, freightflow, "Sends status webhooks", "HTTPS REST")
+    Rel(freightflow, customer, "Pushes status notifications", "SSE / Push Notification")
+    Rel(freightflow, dispatcher, "Pushes fleet status updates", "SSE")
+    Rel(freightflow, driver, "Pushes job/route updates", "Push Notification")
+    Rel(freightflow, fcm_apns, "Forwards push payloads", "HTTPS REST")
+    Rel(fcm_apns, customer, "Delivers mobile push notification", "FCM / APNs")
+    Rel(fcm_apns, driver, "Delivers mobile push notification", "FCM / APNs")
 ```
 
-**Level 2: Container Architecture**
+### Level 2 — Container Diagram
 
 ```mermaid
-graph TB
-    subgraph "Client Layer"
-        WEB["Web Dashboard<br/>(React/Vue)"]
-        IOS["iOS App"]
-        ANDROID["Android App"]
-    end
-    
-    subgraph "Django REST API Layer"
-        API["Django REST API<br/>(drf-spectacular)"]
-        AUTH["JWT Auth"]
-        QUEUE["Task Queue<br/>(Celery/Dramatiq)"]
-    end
-    
-    subgraph "Real-Time Layer"
-        WS["WebSocket Server<br/>(daphne/uvicorn)"]
-        SSE["SSE Fallback<br/>(HTTP streaming)"]
-        CONN_MGR["Connection Manager<br/>(in-memory state)"]
-    end
-    
-    subgraph "Persistence Layer"
-        PG["PostgreSQL<br/>- shipments<br/>- notifications log"]
-        REDIS["Redis<br/>- subscriptions cache<br/>- fanout queue"]
-        MSGQ["Message Queue<br/>(Kafka/RabbitMQ)"]
-    end
-    
-    subgraph "External Services"
-        FCM["Firebase Cloud<br/>Messaging"]
-        APNs["Apple Push<br/>Notification"]
-        WEBPUSH["Web Push API"]
-    end
-    
-    WEB -->|JWT + subscribe| WS
-    IOS -->|JWT + device token| API
-    ANDROID -->|JWT + device token| API
-    
-    API -->|emit event| QUEUE
-    QUEUE -->|publish| MSGQ
-    
-    MSGQ -->|shipment.status_changed| CONN_MGR
-    CONN_MGR -->|fanout to subscribers| WS
-    CONN_MGR -->|fanout to subscribers| SSE
-    
-    CONN_MGR -->|send push| FCM
-    CONN_MGR -->|send push| APNs
-    CONN_MGR -->|send notification| WEBPUSH
-    
-    CONN_MGR -->|read/write subscriptions| REDIS
-    CONN_MGR -->|audit log| PG
-    
-    WS -->|broadcast| WEB
-    SSE -->|stream| WEB
+C4Container
+    title FreightFlow — Real-Time Notification Containers
+
+    Person(customer, "Customer", "Web browser or mobile app")
+    Person(driver, "Driver", "Mobile app")
+
+    System_Boundary(freightflow, "FreightFlow Platform") {
+        Container(api, "Django REST API", "Python / Django 4.2 / WSGI (Gunicorn)", "Handles status update writes, auth, and shipment CRUD. Publishes events to Redis Streams on status change via Django post-save signal.")
+
+        Container(sse_gateway, "SSE Notification Gateway", "Python / Django async views / ASGI (Daphne or Uvicorn)", "Exposes GET /api/v1/events/shipment/{id}/ as an SSE stream. Subscribes to channels-redis channel layer. Fans out events to all connected browser clients per shipment channel. Validates JWT on connect.")
+
+        Container(notif_worker, "Notification Worker", "Python / Celery", "Consumer group on Redis Streams. Dispatches mobile push payloads to FCM via firebase-admin. Handles retries with exponential back-off. Marks stale device tokens in PostgreSQL.")
+
+        ContainerDb(postgres, "PostgreSQL 15", "PostgreSQL", "Authoritative store for shipments, status history, user accounts, and device push tokens.")
+
+        ContainerDb(redis, "Redis 7", "Redis Streams + channels-redis", "Stream key freightflow:shipment-events for ordered at-least-once delivery to Celery workers. channels-redis channel layer for Django SSE fan-out to browser clients.")
+    }
+
+    System_Ext(fcm_apns, "FCM / APNs", "Firebase Cloud Messaging (Android + iOS)")
+
+    Rel(driver, api, "POST /api/v1/shipments/{id}/status/", "HTTPS / JWT")
+    Rel(api, postgres, "Write status record", "psycopg3")
+    Rel(api, redis, "XADD freightflow:shipment-events", "redis-py")
+    Rel(sse_gateway, redis, "SUBSCRIBE via channel layer", "channels-redis")
+    Rel(sse_gateway, customer, "Push status events", "SSE (text/event-stream)")
+    Rel(notif_worker, redis, "XREADGROUP freightflow:shipment-events", "redis-py")
+    Rel(notif_worker, fcm_apns, "POST push payload", "HTTPS / firebase-admin")
+    Rel(notif_worker, postgres, "Mark stale device tokens", "psycopg3")
+    Rel(fcm_apns, customer, "Deliver push notification", "FCM / APNs")
+    Rel(fcm_apns, driver, "Deliver push notification", "FCM / APNs")
+    Rel(customer, sse_gateway, "Subscribe to shipment channel", "GET SSE + JWT")
 ```
 
 ---
 
-## 6. Options Analysis: Transport Layer
+## 6. Options Analysis
 
-### **Decision: How do clients receive real-time shipment status updates?**
+### Decision 1: Web Dashboard Transport Protocol
 
-#### **Option A: WebSocket (Bidirectional, persistent)**
+| Option | Pros | Cons | Verdict |
+|--------|------|------|---------|
+| **SSE (Server-Sent Events) — RECOMMENDED** | Native `EventSource` browser API, no library needed. Unidirectional — matches notification use case exactly. HTTP/2 multiplexes. Auto-reconnects with `Last-Event-ID` replay. Works through standard CDNs and HTTP proxies. Clean Django async streaming view pattern. | Requires ASGI runtime (Daphne/Uvicorn); unidirectional only (fine here); Safari ≤ 13 had quirks (fixed in Safari 14+). | **ACCEPTED** |
+| WebSocket via Django Channels | Full-duplex; Django Channels 4 is stable and well-documented. | Bidirectionality is unused overhead for status display; complex connection lifecycle; load balancer requires sticky sessions or Redis channel layer; not HTTP/2 native. | **REJECTED** — bidirectionality not needed; SSE is simpler and equally capable. |
+| Long Polling | Works with synchronous WSGI Django; no persistent connection infrastructure. | Thread-per-connection exhausts WSGI workers; p95 latency = poll interval + event latency — fails < 5s NFR; not real-time at 30k concurrent clients. | **REJECTED** — fails latency and resource NFRs at scale. |
+| Push-notification-only (no web channel) | Zero SSE/WebSocket infrastructure. | Web dashboard requires polling; any poll interval > 5s fails p95 latency NFR; unacceptable UX for live dispatch dashboard. | **REJECTED** — fails latency NFR for web. |
 
-**Pros:**
-- Lowest latency (p95 <500ms feasible)
-- Bidirectional: client can acknowledge, ask for resend
-- Handles mobile reconnect gracefully
-- Scales to 100k+ concurrent connections with modern servers
-
-**Cons:**
-- Requires persistent server connections (memory overhead ~10MB per 10k connections)
-- Firewall/proxy incompatibility in some corporate networks
-- More complex server state management (graceful disconnect, reconnect logic)
-- Harder to scale horizontally (sticky sessions or shared connection state needed)
-
-**Verdict:** ✅ **Recommended for primary transport**. Mobile apps benefit most; web browsers can use fallback.
+**Decision: SSE via Django async views + `channels-redis` channel layer for fan-out across ASGI worker instances.**
 
 ---
 
-#### **Option B: Server-Sent Events (SSE, one-way streaming)**
+### Decision 2: Event Broker / Message Bus
 
-**Pros:**
-- Simpler than WebSocket (standard HTTP)
-- Better firewall/proxy compatibility
-- Browser-native API; easier for web clients
-- Automatic reconnect with `Last-Event-ID`
+| Option | Pros | Cons | Verdict |
+|--------|------|------|---------|
+| **Redis Streams + channels-redis — RECOMMENDED** | Single Redis instance serves both Celery delivery (Streams consumer groups) and SSE fan-out (channel layer). Per-stream consumer groups provide ordering per `shipment_id`. Built-in ACK/NACK retry. `MAXLEN` prevents unbounded growth. Native Django Channels ecosystem. | Redis single-threaded per shard — needs Cluster or Sentinel for HA at 10× growth. No schema registry. Memory must be tuned. | **ACCEPTED** |
+| PostgreSQL LISTEN/NOTIFY | Zero new infrastructure; transactional (event fires only on commit). | Fire-and-forget — no persistence, no replay. 8,000-byte payload cap. Cannot sustain 30k concurrent listeners without exhausting PG connections. Adds load to primary database. | **REJECTED** — no persistence/replay; connection scaling problem (see AP-4). |
+| Apache Kafka | Exactly-once semantics, long retention, consumer group isolation, schema registry. | Massive operational overhead (KRaft cluster, schema registry) for 2.3 events/second. Premature at 50k shipments/day. | **REJECTED** — see AP-1. Reconsider if volume exceeds ~1M events/day or 24h+ replay is required. |
+| AWS SNS + SQS | Managed HA; built-in mobile push routing. | Vendor lock-in; per-notification cost; Django-to-SNS adds latency hop; less flexible for web fan-out. | **DEFERRED** — acceptable as push delivery layer if platform is already AWS-native. |
 
-**Cons:**
-- One-way only (client can't easily signal acknowledgment)
-- Slightly higher latency (p95 ~2–3s) due to HTTP chunking
-- Max 6 connections per domain (HTTP/1.1 limit) — works only if single endpoint
-- Less efficient than WebSocket for high-frequency updates
-
-**Verdict:** ✅ **Fallback for web browsers if WebSocket unavailable** (corporate proxies, older infrastructure).
+**Decision: Redis Streams (`XADD`/`XREADGROUP`) for worker delivery + `channels-redis` for SSE fan-out.**
 
 ---
 
-#### **Option C: Long-Polling**
+### Decision 3: Mobile Push Delivery Provider
 
-**Pros:**
-- Works in all networks (just HTTP GET)
-- Requires no persistent connection state
+| Option | Pros | Cons | Verdict |
+|--------|------|------|---------|
+| **Firebase Cloud Messaging (unified) — RECOMMENDED** | Single `firebase-admin` Python SDK for both Android (native FCM) and iOS (FCM wraps APNs). Free tier covers 50k/day comfortably. Handles APNs token complexity internally. | Google dependency. FCM→APNs adds one extra hop for iOS (marginal latency increase). | **ACCEPTED** |
+| Direct APNs (HTTP/2) + direct FCM (split) | Lowest iOS latency; maximum control. | Two push client libraries; APNs HTTP/2 persistent connection + certificate rotation complexity; larger code surface. | **REJECTED** — marginal latency gain does not justify operational complexity. |
+| AWS SNS Mobile Push | Managed HA; integrates cleanly with SQS if on AWS. | Per-notification cost; vendor lock-in; additional Django plumbing. | **DEFERRED** — consider if platform migrates to AWS-native stack. |
 
-**Cons:**
-- High latency (p95 >5s from polling interval)
-- Inefficient: ~2.5 reqs/sec baseline × 100k clients = 250k unnecessary requests/sec
-- Hammers database with repeated queries
-- Exceeds our 5s latency SLA during peak
-
-**Verdict:** ❌ **Rejected.** Violates p95 <5s latency requirement and scales poorly.
+**Decision: `firebase-admin` Python SDK dispatched from Celery `notification-worker` queue.**
 
 ---
 
-#### **Option D: Native Push Notifications Only (FCM + APNs)**
+## 7. Confidence Assessment
 
-**Pros:**
-- Works offline; can wake app
-- Native mobile experience (badges, sounds)
-- No persistent server connections needed
+| Component | Confidence | Rationale | Spike Needed? |
+|-----------|-----------|-----------|---------------|
+| Redis Streams for ordered event delivery | 85% | Well-understood; `redis-py` Streams API is stable; consumer groups well-documented | No |
+| Django async view SSE endpoint | 72% | Django 4.2+ async views support streaming; SSE pattern is straightforward but needs prototype to confirm `StreamingHttpResponse` ASGI lifecycle | Yes — prove async SSE streaming with 100 concurrent test connections |
+| `channels-redis` fan-out at 30k concurrent connections | **60%** | Untested at this connection count on a single Redis instance; Redis single-threaded I/O may bottleneck above ~20k channels | **Yes — load-test spike: simulate 30k concurrent SSE connections, measure Redis CPU + p99 fan-out latency** |
+| Celery push notification worker (FCM) | 80% | Standard Celery + `firebase-admin` pattern; retry logic is straightforward | No |
+| JWT auth on SSE handshake | 78% | Token validation in async view before opening stream; handle token expiry during long-lived connections (close with `event: auth_expired`) | No — but handle expiry explicitly |
+| Per-shipment channel naming and isolation | 82% | Standard Channels group naming: `shipment_{id}` | No |
+| Multi-tenancy data isolation in channel groups | **50%** | Assumption #10 unconfirmed; multi-tenant requires `tenant_{tid}__shipment_{sid}` naming | **Yes — confirm multi-tenancy model before implementation** |
+| PostgreSQL write throughput at peak | 75% | Peak 5k events/hour = ~1.4 writes/second — modest for PG; current base load unknown | No — verify existing connection pool sizing |
+| 10× growth via horizontal ASGI scaling | **65%** | ASGI horizontal scale is proven; Redis single-instance is the ceiling | **Yes — spike: profile Redis at 10× event rate; validate Redis Cluster migration path** |
+| SSE `Last-Event-ID` reconnect recovery | 70% | SSE spec + Redis Streams `XREAD COUNT 100 STREAMS key $LAST_ID` is standard; 30s window needs validation | Yes — validate reconnection recovery window in prototype |
 
-**Cons:**
-- Cannot deliver to web dashboard (no native push for browsers running in tabs)
-- Delivery SLA: 99.99% but not real-time (1–10s typical)
-- Cannot display real-time updates while app running (only notification badge)
-- Increased battery drain on mobile
-- Cannot sync missed notifications efficiently
-
-**Verdict:** ❌ **Rejected as primary.** Only viable as **supplementary** for mobile when app is backgrounded; insufficient for web dashboard.
-
----
-
-### **Hybrid Recommendation**
-
-| Client | Primary | Fallback |
-|--------|---------|----------|
-| **Web Dashboard** | WebSocket | SSE |
-| **Mobile (foreground)** | WebSocket | SSE |
-| **Mobile (backgrounded)** | Native Push (FCM/APNs) | None |
-
-**Rationale:** WebSocket handles real-time web/active mobile. Native push handles offline mobile scenario. Two-tier approach maximizes coverage.
-
----
-
-## 7. Confidence Assessment Table
-
-| Component | Confidence | Risk | Spike/Validation Needed |
-|---|---|---|---|
-| WebSocket transport design | 85% | Low | Proof-of-concept: 1k concurrent connections under load |
-| SSE fallback implementation | 80% | Low | Test corporate proxy scenarios; verify `Last-Event-ID` semantics |
-| PostgreSQL write throughput (50–100 writes/sec) | **40%** | **HIGH** | 🔴 **SPIKE:** Load test with production schema; measure connection pool saturation |
-| Message ordering per-shipment | 85% | Low | Verify event sequencing in queue; add ordering tests |
-| Push provider integration (FCM/APNs) | 75% | Medium | 🟡 **Spike:** Validate credential flow; test outage handling |
-| Connection limit scaling (100k concurrent) | **60%** | **MEDIUM** | 🔴 **SPIKE:** Capacity plan for infrastructure; benchmark memory/CPU per connection |
-| Redis subscription cache consistency | 80% | Low | Stress test under peak; verify fanout batching |
-| Cross-device sync (browser + mobile for same user) | **50%** | **HIGH** | 🔴 **SPIKE:** Design sync protocol; avoid duplicate notifications |
-| Retry/backoff without overwhelming receivers | 70% | Medium | 🟡 **Spike:** Simulate receiver slowness; measure queue depth under backpressure |
-| **Total spikes identified:** | | | 4 spikes block confident design handoff |
-
-**Spike Planning:**
-1. **PostgreSQL Load Test** (1–2 days) — provision test DB, measure write latency at 100 writes/sec, identify connection pool bottleneck
-2. **WebSocket Capacity Test** (1–2 days) — prototype with daphne, load to 10k connections, measure memory footprint and latency
-3. **Push Provider Failover** (1 day) — mock FCM/APNs outage, verify web/in-app fallback paths work
-4. **Cross-Device Deduplication** (2 days) — design subscription model that prevents same notification hitting user via web + mobile simultaneously
+**Spikes required (4):** async SSE prototype, `channels-redis` 30k-connection load test, multi-tenancy confirmation, Redis 10× scaling profile.
 
 ---
 
 ## 8. Change Impact Analysis
 
-### **What-If: Traffic 10× Growth (500k active shipments/day, 50k events/hour peak)**
+### What-if: Traffic grows 10× (500k shipments/day, ~50k events/hour peak)
 
-**Impact on each component:**
+| Layer | Current design ceiling | Impact at 10× | Mitigation |
+|-------|----------------------|---------------|------------|
+| Redis Streams | Single instance | Single-threaded Redis I/O bottlenecks above ~100k ops/sec | Migrate to Redis Cluster; hash-slot by `shipment_id` preserves per-shipment ordering |
+| ASGI Workers (SSE gateway) | Horizontal pods, ~1k connections/pod | ~300k concurrent connections → ~300 pods | Kubernetes HPA on connection count metric; NGINX upstream distribution |
+| Celery notification workers | Horizontal pods | 50k events/hour → 14/sec; 10× → 140/sec | Scale Celery concurrency; add `notification-worker` pod replicas |
+| FCM / APNs | Firebase / Apple capacity | FCM handles hundreds of millions/day | No change required |
+| PostgreSQL | Current instance | ~14 status writes/second at 10× — still modest for PG | Add PgBouncer; add read replica for reporting queries |
 
-| Component | Current Capacity | 10× Load | Mitigation |
-|---|---|---|---|
-| PostgreSQL writes | 50–100 writes/sec | 500–1000 writes/sec | ❌ **Breach:** Requires sharding (by shipment ID range or by tenant if multi-tenant). Add read replicas for audit log queries. |
-| WebSocket connections | 100k | 1M | ⚠️ **Breach:** Single daphne instance saturates at ~50k. Horizontal scale to 20 instances + sticky session router (nginx/HAProxy) or move to managed service (e.g., Fly.io). |
-| Redis fanout queue | 5k events/hour | 50k events/hour | ✅ **OK:** Redis can sustain 100k ops/sec. Monitor memory (estimate: 1–2GB baseline → 20–40GB). Add replication. |
-| Push provider throughput | 20k downstream pushes/hour | 200k pushes/hour | ⚠️ **Caution:** FCM/APNs support >1M requests/sec each. Costs increase proportionally; may need rate limiting per customer. |
-
-**Decision point:** At 10× growth, **must shard PostgreSQL by shipment ID or tenant**. Design notifications table with explicit shipment_id partition key.
-
----
-
-### **What-If: New Client Type (3PL Partner API: 500+ external integrations)**
-
-**New requirement:** Partner systems (Shopify, WooCommerce plugins) subscribe to shipment events via REST API (webhook model, not WebSocket).
-
-**Impact:**
-
-| Aspect | Change |
-|---|---|
-| **Event model** | Add webhook subscription table: `(partner_id, shipment_type_filter, callback_url, signing_key)`. Emit events to both WebSocket AND webhook deliverer. |
-| **Delivery semantics** | WebSocket = push; webhooks = pull (retries, exponential backoff). Use separate queue (Celery job) for webhook dispatch. |
-| **Fanout cost** | Each event now triggers: N web clients + N mobile clients + N partners. Estimate: 5k events/hour × (4 subscribers + 10 partners avg) = 70k downstream deliveries/hour. |
-| **Idempotency** | Partners require idempotent notifications (same event may retry). Add event ID to payload; partners implement dedup via event ID. |
-| **Spec update** | ADR-0007 must document webhook model alongside WebSocket. |
-
-**Decision:** Webhook model orthogonal to WebSocket; can be added in Phase 2 without rearchitecting. Add to design as optional Phase 2 extension.
+**Verdict:** 10× is achievable via horizontal ASGI worker scaling and Redis Cluster migration. No architectural rework required if Redis Cluster path is designed in from day 1 (even if not activated until 5× growth is reached).
 
 ---
 
-### **What-If: Push Provider Outage (FCM down for 1 hour)**
+### What-if: New client type — 3PL partner API
 
-**Scenario:** Firebase Cloud Messaging unavailable for mobile apps during 9am peak.
+| Consideration | Impact | Recommendation |
+|--------------|--------|----------------|
+| Transport | Partners cannot maintain long-lived SSE connections in batch processes | Add **webhook delivery**: partner registers `callback_url`; Celery worker POSTs event JSON with `X-FreightFlow-Signature: HMAC-SHA256` |
+| Auth | JWT not suited for server-to-server | API key for webhook registration; OAuth 2.0 client credentials for scoped access |
+| Event schema | Browser events are minimal; partners may need richer payloads | Add `event_version` field now; version at `v1` so `v2` can add fields non-breakingly |
+| Broker impact | No new broker needed | Add `webhook-worker` as a second Celery consumer group on the existing `freightflow:shipment-events` stream |
+| Rate limiting | Partners may subscribe to all events | Per-partner rate limit + subscription filter by account or region |
 
-**Mitigation:**
+**Verdict:** 3PL partner API adds a webhook consumer to the existing Redis Streams pipeline. No new broker or transport infrastructure needed.
 
-| Layer | Fallback |
-|---|---|
-| **Mobile (backgrounded)** | Degrade to no push notifications. Driver/customer won't see banner until they open app. Accept SLA breach. |
-| **Mobile (foreground, connected to WebSocket)** | In-app notification banner displayed instead (no native badge/sound). Seamless. |
-| **Web dashboard** | Unaffected (uses WebSocket + SSE, no FCM dependency). ✅ Uninterrupted. |
+---
 
-**Design requirement:** Add FCM health check to dashboard. If FCM down >5 min, display banner to mobile users: "Notifications delayed. Refresh to check status." Implement fallback to APNs for iOS (primary FCM → APNs + silent notification).
+### What-if: Push provider (FCM) outage
 
-**Post-incident:** Measure FCM uptime SLA monthly. If <99.9%, add APNs as primary for iOS; FCM secondary.
+| Failure mode | Impact | Mitigation |
+|-------------|--------|------------|
+| FCM total outage | Mobile push not delivered; web SSE channel unaffected | Celery retries with exponential back-off (base 30s, cap 1h, max 10 retries); events buffered in Redis Streams (MAXLEN ~100k ≈ 24h) |
+| Prolonged outage (> 24h buffer window) | Events expire from Redis Streams before delivery | Mobile app polls REST catch-up endpoint on reconnect: `GET /api/v1/shipments/{id}/events/?since={iso_timestamp}` — served from PostgreSQL status history |
+| Device token stale / revoked | FCM returns `UNREGISTERED` | Celery worker marks token inactive in `device_tokens`; stops dispatching to that token until app re-registers |
+| APNs outage | iOS push not delivered | FCM routes to APNs internally; if APNs is down and FCM is up, FCM will queue and retry on APNs recovery |
+| Partial regional FCM outage | Some devices unreachable | Firebase handles regional routing; no FreightFlow action required |
+
+**Key mitigation:** Redis Streams MAXLEN (24h buffer) + REST catch-up endpoint. Web SSE channel is entirely independent of FCM — unaffected by any push provider outage.
 
 ---
 
 ## 9. Anti-Patterns Flagged
 
-### ❌ **Anti-Pattern 1: Premature Microservices for a Single Feature**
+**AP-1: Premature microservices for a notification feature**
 
-**The trap:** "Notifications need real-time, so let's split into a separate service."
+Deploying a standalone "Notification Service" microservice at 2.3 events/second average is unjustified. The notification feature belongs inside the FreightFlow Django monolith as a `notifications` app using Django Channels and Celery — both integrate natively with the existing ORM, auth, and PostgreSQL. Microservices introduce distributed tracing, inter-service latency, network partition risk, and independent deployment overhead for no scaling benefit at this volume. Extract to a separate service only if the notification layer becomes a demonstrably independent scaling bottleneck.
 
-**Why it's wrong:** Notification delivery is tightly coupled to shipment state changes. Splitting creates a distributed transaction (shipment updated, service-to-service call fails, notification lost). No independent scaling benefit at 50k/day.
+**AP-2: Distributed monolith via shared database**
 
-**What to do instead:** Keep notifications as a subsystem within Django (via async tasks + WebSocket server running in the same codebase or adjacent process). Use Celery/Dramatiq only for I/O-bound work (push API calls), not to justify a separate service.
+If the notification worker or SSE gateway is deployed as an independent service but reads/writes PostgreSQL directly (loading shipment records or device tokens via raw SQL), you have a distributed monolith: schema changes break multiple deployed services simultaneously, and you pay microservices operational costs without isolation. The Django REST API must own all PostgreSQL writes. Workers receive events from Redis Streams; write-back (e.g., marking stale tokens) goes through the Django model layer or an internal API endpoint — no direct raw-SQL access from a separately deployed notification service.
 
----
+**AP-3: Unbounded WebSocket/SSE connection growth without backpressure**
 
-### ❌ **Anti-Pattern 2: Distributed Monolith via Shared Database**
+Without connection limits and server-side backpressure, a reconnect loop bug or malicious client can exhaust ASGI worker file descriptors within minutes. Required mitigations: (a) per-user connection limit: max 3 concurrent SSE connections, enforced in the async view on connect (HTTP 429 if exceeded); (b) slow-consumer detection: close SSE connections where the server-side buffer exceeds 100 undelivered events; (c) NGINX `limit_conn` directive at the load balancer; (d) ASGI worker `--max-connections` setting.
 
-**The trap:** Multiple WebSocket servers all write to the same `notifications` table, relying on the DB as the message bus.
+**AP-4: PostgreSQL LISTEN/NOTIFY as the event bus**
 
-**Why it's wrong:** PostgreSQL isn't a message queue. Concurrent writes to a hot table (5k/hour) cause lock contention. No ordering guarantees. Client-server affinity breaks when connections migrate.
-
-**What to do instead:** Use an actual message queue (Kafka, RabbitMQ) as the hub. Multiple WebSocket servers consume from the queue independently. Each server maintains in-memory subscription state via Redis. DB is for audit/persistence only, not real-time dispatch.
-
----
-
-### ❌ **Anti-Pattern 3: Unbounded WebSocket Connection Growth Without Backpressure**
-
-**The trap:** Accept all WebSocket subscriptions without limit. At 100k connections, server memory balloons; no queue to handle slow clients.
-
-**Why it's wrong:** One slow client (slow network) backs up the broadcast queue. p95 latency degrades. Server OOM kills all connections.
-
-**What to do instead:** Implement backpressure: set max buffer per connection (e.g., 100 pending messages). If buffer overflows, close the connection. Clients reconnect and catch up from Redis cache. Also set max concurrent connections per server (e.g., 10k per daphne instance); reject new connections with 503 and force load balancer to try next server.
-
----
-
-### ❌ **Anti-Pattern 4: Ignoring Message Ordering in Distributed System**
-
-**The trap:** Use independent push API calls for each notification. Event A (picked up) and Event B (in transit) for the same shipment may arrive out of order on the client.
-
-**Why it's wrong:** Client UI shows "In transit" then "Picked up" after, confusing customers.
-
-**What to do instead:** Enforce ordering guarantee: all events for a shipment go through a single queue with a sequence number. Receiver must apply events in sequence number order. Discard out-of-order events. Add this requirement to the push payload schema.
-
----
-
-### ❌ **Anti-Pattern 5: Over-Provisioning for Peak That Never Comes**
-
-**The trap:** "We expect 5k events/hour peak, so provision for 10k/hour capacity."
-
-**Why it's wrong:** Wastes money. Real peak is often lower than estimated.
-
-**What to do instead:** Provision for stated 5k/hour. Monitor actual peak. If 80% of capacity consumed for >2 consecutive weeks, scale up. Use auto-scaling groups with target utilization (e.g., scale when CPU >70%).
+Tempting because it requires no new infrastructure and events are transactional. However: notifications are fire-and-forget (no persistence or replay), payload is capped at 8,000 bytes, and scaling to 30,000 concurrent listeners requires 30,000 PG connections or a complex multiplexing proxy. Redis Streams solves all three problems: persistence with MAXLEN, consumer group replay, and a single connection pool from Django to Redis regardless of SSE connection count.
 
 ---
 
 ## 10. Recommended ADR
 
-### **ADR-0008: Real-Time Notification Delivery via WebSocket + Hybrid Push**
+**Title:** ADR-0001 — Real-Time Notification Transport: SSE + Redis Streams
 
-**Status:** Proposed
+**Full ADR:** written to `docs/architecture/adr/ADR-0001-real-time-notification-transport.md`
 
-**Context**
+**Summary:**
 
-FreightFlow logistics customers and drivers need real-time visibility into shipment status updates (picked up, in transit, out for delivery, delivered). Current REST API polling is inefficient. Platform must handle 50,000 active shipments per day with peak bursts (5,000 events/hour at 9am & 2pm) while maintaining <5 second end-to-end latency and 99.9% availability.
+Adopt Server-Sent Events (SSE) via Django async views backed by `channels-redis` for the web dashboard, and Firebase Cloud Messaging (FCM) dispatched from Celery workers consuming Redis Streams for mobile clients.
 
-**Decision**
+**Decision in one line:** Status change events are `XADD`'d to a Redis Streams key on Django `post_save`; SSE gateway subscribers fan them to browsers; Celery `XREADGROUP` consumers dispatch FCM push payloads to mobile devices.
 
-Implement **hybrid notification architecture:**
+**Consequences:**
+- Redis required as new infrastructure dependency if not already present
+- ASGI deployment (Daphne/Uvicorn) required alongside existing WSGI (Gunicorn) — NGINX routes `/api/v1/events/` to ASGI, all other paths to WSGI
+- `channels-redis` must be load-tested at 30k concurrent connections before production
+- Redis Streams `MAXLEN` must be tuned to retain 24h of events for recovery
 
-1. **WebSocket (primary transport for web + active mobile clients)**
-   - Daphne (async HTTP server) with Django Channels for WebSocket upgrades
-   - Sticky session load balancer (nginx) for horizontal scaling
-   - Redis PubSub for cross-server fanout
-   - Max 100k concurrent connections per fleet
+**Rejected alternative 1:** WebSocket via Django Channels — rejected because the stream is unidirectional; SSE's `EventSource` API handles reconnection natively and is simpler to operate through CDN/proxy infrastructure. Revisit if a bidirectional command channel is added.
 
-2. **Server-Sent Events (fallback for web clients, fallback for web if WebSocket unavailable)**
-   - HTTP/1.1 chunked streaming with `Last-Event-ID` for reconnect
-   - Better firewall compatibility than WebSocket
-   - Suitable for corporate network scenarios
+**Rejected alternative 2:** Apache Kafka — rejected as premature at 2.3 events/second average. Redis Streams provides sufficient ordering, consumer groups, and replay at this scale. Reconsider if volume exceeds ~1M events/day or if >24h event replay is required.
 
-3. **Native Push Notifications (supplementary for backgrounded mobile apps)**
-   - Firebase Cloud Messaging (FCM) for Android
-   - Apple Push Notification Service (APNs) for iOS
-   - Device tokens persisted in database with last-activity timestamp for cleanup
-   - Fallback: if FCM down >5min, promote APNs to primary for iOS
-
-4. **Message Queue (async fan-out orchestration)**
-   - RabbitMQ or Kafka for reliable event delivery
-   - Each shipment status change published to queue
-   - Async workers consume and fanout to subscribed clients
-   - Enables scaling WebSocket count independently of event producers
-
-5. **Subscription State (Redis cache)**
-   - Store subscriptions in-memory on each WebSocket server
-   - Redis cluster mirrors subscriptions for cross-server visibility
-   - Subscription: `shipment_id:*` or `user_id:*` granularity
-
-6. **Audit Log (PostgreSQL)**
-   - Persist all notifications to `notifications` table for compliance/debug
-   - Indexed by `shipment_id` for retrieval of missed updates
-   - Retention: 30 days (configurable)
-
-**Rejected Alternatives**
-
-1. **Long-Polling only:** Violates <5s latency SLA; creates 250k unnecessary HTTP requests/sec at peak. ❌
-
-2. **Native Push only (no WebSocket):** Cannot deliver real-time updates to web dashboard; cannot show in-app banner for foreground mobile. ❌
-
-3. **Single WebSocket server (no scaling):** Hits connection limits at ~50k; doesn't scale to 10× growth. ❌
-
-4. **Synchronous REST API polling:** Baseline approach; customer requirement explicitly "without polling." ❌
-
-**Consequences**
-
-**Positive:**
-- Real-time delivery <5s p95 meets customer expectations
-- Scales to 100k concurrent connections with horizontal scaling
-- Hybrid approach maximizes coverage (web + mobile + offline)
-- Message queue decouples producers from consumers
-
-**Negative:**
-- Operational complexity: daphne + RabbitMQ + Redis requires ops discipline
-- Requires sticky sessions or shared state (Redis) for horizontal scaling
-- Push provider outages (FCM/APNs) require fallback coordination
-- 4 spikes needed before confident implementation (see Section 7)
-
-**Risks**
-- Database write bottleneck at 100+ writes/sec (PostgreSQL connection pool saturation)
-  - **Mitigation:** Load test before build; shard by shipment ID if needed
-- WebSocket memory overhead at 100k connections (~1–2GB per server)
-  - **Mitigation:** Set connection limits per server; use auto-scaling to add servers at 70% capacity
-- Message ordering: distributed system may reorder events
-  - **Mitigation:** Enforce sequence numbers per shipment; client applies events in order
-
-**Implementation Phases**
-
-1. **Phase 1 (MVP):** WebSocket + Redis + RabbitMQ + PostgreSQL audit log
-   - Supports web + active mobile clients
-   - Estimated 3–4 weeks
-
-2. **Phase 2:** Native push integration (FCM + APNs) + backgrounded mobile support
-   - Estimated 2–3 weeks
-
-3. **Phase 3 (optional):** Webhook API for 3PL partners
-   - Requires separate Celery job for retry orchestration
-   - Estimated 1–2 weeks
+**Rejected alternative 3:** PostgreSQL LISTEN/NOTIFY — rejected due to lack of persistence/replay, 8,000-byte payload cap, and the connection scaling problem at 30k concurrent listeners.
 
 ---
 
-## Summary
+Files written to disk:
+- `docs/architecture/notification-system-design.md` — full design document
+- `docs/architecture/adr/ADR-0001-real-time-notification-transport.md` — ADR with full decision record
 
-**Key Design Decisions:**
-1. ✅ WebSocket primary, SSE fallback for web layer
-2. ✅ Native push supplementary for backgrounded mobile
-3. ✅ RabbitMQ for reliable event fan-out
-4. ✅ Redis for subscription state (cross-server visibility)
-5. ✅ PostgreSQL for audit persistence only
+**4 spikes are flagged before production:** async SSE prototype with concurrent connection validation, `channels-redis` load test at 30k connections, multi-tenancy channel naming confirmation (Assumption #10, 50% confidence), and Redis 10× scaling profile with Cluster migration path. The broker (Redis Streams + `channels-redis`) and mobile delivery (Celery + FCM) components are well-understood; the SSE connection fan-out at target scale is the single highest-risk assumption.
 
-**Confidence Level:** 60% (4 high-risk spikes pending validation)
+### Artifacts written
 
-**Next Steps:** Execute spikes in Section 7 (PostgreSQL load test, WebSocket capacity, push failover, cross-device dedup). Design is architecture-sound but infrastructure assumptions require proof before build begins.
+#### `work/docs/architecture/notification-system-design.md`
+
+```
+# FreightFlow — Real-Time Notification System Architecture Design
+
+**Date:** 2026-05-27
+**Author:** Architecture design session
+**Status:** Draft — pending assumption confirmation (see ledger)
+
+---
+
+## 1. Pre-flight
+
+Files checked and result of each check:
+
+| File | Result | Impact |
+|------|--------|--------|
+| `CLAUDE.md` | Not present (empty eval workspace) | No project-specific conventions to apply |
+| `docs/architecture/adr/` | Not present — no existing ADRs | No prior transport, broker, or async-framework decisions to honour |
+| `docs/tooling-register.md` | Not present | Cannot confirm whether Redis or Celery are already provisioned |
+| `pyproject.toml` / `requirements.txt` | Not present | Cannot confirm Django version (design assumes 4.2 LTS or 5.0) |
+
+In a real project, these files would be read to extract:
+- **CLAUDE.md**: team naming conventions, preferred async framework, banned dependencies
+- **ADRs**: prior decisions on message brokers, deployment model, auth strategy
+- **Tooling register**: whether Redis, Celery, FCM credentials, ASGI runtime are already in the stack — to avoid proposing infrastructure already rejected or redundant with what exists
+- **pyproject.toml**: Django version constrains async view support and Channels version compatibility
+
+All context for this design comes from the user brief: Django REST API on PostgreSQL, 50k active shipments/day, web dashboard + mobile apps, peak bursts 9am and 2pm.
+
+---
+
+## 2. Work Classification + Scope
+
+**Classification:** Architecture design (not implementation, not bug fix, not refactor).
+
+### In-scope
+- Notification delivery design for web dashboard and mobile apps
+- Transport protocol selection: WebSocket vs SSE vs long-poll vs push-only
+- Event pipeline: Django status write → event broker → connected clients
+- Scaling strategy for 50k shipments/day with 9am/2pm peak bursts
+- Django Channels / ASGI integration pattern
+- Mobile push notification delivery path (FCM / APNs)
+- Failure handling, retry semantics, and backpressure strategy
+- Change impact analysis for 10× growth, new 3PL client type, push provider outage
+- Recommended ADR with rejected alternatives
+
+### Out-of-scope
+- Mobile app implementation (Swift / Kotlin code)
+- Push provider account setup (FCM project configuration, APNs certificate provisioning)
+- Business rules for shipment state machine (what triggers each status transition)
+- Operational concerns: CI/CD pipeline, deployment scripts, Kubernetes manifests, Grafana dashboards
+- Carrier webhook ingestion design (assumed already handled by existing Django REST endpoints)
+
+---
+
+## 3. Assumption Ledger
+
+| # | Assumption | Classification | Validation method | Confidence |
+|---|-----------|----------------|-------------------|------------|
+| 1 | Django version is 4.2 LTS or 5.0, supporting async views and Django Channels 4.x | inferred | Check `pyproject.toml` / `requirements.txt` for `django` version pin | 75% |
+| 2 | Redis is available or can be added to the infrastructure stack | inferred | Check `docker-compose.yml`, IaC (Terraform/Ansible), or confirm with infrastructure team | 80% |
+| 3 | Mobile clients are iOS (APNs) and Android (FCM); Firebase Cloud Messaging is the chosen push provider | inferred | Confirm with mobile team — FCM can wrap APNs, or split APNs+FCM may be preferred | 70% |
+| 4 | PostgreSQL can sustain current write load; notification event publishing does not require a DB-level trigger — Django post-save signals are sufficient and do not cause PG overload | inferred | Load-test write path; check PgBouncer config and max_connections | 70% |
+| 5 | Peak burst sizing: 9am and 2pm peaks are ~3× average load. 50k shipments/day × 4 status transitions = ~200k events/day = ~8,333/hour average; peak ~5,000/hour per user brief | inferred | Confirm with dispatch/ops team or analyse historical delivery cadence data | 65% |
+| 6 | Message ordering must be guaranteed per shipment (FIFO per `shipment_id`); global ordering across all shipments is not required | inferred | Confirm with product team — affects Redis Streams partitioning strategy | 70% |
+| 7 | Retry semantics: at-least-once delivery is acceptable for push notifications; duplicate suppression is the client's responsibility (idempotent event handling in mobile app by `event_id`) | inferred | Confirm with product/mobile team | 65% |
+| 8 | Web dashboard targets modern browsers: Chrome 90+, Firefox 88+, Safari 14+, Edge 90+ — EventSource (SSE) API available natively | inferred | Check browser support requirements from product brief or front-end team | 80% |
+| 9 | Auth: JWT tokens (already in use for REST API) are used for the SSE/WebSocket handshake; no separate OAuth server needed for notification subscription | inferred | Review existing Django auth implementation; check whether DRF JWT or SimpleJWT is in use | 75% |
+| 10 | Multi-tenancy: FreightFlow is either single-tenant or per-tenant data isolation is already enforced at the Django API layer; notification channels will be scoped per user/shipment, not per tenant at the broker level | needs_user_confirmation | Confirm multi-tenancy model with engineering lead before channel naming is finalised | 50% |
+| 11 | Celery is available or acceptable to add; an existing Redis or RabbitMQ broker may already be in use | inferred | Check `CELERY_BROKER_URL` in Django settings or existing worker Dockerfiles | 70% |
+| 12 | 10× growth scenario (500k shipments/day) must be achievable through horizontal scaling without architectural rework to the event pipeline | inferred | Stress-test Redis Streams + ASGI worker model at 10× load as a spike | 65% |
+
+---
+
+## 4. Quantified NFRs
+
+| NFR | Target | Notes |
+|-----|--------|-------|
+| p95 notification delivery latency (status change → client display) | < 5 seconds end-to-end | Covers Django write → Redis → SSE push / FCM delivery |
+| p99 delivery latency | < 15 seconds | Outlier tolerance for congested mobile networks |
+| Average throughput | ~200,000 events/day (~2.3 events/second) | 50k shipments × 4 status transitions |
+| Peak throughput | 5,000 events/hour = ~1.4 events/second at 9am and 2pm | Per user brief |
+| Concurrent SSE/WebSocket connections | 30,000 peak (customers + drivers) | Inferred — needs_user_confirmation (Assumption #10) |
+| Message ordering | Strictly ordered per `shipment_id` (FIFO) | No global ordering required |
+| Push notification delivery rate | ≥ 98% (2% tolerance for unregistered/offline devices) | FCM/APNs SLA + retry policy |
+| System availability | 99.9% (≤ 8.7 hours downtime/year) | Per user brief |
+| Event replay / reconnect recovery window | Client reconnects within 30 seconds; server retains last 60 seconds of events per channel | UX continuity on mobile network switch or tab reload |
+| Redis Streams retention | MAXLEN 100,000 (covers ~24h at average volume) | Enables catch-up after push provider outage |
+
+---
+
+## 5. C4 Diagrams
+
+### Level 1 — System Context
+
+```mermaid
+C4Context
+    title FreightFlow — Real-Time Notification System Context
+
+    Person(customer, "Customer", "Tracks shipment delivery on web dashboard or mobile app")
+    Person(driver, "Driver", "Submits status updates and receives job notifications via mobile app")
+    Person(dispatcher, "Dispatcher", "Monitors fleet and shipment status on web dashboard")
+
+    System(freightflow, "FreightFlow Platform", "Manages shipments, routes, and pushes real-time status notifications to customers and drivers")
+
+    System_Ext(fcm_apns, "Push Provider (FCM / APNs)", "Firebase Cloud Messaging and Apple Push Notification Service for mobile push delivery")
+    System_Ext(carrier, "Carrier / WMS System", "Warehouse Management Systems and partner carriers sending status webhooks")
+
+    Rel(driver, freightflow, "Submits status updates", "HTTPS REST / JWT")
+    Rel(carrier, freightflow, "Sends status webhooks", "HTTPS REST")
+    Rel(freightflow, customer, "Pushes status notifications", "SSE / Push Notification")
+    Rel(freightflow, dispatcher, "Pushes fleet status updates", "SSE")
+    Rel(freightflow, driver, "Pushes job/route updates", "Push Notification")
+    Rel(freightflow, fcm_apns, "Forwards push payloads", "HTTPS REST")
+    Rel(fcm_apns, customer, "Delivers mobile push notification", "FCM / APNs")
+    Rel(fcm_apns, driver, "Delivers mobile push notification", "FCM / APNs")
+```
+
+### Level 2 — Container Diagram
+
+```mermaid
+C4Container
+    title FreightFlow — Real-Time Notification Containers
+
+    Person(customer, "Customer", "Web browser or mobile app")
+    Person(driver, "Driver", "Mobile app")
+
+    System_Boundary(freightflow, "FreightFlow Platform") {
+        Container(api, "Django REST API", "Python / Django 4.2 / WSGI (Gunicorn)", "Handles status update writes, authentication, and shipment CRUD. Publishes events to Redis Streams on status change via Django post-save signal.")
+
+        Container(sse_gateway, "SSE Notification Gateway", "Python / Django async views / ASGI (Daphne or Uvicorn)", "Exposes GET /api/v1/events/shipment/{id}/ as an SSE stream. Subscribes to channels-redis channel layer. Fans out events to all connected browser clients per shipment channel. Enforces JWT auth on connect.")
+
+        Container(notif_worker, "Notification Worker", "Python / Celery", "Consumer group on Redis Streams (freightflow:shipment-events). Dispatches mobile push payloads to FCM via firebase-admin. Handles retries with exponential back-off. Writes delivery status back to PostgreSQL.")
+
+        ContainerDb(postgres, "PostgreSQL 15", "PostgreSQL", "Authoritative store for shipments, status history, user accounts, and device push tokens.")
+
+        ContainerDb(redis, "Redis 7", "Redis Streams + channels-redis", "Stream key freightflow:shipment-events for ordered, at-least-once delivery to Celery workers. channels-redis channel layer for Django SSE/WebSocket fan-out to connected browser clients.")
+    }
+
+    System_Ext(fcm_apns, "FCM / APNs", "Firebase Cloud Messaging (Android + iOS)")
+
+    Rel(driver, api, "POST /api/v1/shipments/{id}/status/", "HTTPS / JWT")
+    Rel(carrier, api, "POST /api/v1/webhooks/carrier/", "HTTPS / HMAC")
+    Rel(api, postgres, "Write status record", "psycopg3")
+    Rel(api, redis, "XADD freightflow:shipment-events", "redis-py")
+    Rel(sse_gateway, redis, "SUBSCRIBE via channel layer", "channels-redis")
+    Rel(sse_gateway, customer, "Push status events", "SSE (text/event-stream)")
+    Rel(notif_worker, redis, "XREADGROUP freightflow:shipment-events", "redis-py")
+    Rel(notif_worker, fcm_apns, "POST push payload", "HTTPS / firebase-admin")
+    Rel(notif_worker, postgres, "Write delivery status, mark stale tokens", "psycopg3")
+    Rel(fcm_apns, customer, "Deliver push notification", "FCM / APNs")
+    Rel(fcm_apns, driver, "Deliver push notification", "FCM / APNs")
+    Rel(customer, sse_gateway, "Subscribe to shipment channel", "GET SSE + JWT")
+```
+
+---
+
+## 6. Options Analysis
+
+### Decision 1: Web Dashboard Transport Protocol
+
+| Option | Pros | Cons | Verdict |
+|--------|------|------|---------|
+| **SSE (Server-Sent Events) — RECOMMENDED** | Native browser `EventSource` API, no library needed. Unidirectional — matches notification use case exactly. HTTP/2 multiplexes over fewer connections. Auto-reconnects with `Last-Event-ID` for event replay. Works through standard CDNs and HTTP proxies. ASGI-compatible as a Django async streaming view. | Requires ASGI runtime (Daphne/Uvicorn); purely unidirectional (fine for this use case); Safari ≤ 13 had quirks (resolved in Safari 14+). | **ACCEPTED** |
+| WebSocket via Django Channels | Full-duplex; well-supported in Django ecosystem; Channels 4 is stable. | Bidirectionality is unnecessary overhead for status display; more complex connection lifecycle (handshake, heartbeat, close codes); load balancer requires sticky sessions or Redis channel layer; not HTTP/2 native. | **REJECTED** — bidirectionality not needed; SSE is simpler and equally capable for this use case. |
+| Long Polling | Works with WSGI (synchronous Django); no persistent connection infrastructure needed. | Thread-per-connection on WSGI exhausts workers; high p95 latency (poll interval + event latency); not real-time at 30k concurrent clients. Fails < 5s latency NFR. | **REJECTED** — fails latency and resource NFRs at scale. |
+| Push-notification-only (no web channel) | Simplest server-side; zero SSE/WebSocket infrastructure. | Web dashboard would require polling REST API; any poll interval > 5s fails the p95 latency NFR; degraded UX for dispatch dashboard requiring live fleet view. | **REJECTED** — fails latency NFR for web; unacceptable UX for dispatcher. |
+
+**Decision: SSE delivered via Django async streaming views, backed by `channels-redis` channel layer for fan-out across ASGI worker instances.**
+
+---
+
+### Decision 2: Event Broker / Message Bus
+
+| Option | Pros | Cons | Verdict |
+|--------|------|------|---------|
+| **Redis Streams + channels-redis — RECOMMENDED** | Single Redis instance serves both Celery delivery (Streams consumer groups) and SSE fan-out (channel layer). Per-stream consumer groups give ordering per `shipment_id`. Built-in ACK/NACK retry. `MAXLEN` prevents unbounded growth. Fits Django Channels ecosystem. | Redis is single-threaded per shard — requires Redis Cluster or Sentinel for HA at 10× growth. No schema registry. Memory must be tuned. | **ACCEPTED** |
+| PostgreSQL LISTEN/NOTIFY | Zero new infrastructure; events are transactional (fire only on commit). | Fire-and-forget — no persistence, no replay. Payload capped at 8,000 bytes. Cannot sustain 30k concurrent listeners without exhausting PG connections. Adds load to the primary database. | **REJECTED** — no persistence/replay; connection scaling problem at target concurrency. |
+| Apache Kafka | Industrial-strength ordering, consumer groups, long retention, exactly-once semantics. | Massive operational overhead (KRaft/ZooKeeper, broker cluster, schema registry) for 2.3 events/second average throughput. Premature at 50k shipments/day. | **REJECTED** — see Anti-Pattern AP-1. Reconsider if volume exceeds ~1M events/day or if event replay beyond 24h is required. |
+| AWS SNS + SQS | Managed HA; built-in mobile push routing via SNS Mobile Push. | Vendor lock-in; cost per notification beyond free tier; Django-to-SNS integration adds latency hop; less flexible for web channel fan-out. | **DEFERRED** — acceptable as push delivery routing layer if platform is already on AWS; not recommended as primary broker. |
+
+**Decision: Redis Streams (`XADD`/`XREADGROUP`) for worker delivery + `channels-redis` channel layer for SSE fan-out.**
+
+---
+
+### Decision 3: Mobile Push Delivery Provider
+
+| Option | Pros | Cons | Verdict |
+|--------|------|------|---------|
+| **Firebase Cloud Messaging (unified) — RECOMMENDED** | Single `firebase-admin` Python SDK for both Android (native FCM) and iOS (FCM wraps APNs). Handles APNs token complexity. Free tier covers 50k/day volume comfortably. Well-maintained SDK. | Google dependency. FCM → APNs adds one extra hop for iOS (marginal latency increase). | **ACCEPTED** |
+| Direct APNs (HTTP/2) + direct FCM (split) | Lowest latency for iOS (no FCM middleman); maximum control over delivery semantics. | Two separate push client libraries; APNs HTTP/2 persistent connection management; certificate rotation complexity; larger code surface. | **REJECTED** — marginal latency benefit does not justify operational complexity at this volume. |
+| AWS SNS Mobile Push | Managed HA; integrates cleanly with SQS if on AWS. | Per-notification cost; vendor lock-in; additional infrastructure plumbing. | **DEFERRED** — consider if platform migrates to AWS-native stack. |
+
+**Decision: `firebase-admin` Python SDK dispatched from Celery `notification-worker` queue.**
+
+---
+
+## 7. Confidence Assessment
+
+| Component | Confidence | Rationale | Spike Needed? |
+|-----------|-----------|-----------|---------------|
+| Redis Streams for ordered event delivery | 85% | Well-understood pattern; `redis-py` Streams API is stable; consumer groups well-documented | No |
+| Django async view SSE endpoint | 72% | Django 4.2+ async views support streaming responses; SSE pattern is straightforward but needs prototype to confirm `StreamingHttpResponse` with ASGI lifecycle | Yes — prove async SSE streaming with 100 concurrent test connections before full build |
+| `channels-redis` fan-out to 30k concurrent connections | 60% | Untested at this connection count on a single Redis instance; Redis single-threaded I/O may bottleneck above ~20k channels | **Yes — load test spike: simulate 30k concurrent SSE connections, measure Redis CPU, memory, and p99 fan-out latency** |
+| Celery push notification worker (FCM) | 80% | Standard Celery + `firebase-admin` pattern; well-documented; retry logic is straightforward | No |
+| JWT auth on SSE handshake | 78% | Requires token validation in async view before opening stream; well-documented but needs review of token expiry behaviour during long-lived SSE connections | No — but handle token refresh by closing/reopening stream on 401 |
+| Per-shipment channel naming and isolation | 82% | Standard Django Channels group naming; use `shipment_{id}` as group name | No |
+| Multi-tenancy data isolation in channel groups | 50% | Assumption #10 unconfirmed; if multi-tenant, channel name must include `tenant_{id}__shipment_{id}` | **Yes — confirm multi-tenancy model before channel naming is finalised** |
+| PostgreSQL write throughput at peak | 75% | Peak 5k events/hour = ~1.4 writes/second — modest for PG; current load unknown | No — but verify existing connection pool sizing |
+| 10× growth via horizontal ASGI scaling | 65% | ASGI horizontal scale is proven; Redis single-instance is the ceiling; Cluster migration path needed | **Yes — spike: profile Redis at 10× event rate; validate Redis Cluster migration path** |
+| SSE `Last-Event-ID` reconnect recovery | 70% | SSE spec + Redis Streams `XREAD COUNT 100 STREAMS key $LAST_ID` is standard; needs implementation and 30s window validation | Yes — validate reconnection recovery window in prototype |
+
+**Spikes required (4):**
+1. Async SSE streaming prototype with concurrent connection test
+2. `channels-redis` load test at 30k connections
+3. Multi-tenancy channel naming confirmation
+4. Redis 10× scaling profile and Cluster migration path
+
+---
+
+## 8. Change Impact Analysis
+
+### What-if: Traffic grows 10× (500k shipments/day, ~50k events/hour peak)
+
+| Layer | Current design ceiling | Impact at 10× | Mitigation |
+|-------|----------------------|---------------|------------|
+| Redis Streams | ~500k ops/min on single instance | Single-threaded Redis I/O becomes bottleneck above ~100k ops/sec | Migrate to Redis Cluster; hash-slot by `shipment_id` preserves per-shipment ordering |
+| ASGI Workers (SSE gateway) | Horizontal pods, ~1k connections/pod | ~300k concurrent connections requires ~300 pods | Kubernetes HPA on connection count; NGINX upstream connection distribution |
+| Celery notification workers | Horizontal pods | 50k events/hour → 14/second; 10× = 140/second — manageable with ~30 workers | Scale Celery concurrency; add `notification-worker` pod replicas |
+| FCM / APNs | Firebase / Apple capacity | FCM handles hundreds of millions of messages/day | No change required |
+| PostgreSQL | Current instance | Status write rate 10× but still ~14 writes/second — modest for PG | Add PgBouncer connection pooler; read replica for reporting queries |
+
+**Verdict:** 10× is achievable via horizontal ASGI worker scaling + Redis Cluster migration. No architectural rework required if the Redis Cluster migration path is designed in from day 1 (even if activated later at 5× growth).
+
+---
+
+### What-if: New client type — 3PL partner API
+
+A 3PL partner needs programmatic, server-to-server shipment status event delivery.
+
+| Consideration | Impact | Recommendation |
+|--------------|--------|----------------|
+| Transport | Partners cannot maintain long-lived SSE connections in batch processes | Add **webhook delivery**: partner registers a `callback_url`; Celery worker POSTs event JSON to that URL with `X-FreightFlow-Signature: HMAC-SHA256` header |
+| Auth | JWT not suited for server-to-server | Add **API key** auth for webhook endpoint registration; OAuth 2.0 client credentials if partners need scoped access |
+| Event schema | Browser events are minimal; partners may need richer payloads | Add `event_version` field; version the schema at `v1` now so `v2` can add fields non-breakingly |
+| Broker impact | No new broker needed | Add `webhook-worker` as a second Celery consumer group on the existing `freightflow:shipment-events` stream; same stream, new consumer |
+| Rate limiting | Partners may subscribe to all events across all shipments | Per-partner rate limit + subscription filter by account or region; implement as Celery task rate limit |
+
+**Verdict:** 3PL partner API adds a webhook consumer to the existing Redis Streams pipeline. No new broker or transport infrastructure needed — the streaming backbone absorbs it cleanly.
+
+---
+
+### What-if: Push provider (FCM) outage
+
+| Failure mode | Impact | Mitigation |
+|-------------|--------|------------|
+| FCM total outage | Mobile push not delivered; web SSE channel unaffected | Celery retries with exponential back-off (base 30s, cap 1 hour, max 10 retries); events buffered in Redis Streams (MAXLEN 100k ≈ 24h retention at current volume) |
+| APNs outage | iOS push not delivered | Same Celery retry path; FCM routes to APNs so outage is transparent if FCM is up |
+| Prolonged outage (> 24h buffer window) | Events expire from Redis Streams before delivery | Mobile app polls REST catch-up endpoint on reconnect: `GET /api/v1/shipments/{id}/events/?since={iso_timestamp}` — serves from PostgreSQL status history |
+| Device token stale / revoked | FCM returns `UNREGISTERED` error code | Celery worker marks token inactive in `device_tokens` table; stops dispatching to that token until app re-registers |
+| Partial regional FCM outage | Some devices unreachable | Firebase handles internal regional routing; no action required from FreightFlow |
+
+**Key mitigation:** Redis Streams MAXLEN + REST catch-up endpoint. The web SSE channel is entirely independent of FCM and is unaffected by any push provider outage.
+
+---
+
+## 9. Anti-Patterns Flagged
+
+### AP-1: Premature microservices for a notification feature
+
+Deploying a standalone "Notification Service" microservice with its own database, API gateway entry, and separate CI/CD pipeline is unjustified at 50k shipments/day and 2.3 events/second average throughput. The notification feature belongs inside the FreightFlow Django monolith as a `notifications` app, using Django Channels and Celery — both integrate natively with the existing ORM, auth system, and PostgreSQL. Microservices introduce distributed tracing requirements, inter-service latency, network partition risk, and deployment complexity for no scaling benefit at this volume. Extract to a separate service only if the notification layer becomes a demonstrable, independent scaling bottleneck.
+
+### AP-2: Distributed monolith via shared database
+
+If the push notification worker or SSE gateway is deployed as an independent service but reads/writes the same PostgreSQL database directly (e.g., loading shipment records or device tokens), you have a distributed monolith: schema changes break multiple deployed services simultaneously, and you pay microservices operational costs without isolation benefits. Correct boundary: the Django REST API owns all PostgreSQL writes. Workers receive events from Redis Streams; any write-back (e.g., marking stale tokens) either goes through the Django model layer (if co-deployed) or via an internal API endpoint (if extracted). No direct raw-SQL access from a separately deployed notification service.
+
+### AP-3: Unbounded WebSocket/SSE connection growth without backpressure
+
+Without connection limits and server-side backpressure, a reconnect loop bug, a malicious client, or a deployment incident (app restarting → all clients reconnect simultaneously) can exhaust ASGI worker file descriptors and memory within minutes.
+
+Required mitigations:
+- **Per-user connection limit:** max 3 concurrent SSE connections per authenticated user, enforced in the async view on connect (HTTP 429 if exceeded)
+- **Slow consumer detection:** close SSE connections where the server-side buffer exceeds 100 undelivered events (client is not consuming)
+- **Load balancer connection cap:** NGINX `limit_conn` directive, max connections per upstream IP
+- **ASGI worker max connection setting:** Daphne `--max-connections` or Uvicorn worker pool sizing
+
+### AP-4: PostgreSQL LISTEN/NOTIFY as the event bus
+
+Using PG LISTEN/NOTIFY is tempting because it requires no new infrastructure, but it is fire-and-forget (no persistence, no replay on reconnect), has an 8,000-byte payload cap, and requires one PG connection per listener. Scaling to 30k concurrent SSE connections via LISTEN/NOTIFY would require 30k PG connections or a complex multiplexing proxy — neither acceptable. Redis Streams solves all three problems: persistence with MAXLEN, consumer group replay, and a single connection pool from the Django app to Redis regardless of SSE connection count.
+
+---
+
+## 10. Recommended ADR
+
+See: [`docs/architecture/adr/ADR-0001-real-time-notification-transport.md`](./adr/ADR-0001-real-time-notification-transport.md)
+
+**Title:** ADR-0001 — Real-Time Notification Transport: SSE + Redis Streams
+
+**Summary:**
+
+Adopt Server-Sent Events (SSE) via Django async views backed by `channels-redis` for the web dashboard, and Firebase Cloud Messaging (FCM) dispatched from Celery workers consuming Redis Streams for mobile clients.
+
+**Rejected alternatives:**
+1. WebSocket via Django Channels — rejected because the stream is unidirectional; SSE is simpler and equally capable.
+2. Apache Kafka as the event broker — rejected as premature at 2.3 events/second average throughput.
+3. PostgreSQL LISTEN/NOTIFY as the event bus — rejected due to lack of persistence, payload size limit, and connection scaling problem.
+
+```
+
+#### `work/docs/architecture/adr/ADR-0001-real-time-notification-transport.md`
+
+```
+# ADR-0001 — Real-Time Notification Transport: SSE + Redis Streams
+
+**Date:** 2026-05-27
+**Status:** Proposed
+**Deciders:** Engineering lead, infrastructure team
+**Context area:** FreightFlow real-time notification system
+
+---
+
+## Context
+
+FreightFlow needs to push shipment status updates (picked up → in transit → out for delivery → delivered) to web browser dashboards and mobile apps without polling. The Django REST API on PostgreSQL is the source of truth for status changes. Volume: 50,000 active shipments per day, ~200,000 events/day (4 transitions × 50k), with peak bursts at 9am and 2pm (~5,000 events/hour peak).
+
+Two delivery channels are required:
+1. **Web dashboard** — customers and dispatchers in browser, need sub-5-second update latency
+2. **Mobile apps** — customers and drivers on iOS/Android, need push notifications when app is backgrounded
+
+## Decision
+
+### Event pipeline
+
+On each shipment status write, the Django `post_save` signal publishes an event to a Redis Streams key (`freightflow:shipment-events`) using `XADD`. The event payload includes: `shipment_id`, `status`, `timestamp`, `event_id` (UUID for idempotency).
+
+```
+Django REST API
+    → post_save signal
+    → redis-py XADD freightflow:shipment-events * shipment_id={id} status={status} ...
+```
+
+### Web dashboard: Server-Sent Events (SSE)
+
+A Django async view (`GET /api/v1/events/shipment/{id}/`) opens a persistent `text/event-stream` response. The view subscribes to a `channels-redis` channel group named `shipment_{id}`. When an event arrives on that group, it is formatted as an SSE `data:` frame and flushed to the client.
+
+JWT token is validated on connection initiation (passed as `Authorization: Bearer` header or query parameter `?token=`). The connection is rejected with HTTP 401 if the token is invalid or if the requesting user does not have access to the shipment.
+
+The `id:` SSE field carries `event_id` (UUID). On reconnect, the browser sends `Last-Event-ID`; the server replays events from Redis Streams since that ID: `XREAD COUNT 100 STREAMS freightflow:shipment-events {last_id}`.
+
+### Mobile apps: FCM via Celery
+
+A Celery consumer group (`notification-worker`, queue `freightflow_push`) reads from Redis Streams using `XREADGROUP`. For each event, it loads the recipient user's device tokens from PostgreSQL and dispatches a push payload via `firebase-admin` to FCM (which handles both Android and iOS / APNs routing).
+
+Retry policy: exponential back-off, base 30 seconds, cap 1 hour, max 10 retries. On FCM `UNREGISTERED` response, the token is marked inactive in `device_tokens` and not retried.
+
+Redis Streams `MAXLEN ~= 100,000` (approximately 24 hours of events at average volume) — this enables the mobile REST catch-up path after push provider outage: `GET /api/v1/shipments/{id}/events/?since={iso_timestamp}`.
+
+### ASGI deployment
+
+The SSE gateway is deployed as a separate ASGI process (Daphne or Uvicorn) behind NGINX, distinct from the main WSGI Gunicorn API process. This allows independent horizontal scaling of long-lived connections without blocking the synchronous API worker pool.
+
+NGINX upstream routes `/api/v1/events/` to the ASGI pool and all other `/api/v1/` paths to the WSGI pool.
+
+## Consequences
+
+### Positive
+- Unidirectional SSE is the right fit for status push — no bidirectional overhead
+- `EventSource` API reconnects automatically with `Last-Event-ID` — built-in reconnect recovery
+- Redis Streams consumer groups give ordered, at-least-once delivery with ACK/NACK retry
+- Single Redis instance serves both SSE fan-out and Celery event delivery
+- `channels-redis` scales horizontally across ASGI worker pods without sticky sessions
+- FCM unified SDK handles both Android and iOS push without separate APNs management
+
+### Negative / Trade-offs
+- Requires ASGI deployment alongside existing WSGI — two runtimes to operate
+- Redis is a new infrastructure dependency if not already in the stack
+- `channels-redis` at 30,000 concurrent connections is untested — load-test spike required before production
+- Redis single-instance is the ceiling; Redis Cluster migration needed at ~5× growth
+
+### Risks and mitigations
+| Risk | Mitigation |
+|------|-----------|
+| FCM outage | Celery retry + Redis Streams buffer (24h); REST catch-up endpoint on reconnect |
+| Redis single-instance bottleneck at 10× growth | Design channel naming with `shipment_id` hash partitioning from day 1; Redis Cluster migration is additive |
+| Unbounded SSE connection growth | Per-user connection limit (max 3), slow-consumer detection, NGINX `limit_conn` |
+| JWT expiry during long-lived SSE connection | Server closes stream with `event: auth_expired` when token expires; client re-authenticates and reconnects |
+
+## Rejected Alternatives
+
+### WebSocket via Django Channels
+
+Django Channels 4 is stable and well-integrated, but WebSocket is bidirectional — the full-duplex capability is unused and adds connection lifecycle complexity (heartbeat, close codes, ASGI consumer routing). SSE is simpler to implement, simpler to debug (plain HTTP), works through standard CDN and proxy infrastructure without WebSocket tunnel support, and is multiplexed natively over HTTP/2. Revisit WebSocket if a bidirectional command channel is added in future (e.g., dispatcher → driver live routing updates).
+
+### Apache Kafka as the event broker
+
+Kafka provides exactly-once semantics, long retention, consumer group isolation, and schema registry — all valuable at scale. At 2.3 events/second average and 1.4 events/second peak, Kafka's operational overhead (KRaft cluster, broker management, schema registry, ZooKeeper or equivalent) is disproportionate. Redis Streams provides sufficient ordering, consumer groups, and replay at this scale. Re-evaluate Kafka if: (a) event volume exceeds ~1M events/day, (b) replay retention beyond 24 hours is required, or (c) multiple independent consumer teams need isolated namespaces with schema contracts.
+
+### PostgreSQL LISTEN/NOTIFY as the event bus
+
+PG LISTEN/NOTIFY is transactional and requires no new infrastructure. However: notifications are fire-and-forget (no persistence or replay), payload is capped at 8,000 bytes, and scaling to 30,000 concurrent listeners would require 30,000 PG connections or a complex multiplexing proxy. At the target connection count, LISTEN/NOTIFY would overwhelm the primary database. Redis Streams solves all three problems cleanly.
+
+---
+
+## Assumptions requiring confirmation before implementation
+
+- **Assumption #10 (multi-tenancy):** If FreightFlow is multi-tenant, channel group names must be `tenant_{tid}__shipment_{sid}`. Confirm with engineering lead.
+- **Assumption #2 (Redis):** Confirm Redis is available or approved for addition to the infrastructure stack.
+- **Assumption #3 (FCM/APNs):** Confirm FCM unified SDK is acceptable or whether split FCM/APNs is preferred.
+- **Spike required:** Load-test `channels-redis` at 30,000 concurrent SSE connections before production. See confidence assessment in design doc.
+
+```
 
 ## Evaluation
 
 | Field | Value |
 |---|---|
 | Verdict | PASS |
-| Score | 17.0/18.5 (92%) |
-| Evaluated | 2026-05-04 |
-| Target duration | 84029 ms |
-| Target cost | $0.1360 |
+| Score | 16.0/17.0 (94%) |
+| Evaluated | 2026-05-27 |
+| Target model | claude-sonnet-4-6 |
+| Judge model | claude-sonnet-4-6 |
+| Target duration | 548155 ms |
+| Target cost | $0.6352 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | Agent performs a pre-flight step — checks for project conventions (CLAUDE.md, installed rules) and existing ADRs before proposing anything | PASS | Section 1 'Pre-flight' explicitly lists CLAUDE.md, docs/architecture/adr/, docs/tooling-register.md, pyproject.toml, and docs/specs/ — each stating what would be checked and noting files are not present. Assumption stated: 'Working with vanilla Django + PostgreSQL. Proceeding with design that assumes Django 4.2+, PostgreSQL 13+, and no existing real-time infrastructure.' |
-| c2 | Agent classifies the work type and scopes what is and is not covered by the design | PASS | Section 2 'Work Classification + Scope' explicitly states: 'Classification: This is architecture design (system boundaries, technology selection, scalability model). Not implementation, not deployment.' In-scope and Out-of-scope items are each listed as bullet points. |
-| c3 | Agent produces a mandatory assumption ledger with each assumption classified as proven_by_code, inferred, or needs_user_confirmation | PASS | Section 3 'Assumption Ledger' has a 10-row table with columns '# \| Assumption \| Classification \| Validation Method \| Confidence'. Classifications used: 'inferred' (#1,2,5,6,7,8,9,10) and 'needs_user_confirmation' (#3,4). Covers DB load (#3), push provider (#4), auth model (#9), burst sizing (#1,2), message ordering (#5), retry (#6/implicit), browser support (#8). |
-| c4 | Agent quantifies non-functional requirements rather than accepting vague terms — scale (50k shipments/day), latency targets, and availability | PASS | Section 4 'Quantified NFRs' table states: 'End-to-end latency: p95 < 5s', 'Throughput: 50,000 events/day; peak 5,000 events/hour', 'Availability: 99.9% uptime (SLA: ~22 min downtime/month)', 'Message ordering: Guaranteed per-shipment'. Converts daily rate to writes/sec: '~1.4 writes/sec baseline, ~1.4k writes/sec peak'. |
-| c5 | Agent presents at least two architectural options (e.g. WebSockets vs SSE vs polling) with a scored trade-off table | PASS | Section 6 presents four options: Option A (WebSocket), Option B (SSE), Option C (Long-Polling), Option D (Native Push Only). Each has Pros/Cons lists and an explicit Verdict (✅ or ❌ with reasoning). A Hybrid Recommendation table at the end maps client type to primary/fallback transport. |
-| c6 | Agent includes Mermaid diagrams — at minimum a component diagram showing trust boundaries | PASS | Section 5 contains two fenced mermaid blocks: Level 1 System Context (graph TB with external actors, FreightFlow platform, and external push services) and Level 2 Container Architecture (with subgraphs 'Client Layer', 'Django REST API Layer', 'Real-Time Layer', 'Persistence Layer', 'External Services' acting as trust boundary delineators). |
-| c7 | Agent identifies decisions that require an ADR (e.g. choice of message broker or real-time transport) | PASS | Section 10 'Recommended ADR' presents ADR-0008 covering: WebSocket as primary transport, RabbitMQ/Kafka message queue, Redis for subscription state, native push (FCM/APNs) for backgrounded mobile, and PostgreSQL for audit. Rejected alternatives are listed with reasoning. |
-| c8 | Agent includes a confidence score (HIGH/MEDIUM/LOW with numeric) and states which assumptions drive uncertainty | PASS | Section 7 'Confidence Assessment Table' has per-component rows with percentage confidence and a Risk column using Low/Medium/High labels. Summary states: 'Confidence Level: 60% (4 high-risk spikes pending validation)'. Spike items explicitly link to assumptions driving uncertainty (e.g., PostgreSQL at 40% confidence flagged as HIGH risk, WebSocket connection limits at 60% MEDIUM). |
-| c9 | Agent maps change impact — what existing FreightFlow components are directly or indirectly affected, and explicitly lists what is unaffected | PARTIAL | Section 8 covers three what-if scenarios with per-component impact tables. Under push provider outage: 'Web dashboard: Unaffected (uses WebSocket + SSE, no FCM dependency). ✅ Uninterrupted.' However, there is no comprehensive 'unaffected components' list across all scenarios — only one component (web dashboard) is explicitly labeled unaffected in one scenario. The change impact is addressed but the unaffected listing is sparse. |
-| c10 | Output's transport recommendation explicitly compares WebSockets vs SSE vs long-polling for the push-to-browser-and-mobile use case, with reasoning that addresses bidirectional vs server-initiated traffic and mobile network behaviour (background sockets, reconnection) | PASS | Section 6 Options A/B/C/D cover WebSocket ('Bidirectional: client can acknowledge, ask for resend'; 'Handles mobile reconnect gracefully'), SSE ('one-way only'), Long-Polling (rejected, violates 5s SLA). Hybrid table distinguishes Mobile (foreground) WebSocket vs Mobile (backgrounded) Native Push. Mobile reconnect behaviour and bidirectionality are explicitly compared. |
-| c11 | Output addresses the existing Django + PostgreSQL stack — either uses Django Channels / a Django-compatible push solution, or names a separate service with clear integration points to the existing API | PASS | ADR-0008 states: 'Daphne (async HTTP server) with Django Channels for WebSocket upgrades.' Level 2 diagram shows 'Django REST API (drf-spectacular)' as a container. Task Queue is listed as 'Celery/Dramatiq'. PostgreSQL role is defined: 'Persist all notifications to notifications table for compliance/debug.' |
-| c12 | Output sizes the system from the 50,000 shipments/day plus 9am/2pm peak — converting daily volume into a peak-second concurrent connection or message rate (e.g. burst factor of 5-10x average) and validating the chosen transport handles it | PASS | Section 4 converts: '50,000 events/day; peak 5,000 events/hour (bursts at 9am & 2pm)... translate to ~1.4 writes/sec baseline, ~1.4k writes/sec peak.' Fanout calculation: '5k events × 4 subscribers = 20k downstream pushes/hour peak.' Section 8 10× growth validates transport capacity: 'Single daphne instance saturates at ~50k [connections]. Horizontal scale to 20 instances.' |
-| c13 | Output includes at least one Mermaid component diagram showing the path from shipment status change → message broker → push fan-out → web/mobile clients, with trust boundaries marked | PASS | Level 2 Container Architecture mermaid diagram traces: 'API → QUEUE → MSGQ → CONN_MGR → WS/SSE/FCM/APNs → WEB/IOS/ANDROID'. Subgraphs ('Django REST API Layer', 'Real-Time Layer', 'Persistence Layer', 'External Services') serve as trust boundary demarcation. The full fan-out path is visible in one diagram. |
-| c14 | Output's assumption ledger lists the unstated facts (mobile platforms iOS/Android both, push notification vs in-app socket for backgrounded apps, customer authentication model) classified as `inferred` or `needs_user_confirmation` | PASS | Assumption #4: 'Web clients: browsers...; mobile clients: iOS/Android with FCM+APNs' — classified needs_user_confirmation. Assumption #8: 'Web notifications use browser Web Push API; fallback to WebSocket for real-time if Web Push unavailable' — inferred. Assumption #9: 'Authentication: same JWT tokens...validate WebSocket/SSE subscriptions' — inferred. All three required categories are present. |
-| c15 | Output identifies at least 2 ADR-worthy decisions (e.g. message broker selection, push transport, fan-out service vs in-Django) and lists them in a "Decisions Requiring ADR" section | PARTIAL | Section 10 'Recommended ADR' presents ADR-0008 which contains multiple decisions (transport selection, message broker RabbitMQ/Kafka, Redis for subscriptions, native push integration). However, the section name is 'Recommended ADR' not 'Decisions Requiring ADR', and all decisions are bundled into one combined ADR rather than listed as multiple separately identified ADR-worthy decisions. The substance is present but not structured as the criterion requires. |
-| c16 | Output's change impact section explicitly addresses the Django REST API (extended with status-change events) and PostgreSQL (transactional outbox or change capture) and lists at least one component that is unaffected | PARTIAL | Section 8 addresses PostgreSQL under 10× growth ('Requires sharding by shipment ID range') but does not mention transactional outbox or change capture patterns. Django REST API is implicit in diagrams but Section 8 does not explicitly address it as a component being extended with status-change events. Unaffected component is listed: 'Web dashboard: Unaffected (uses WebSocket + SSE, no FCM dependency). ✅ Uninterrupted.' One of three sub-criteria fully met, two partially. |
-| c17 | Output includes a confidence score with HIGH/MEDIUM/LOW label plus a numeric value out of 100, and lists the assumptions or unknowns driving any confidence reduction | PASS | Section 7 table has numeric confidence percentages (85%, 80%, 40%, 85%, 75%, 60%, 80%, 50%, 70%) and Risk column with Low/Medium/High labels. Summary states '60% (4 high-risk spikes pending validation).' Four spikes are explicitly planned (PostgreSQL Load Test, WebSocket Capacity Test, Push Provider Failover, Cross-Device Deduplication), each linked to specific low-confidence assumptions. |
-| c18 | Output addresses backgrounded mobile app delivery — recommending APNs/FCM for true push when the app isn't foregrounded, distinct from in-app socket for live dashboards | PARTIAL | Hybrid Recommendation table explicitly distinguishes: 'Mobile (foreground): WebSocket / SSE fallback' vs 'Mobile (backgrounded): Native Push (FCM/APNs) / None'. Section 8 push provider outage scenario differentiates: 'Mobile (backgrounded): Degrade to no push notifications' vs 'Mobile (foreground, connected to WebSocket): In-app notification banner displayed instead.' The foreground/background distinction is consistently maintained. |
-| c19 | Output addresses authentication on the persistent connection (token-scoped channels per customer/driver, not broadcast) so customers can't see other customers' shipments | PARTIAL | Assumption #9 states 'same JWT tokens used for API auth also validate WebSocket/SSE subscriptions' (inferred). Level 2 diagram includes 'JWT Auth' as a container. ADR mentions 'Subscription: shipment_id:* or user_id:* granularity'. However, the output does not explicitly address isolation guarantees (customers can't see other customers' shipments) or how channels are scoped per customer/driver identity as a security constraint. |
+| c1 | Agent performs a pre-flight step — checks for project conventions (CLAUDE.md, installed rules) and existing ADRs before proposing anything | PASS | Section 1 'Pre-flight' table lists CLAUDE.md, docs/architecture/adr/, docs/tooling-register.md, pyproject.toml each with Result and Impact columns. |
+| c2 | Agent classifies the work type and scopes what is and is not covered by the design | PASS | Section 2 'Work Classification + Scope': 'Classification: Architecture design — not implementation, not bug fix' with explicit In-scope and Out-of-scope bullet lists. |
+| c3 | Agent produces a mandatory assumption ledger with each assumption classified as proven_by_code, inferred, or needs_user_confirmation | PASS | Section 3 has 12-row numbered table with Classification column using 'inferred' and 'needs_user_confirmation'. Covers all 8 specified areas: DB load (#4), push provider (#3), auth (#9), multi-tenancy (#10), peak burst (#5), ordering (#6), retry (#7), browser support (#8). |
+| c4 | Agent quantifies non-functional requirements rather than accepting vague terms — scale (50k shipments/day), latency targets, and availability | PASS | Section 4 table: p95 < 5s, p99 < 15s, 200k events/day (~2.3 events/second), peak 5k events/hour, 30k concurrent connections, 99.9% availability, MAXLEN 100k. |
+| c5 | Agent presents at least two architectural options (e.g. WebSockets vs SSE vs polling) with a scored trade-off table | PASS | Section 6 has 3 decisions each with 3-4 options. Decision 1: SSE vs WebSocket vs Long Polling vs Push-only. Decision 2: Redis Streams vs PG LISTEN/NOTIFY vs Kafka vs SNS+SQS. Decision 3: FCM unified vs split APNs+FCM vs SNS. |
+| c6 | Agent includes Mermaid diagrams — at minimum a component diagram showing trust boundaries | PASS | Section 5 has C4Context (Level 1) and C4Container (Level 2) Mermaid diagrams. Level 2 uses System_Boundary block delineating internal FreightFlow containers from external systems (FCM/APNs, Carrier). |
+| c7 | Agent identifies decisions that require an ADR (e.g. choice of message broker or real-time transport) | PASS | Section 10 recommends 'ADR-0001 — Real-Time Notification Transport: SSE + Redis Streams' and the ADR file was written to docs/architecture/adr/ADR-0001-real-time-notification-transport.md. |
+| c8 | Agent includes a confidence score (HIGH/MEDIUM/LOW with numeric) and states which assumptions drive uncertainty | PASS | Section 7 table gives numeric % confidence per component (85%, 72%, 60%, 80%, 78%, 82%, 50%, 75%, 65%, 70%) with Rationale and 'Spike Needed?' column. 4 spikes flagged for items <72%. |
+| c9 | Agent maps change impact — what existing FreightFlow components are directly or indirectly affected, and explicitly lists what is unaffected | PARTIAL | Section 8 covers 3 what-if scenarios. 10× growth table lists affected layers. FCM outage states 'web SSE channel unaffected' and 10× table has 'FCM/APNs: No change required'. Unaffected components appear but no dedicated 'unaffected' column or list. |
+| c10 | Output's transport recommendation explicitly compares WebSockets vs SSE vs long-polling for the push-to-browser-and-mobile use case, with reasoning that addresses bidirectional vs server-initiated traffic and mobile network behaviour (background sockets, reconnection) | PASS | Section 6 Decision 1: WebSocket rejected — 'bidirectionality not needed'; long-poll rejected — 'fails latency and resource NFRs'; SSE chosen. Reconnect recovery addressed via 'Last-Event-ID' and 30s window NFR. |
+| c11 | Output addresses the existing Django + PostgreSQL stack — either uses Django Channels / a Django-compatible push solution, or names a separate service with clear integration points to the existing API | PASS | Design uses Django post_save signals → Redis XADD, Django async views for SSE gateway, channels-redis channel layer, Celery workers. ASGI (Daphne/Uvicorn) alongside WSGI (Gunicorn) with NGINX routing explicitly specified. |
+| c12 | Output sizes the system from the 50,000 shipments/day plus 9am/2pm peak — converting daily volume into a peak-second concurrent connection or message rate (e.g. burst factor of 5-10x average) and validating the chosen transport handles it | PASS | Assumption #5: '50k × 4 = ~200k events/day = ~8,333/hour average; peak ~5,000/hour'. Section 4 NFRs: '~2.3 events/second' average, '~1.4 events/second' peak, '30,000 peak concurrent connections'. |
+| c13 | Output includes at least one Mermaid component diagram showing the path from shipment status change → message broker → push fan-out → web/mobile clients, with trust boundaries marked | PASS | C4Container diagram shows: Django REST API → XADD Redis → SSE gateway → customer (SSE) AND Redis → Celery notif_worker → FCM/APNs → customer/driver. System_Boundary marks FreightFlow vs external systems. |
+| c14 | Output's assumption ledger lists the unstated facts (mobile platforms iOS/Android both, push notification vs in-app socket for backgrounded apps, customer authentication model) classified as `inferred` or `needs_user_confirmation` | PASS | Assumption #3 (iOS/Android FCM): inferred. Assumption #9 (JWT auth model): inferred. Assumption #10 (multi-tenancy): needs_user_confirmation. Assumption #8 (browser support): inferred. All classified correctly. |
+| c15 | Output identifies at least 2 ADR-worthy decisions (e.g. message broker selection, push transport, fan-out service vs in-Django) and lists them in a "Decisions Requiring ADR" section | PARTIAL | Section 6 identifies 3 ADR-worthy decisions (transport, event broker, mobile push) but Section 10 formally recommends only ADR-0001, consolidating all decisions into it. No 'Decisions Requiring ADR' section exists by that name. |
+| c16 | Output's change impact section explicitly addresses the Django REST API (extended with status-change events) and PostgreSQL (transactional outbox or change capture) and lists at least one component that is unaffected | PARTIAL | Section 8 10× table explicitly addresses PostgreSQL ('~14 writes/second — modest') and lists FCM/APNs as unaffected ('No change required'). Django REST API is NOT a named row in any change impact table. |
+| c17 | Output includes a confidence score with HIGH/MEDIUM/LOW label plus a numeric value out of 100, and lists the assumptions or unknowns driving any confidence reduction | PARTIAL | Section 7 uses numeric percentages (50%–85%) with rationale and spike flags, but no HIGH/MEDIUM/LOW labels are applied. Ceiling is PARTIAL; numeric-only format partially meets the criterion. |
+| c18 | Output addresses backgrounded mobile app delivery — recommending APNs/FCM for true push when the app isn't foregrounded, distinct from in-app socket for live dashboards | PARTIAL | FCM/APNs recommended for mobile throughout; SSE for browser. ADR context states 'need push notifications when app is backgrounded'. But foregrounded (in-app socket) vs backgrounded distinction is not explicitly elaborated in the design. |
+| c19 | Output addresses authentication on the persistent connection (token-scoped channels per customer/driver, not broadcast) so customers can't see other customers' shipments | PARTIAL | JWT validated on connect; channel named shipment_{id}; ADR states 'connection is rejected with HTTP 401 if user does not have access to the shipment'. Not broadcast is implicit but not explicitly stated as a broadcast-prevention guarantee. |
 
 ### Notes
 
-The output is a thorough, well-structured architecture design that satisfies the vast majority of criteria. Strongest areas: assumption ledger with proper tripartite classification, quantified NFRs with unit conversions, four-option transport comparison with explicit verdicts, and dual Mermaid diagrams with trust boundaries. The main gaps are: (1) c15 bundles all decisions into a single combined ADR rather than listing multiple ADR-worthy decisions in a dedicated section by that name; (2) c16 omits the transactional outbox/change capture pattern for PostgreSQL and doesn't explicitly name the Django REST API as a change impact item in Section 8; (3) c19 mentions JWT validation at connection time but doesn't articulate per-customer channel isolation as a security property. The PARTIAL-ceilinged criteria (c9, c18, c19) are all addressed with reasonable depth. Overall confidence and spike planning in Section 7 is a standout strength.
+A comprehensive, well-structured architecture design that passes 13 of 15 PASS-ceiling criteria and hits the ceiling on all 4 PARTIAL-ceiling criteria. The main gaps are: no 'Decisions Requiring ADR' section listing 2+ ADRs (only one ADR bundling all decisions), Django REST API not explicitly in the change impact tables, and confidence levels expressed only as percentages without HIGH/MEDIUM/LOW labels.

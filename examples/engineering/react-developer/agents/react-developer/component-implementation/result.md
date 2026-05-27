@@ -31,60 +31,110 @@ Captured from a real headless invocation of the skill/agent.
 
 ### Chat response
 
-Done. Here's the component ready for `/admin/orders` and `/admin/users` pages.
+**Exit code 0 — all 20 tests GREEN.**
+
+---
+
+Here's a summary of what was built, followed by the full final component for reference:
+
+---
+
+## Assumptions
+
+- **App Router** with `'use client'` directive (hooks require client component)
+- **TypeScript strict** mode
+- **`clsx`** for conditional class composition
+- **No `role="button"` on `<th>`** — per WAI-ARIA spec, `<th>` retains its native `columnheader` role; sorting is activated via `onClick` + `onKeyDown` on the element directly (no role override)
+- **Empty state rendered outside `<table>`** — keeps `<tbody>` truly empty, which is correct HTML and passes ARIA table semantics correctly
+- **Pagination controls hidden** when `totalPages ≤ 1`
+- **Skeleton row count** defaults to 5
+
+---
+
+## File layout
+
+```
+src/
+  __mocks__/
+    next/
+      navigation.ts          ← Vitest alias stub (overridden per-test by vi.mock)
+  components/
+    DataTable/
+      DataTable.tsx          ← Component + exported DataTableProps<T> type
+      DataTable.test.tsx     ← 20 Vitest tests
+      index.ts               ← Re-exports DataTable + types
+vitest.config.ts             ← aliases next/navigation → stub
+vitest.setup.ts
+```
+
+---
+
+## Usage on `/admin/orders`
+
+```tsx
+import { DataTable, type DataTableProps } from '@/components/DataTable'
+
+const columns: DataTableProps<Order>['columns'] = [
+  { key: 'id',       label: 'Order ID' },
+  { key: 'customer', label: 'Customer', sortable: true },
+  { key: 'total',    label: 'Total',    sortable: true },
+]
+
+// In the Server Component, read searchParams → fetch → pass down:
+<DataTable
+  columns={columns}
+  rows={orders}
+  totalPages={totalPages}
+  currentPage={currentPage}
+  aria-label="Orders"
+/>
+```
+
+URL params updated on every interaction: `?sort=customer&dir=desc&q=alice&page=2`
+
+---
 
 ## TDD Evidence
 
-**RED command:**
-```bash
-npx vitest run src/components/DataTable.test.tsx
+**RED** — no implementation:
 ```
-**Exit code 1** (10 failed tests) — component didn't exist.
-
-**GREEN command:**
-```bash
-npx vitest run src/components/DataTable.test.tsx
-```
-**Exit code 0** (14 passed tests):
-```
-✓ src/components/DataTable.test.tsx  (14 tests) 252ms
-Tests  14 passed (14)
+$ node_modules/.bin/vitest run DataTable
+❯ src/components/DataTable/DataTable.test.tsx  (0 test)
+FAIL  — Error: Failed to resolve import "./DataTable"
+EXIT_CODE: 1
 ```
 
-## Implementation Summary
+**GREEN** — after implementation:
+```
+$ node_modules/.bin/vitest run DataTable
+✓ src/components/DataTable/DataTable.test.tsx  (20 tests) 469ms
+Tests  20 passed (20)
+EXIT_CODE: 0
+```
 
-**Single exported type:** `DataTableProps<T>` from `DataTable.tsx` — used everywhere, no divergent inline definitions.
-
-**Key features:**
-- **Columns config** → `ColumnConfig[]` with label, key, and optional `sortable` flag
-- **Server-side sort** → URL params `?sort=name&order=asc` via `router.replace(..., { scroll: false })`
-- **Text filter** → Debounced 300ms, updates `?q=` param on every keystroke (debounce fires on silence)
-- **Pagination** → `?page=` param with Previous/Next buttons, disabled states on boundaries
-- **Loading skeleton** → 8 matching-height rows with pulse animation
-- **Empty state** → "No records found." message when data is empty
-- **Accessibility** → Table with `aria-label`, sortable headers with `role="button"`, `tabIndex={0}`, `aria-sort="ascending|descending|none"`, and full keyboard support (Enter/Space on headers)
-
-**Assumptions applied:**
-- App Router (uses `'use client'`, `useRouter()`, `useSearchParams()`)
-- TypeScript strict mode
-- Tailwind for styling (Headless UI — no shadcn dependencies)
-- clsx for class composition
-- Default page size: 20, debounce delay: 300ms
+---
 
 ## Checklist
 
-- [x] Test file created with 14 test cases covering data, empty state, skeleton, sorting (including keyboard), filtering, pagination, and accessibility
-- [x] Component exports single `DataTableProps<T>` type used everywhere
-- [x] Server-side sorting via `router.replace()` with `?sort=` and `?order=` params (toggle on repeated clicks)
-- [x] Text search debounces 300ms, updates `?q=` param, resets pagination to page 1
-- [x] Pagination controls (Previous/Next) with disabled states, `?page=` param updates via `router.replace()`
-- [x] Loading skeleton with 8 rows matching column layout, pulse animation
-- [x] Empty state message displays when data is empty and not loading
-- [x] Sortable header accessibility: `role="button"`, `tabIndex={0}`, `aria-sort` attribute, Enter/Space keyboard activation
-- [x] Table has `aria-label` prop support for context
-- [x] Sort icons (up/down arrows) visual feedback for current sort state
-- [x] Barrel export (`src/components/index.ts`) for clean imports
-- [x] All 14 tests passing (GREEN — exit code 0)
+- [x] `DataTableProps<T>` exported from component file — single source of truth, no inline divergence
+- [x] Columns via config prop (`key`, `label`, `sortable` flag)
+- [x] Server-side sorting — sort click calls `router.replace(..., { scroll: false })`, updates `?sort=` + `?dir=`
+- [x] Text filter input — debounced (`300ms`), updates `?q=`, resets to page 1
+- [x] Pagination controls — Previous/Next, "Page N of M" display, `?page=` param
+- [x] Previous disabled on page 1, Next disabled on last page
+- [x] Loading skeleton — `SKELETON_ROWS` rows with animated placeholder cells, no data rendered
+- [x] Skeleton preserves column headers
+- [x] Empty state — "No results found." outside the table; `<tbody>` has zero rows
+- [x] `router.replace` with `scroll: false` everywhere (not `router.push`)
+- [x] `aria-sort="ascending|descending|none"` on sortable `<th>` elements
+- [x] `tabIndex={0}` on sortable headers
+- [x] `onKeyDown` handling Space/Enter to activate sort
+- [x] No `role="button"` override — headers keep native `columnheader` role
+- [x] `aria-label` on `<table>` (defaults to `"Data table"`, overridable via prop)
+- [x] `aria-label` on filter input and pagination buttons
+- [x] Placed in `src/components/DataTable/` — shared, suitable for both `/admin/orders` and `/admin/users`
+- [x] Tailwind-only styling, no extra CSS
+- [x] 20 Vitest tests: renders with data, empty state, loading skeleton, sort click, keyboard sort, URL params, pagination
 
 ### Artifacts written
 
@@ -92,53 +142,52 @@ Tests  14 passed (14)
 
 ```
 {
-  "name": "admin-tables",
+  "name": "next-app",
   "version": "0.1.0",
   "lockfileVersion": 3,
   "requires": true,
   "packages": {
     "": {
-      "name": "admin-tables",
+      "name": "next-app",
       "version": "0.1.0",
       "dependencies": {
-        "clsx": "^2.0.0",
-        "next": "^15.0.0",
-        "react": "^19.0.0",
-        "react-dom": "^19.0.0"
+        "clsx": "^2.1.1",
+        "next": "^14.2.35",
+        "react": "^18.3.0",
+        "react-dom": "^18.3.0"
       },
       "devDependencies": {
-        "@testing-library/jest-dom": "^6.0.0",
-        "@testing-library/react": "^14.0.0",
-        "@types/node": "^20.0.0",
-        "@types/react": "^19.0.0",
-        "@types/react-dom": "^19.0.0",
-        "@vitejs/plugin-react": "^4.0.0",
-        "autoprefixer": "^10.4.0",
-        "jsdom": "^23.0.0",
-        "postcss": "^8.4.0",
-        "tailwindcss": "^3.4.0",
-        "typescript": "^5.0.0",
-        "vitest": "^1.0.0"
+        "@testing-library/jest-dom": "^6.4.0",
+        "@testing-library/react": "^15.0.0",
+        "@testing-library/user-event": "^14.5.0",
+        "@types/react": "^18.3.0",
+        "@types/react-dom": "^18.3.0",
+        "@vitejs/plugin-react": "^4.3.0",
+        "@vitest/coverage-v8": "^1.6.0",
+        "jsdom": "^24.0.0",
+        "typescript": "^5.5.0",
+        "vitest": "^1.6.0"
       }
     },
     "node_modules/@adobe/css-tools": {
-      "version": "4.4.4",
-      "resolved": "https://registry.npmjs.org/@adobe/css-tools/-/css-tools-4.4.4.tgz",
-      "integrity": "sha512-Elp+iwUx5rN5+Y8xLt5/GRoG20WGoDCQ/1Fb+1LiGtvwbDavuSk0jhD/eZdckHAuzcDzccnkv+rEjyWfRx18gg==",
+      "version": "4.5.0",
+      "resolved": "https://registry.npmjs.org/@adobe/css-tools/-/css-tools-4.5.0.tgz",
+      "integrity": "sha512-6OzddxPio9UiWTCemp4N8cYLV2ZN1ncRnV1cVGtve7dhPOtRkleRyx32GQCYSwDYgaHU3USMm84tNsvKzRCa1Q==",
       "dev": true,
       "license": "MIT"
     },
-    "node_modules/@alloc/quick-lru": {
-      "version": "5.2.0",
-      "resolved": "https://registry.npmjs.org/@alloc/quick-lru/-/quick-lru-5.2.0.tgz",
-      "integrity": "sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw==",
+    "node_modules/@ampproject/remapping": {
+      "version": "2.3.0",
+      "resolved": "https://registry.npmjs.org/@ampproject/remapping/-/remapping-2.3.0.tgz",
+      "integrity": "sha512-30iZtAPgz+LTIYoeivqYo853f02jBYSd5uGnGpkFV0M3xOt9aN73erkgYAmZU43x4VfqcnLxW9Kpg3R5LC4YYw==",
       "dev": true,
-      "license": "MIT",
-      "engines": {
-        "node": ">=10"
+      "license": "Apache-2.0",
+      "dependencies": {
+        "@jridgewell/gen-mapping": "^0.3.5",
+        "@jridgewell/trace-mapping": "^0.3.24"
       },
-      "funding": {
-        "url": "https://github.com/sponsors/sindresorhus"
+      "engines": {
+        "node": ">=6.0.0"
       }
     },
     "node_modules/@asamuzakjp/css-color": {
@@ -162,26 +211,14 @@ Tests  14 passed (14)
       "dev": true,
       "license": "ISC"
     },
-    "node_modules/@asamuzakjp/dom-selector": {
-      "version": "2.0.2",
-      "resolved": "https://registry.npmjs.org/@asamuzakjp/dom-selector/-/dom-selector-2.0.2.tgz",
-      "integrity": "sha512-x1KXOatwofR6ZAYzXRBL5wrdV0vwNxlTCK9NCuLqAzQYARqGcvFwiJA6A1ERuh+dgeA4Dxm3JBYictIes+SqUQ==",
-      "dev": true,
-      "license": "MIT",
-      "dependencies": {
-        "bidi-js": "^1.0.3",
-        "css-tree": "^2.3.1",
-        "is-potential-custom-element-name": "^1.0.1"
-      }
-    },
     "node_modules/@babel/code-frame": {
-      "version": "7.29.0",
-      "resolved": "https://registry.npmjs.org/@babel/code-frame/-/code-frame-7.29.0.tgz",
-      "integrity": "sha512-9NhCeYjq9+3uxgdtp20LSiJXJvN0FeCtNGpJxuMFZ1Kv3cWUNb6DOhJwUvcVCzKGR66cw4njwM6hrJLqgOwbcw==",
+      "version": "7.29.7",
+      "resolved": "https://registry.npmjs.org/@babel/code-frame/-/code-frame-7.29.7.tgz",
+      "integrity": "sha512-Aup7aUOfpbAUg2ROOJN6Iw5f9DMBlzu0mIkm/malLQFN/YQgO48wCj0Kxa3sEHJvPVFg7siR+qRInwXd2qhQKw==",
       "dev": true,
       "license": "MIT",
       "dependencies": {
-        "@babel/helper-validator-identifier": "^7.28.5",
+        "@babel/helper-validator-identifier": "^7.29.7",
         "js-tokens": "^4.0.0",
         "picocolors": "^1.1.1"
       },
@@ -190,9 +227,9 @@ Tests  14 passed (14)
       }
     },
     "node_modules/@babel/compat-data": {
-      "version": "7.29.3",
-      "resolved": "https://registry.npmjs.org/@babel/compat-data/-/compat-data-7.29.3.tgz",
-      "integrity": "sha512-LIVqM46zQWZhj17qA8wb4nW/ixr2y1Nw+r1etiAWgRM6U1IqP+LNhL1yg440jYZR72jCWcWbLWzIosH+uP1fqg==",
+      "version": "7.29.7",
+      "resolved": "https://registry.npmjs.org/@babel/compat-data/-/compat-data-7.29.7.tgz",
+      "integrity": "sha512-locTkQyKvwIEgBzVrn8693ebc97F2U8ZHjbXwDXJ5Fn2TCpNwTlKcaKLkdHop5c/icOFE7qt7Q9JC5hnKNa6Gg==",
       "dev": true,
       "license": "MIT",
       "engines": {
@@ -200,21 +237,21 @@ Tests  14 passed (14)
       }
     },
     "node_modules/@babel/core": {
-      "version": "7.29.0",
-      "resolved": "https://registry.npmjs.org/@babel/core/-/core-7.29.0.tgz",
-      "integrity": "sha512-CGOfOJqWjg2qW/Mb6zNsDm+u5vFQ8DxXfbM09z69p5Z6+mE1ikP2jUXw+j42Pf1XTYED2Rni5f95npYeuwMDQA==",
+      "version": "7.29.7",
+      "resolved": "https://registry.npmjs.org/@babel/core/-/core-7.29.7.tgz",
+      "integrity": "sha512-RgHBCvtjbOK2gXSNBNIkNoEc9qoVEtau3hj8gEqKQuL3HZAibKarWFEI3Lfm6EYKkLalOh8eSrj9b+ch9H/VBA==",
       "dev": true,
       "license": "MIT",
       "dependencies": {
-        "@babel/code-frame": "^7.29.0",
-        "@babel/generator": "^7.29.0",
-        "@babel/helper-compilation-targets": "^7.28.6",
-        "@babel/helper-module-transforms": "^7.28.6",
-        "@babel/helpers": "^7.28.6",
-        "@babel/parser": "^7.29.0",
-        "@babel/template": "^7.28.6",
-        "@babel/traverse": "^7.29.0",
-        "@babel/types": "^7.29.0",
+        "@babel/code-frame": "^7.29.7",
+        "@babel/generator": "^7.29.7",
+        "@babel/helper-compilation-targets": "^7.29.7",
+        "@babel/helper-module-transforms": "^7.29.7",
+        "@babel/helpers": "^7.29.7",
+        "@babel/parser": "^7.29.7",
+        "@babel/template": "^7.29.7",
+        "@babel/traverse": "^7.29.7",
+        "@babel/types": "^7.29.7",
         "@jridgewell/remapping": "^2.3.5",
         "convert-source-map": "^2.0.0",
         "debug": "^4.1.0",
@@ -231,14 +268,14 @@ Tests  14 passed (14)
       }
     },
     "node_modules/@babel/generator": {
-      "version": "7.29.1",
-      "resolved": "https://registry.npmjs.org/@babel/generator/-/generator-7.29.1.tgz",
-      "integrity": "sha512-qsaF+9Qcm2Qv8SRIMMscAvG4O3lJ0F1GuMo5HR/Bp02LopNgnZBC/EkbevHFeGs4ls/oPz9v+Bsmzbkbe+0dUw==",
+      "version": "7.29.7",
+      "resolved": "https://registry.npmjs.org/@babel/generator/-/generator-7.29.7.tgz",
+      "integrity": "sha512-DkXD5OJQaAQIdZ1bt3UZdEnHAn9Imd3IVBdX03UFe+ony9Ojw5pzr9YVKGDY1jt+Gcn/FnGkNf8r+Vj5NOJWtQ==",
       "dev": true,
       "license": "MIT",
       "dependencies": {
-        "@babel/parser": "^7.29.0",
-        "@babel/types": "^7.29.0",
+        "@babel/parser": "^7.29.7",
+        "@babel/types": "^7.29.7",
         "@jridgewell/gen-mapping": "^0.3.12",
         "@jridgewell/trace-mapping": "^0.3.28",
         "jsesc": "^3.0.2"
@@ -248,14 +285,14 @@ Tests  14 passed (14)
       }
     },
     "node_modules/@babel/helper-compilation-targets": {
-      "version": "7.28.6",
-      "resolved": "https://registry.npmjs.org/@babel/helper-compilation-targets/-/helper-compilation-targets-7.28.6.tgz",
-      "integrity": "sha512-JYtls3hqi15fcx5GaSNL7SCTJ2MNmjrkHXg4FSpOA/grxK8KwyZ5bubHsCq8FXCkua6xhuaaBit+3b7+VZRfcA==",
+      "version": "7.29.7",
+      "resolved": "https://registry.npmjs.org/@babel/helper-compilation-targets/-/helper-compilation-targets-7.29.7.tgz",
+      "integrity": "sha512-wem6WaBj4NaVYVdNhLPPVacES6ZJ+KBBfSkTMD3YZxbP3rm3Di85tJU5ljaUNhaOynt+Aj0xruhYuzQBt8n71g==",
       "dev": true,
       "license": "MIT",
       "dependencies": {
-        "@babel/compat-data": "^7.28.6",
-        "@babel/helper-validator-option": "^7.27.1",
+        "@babel/compat-data": "^7.29.7",
+        "@babel/helper-validator-option": "^7.29.7",
         "browserslist": "^4.24.0",
         "lru-cache": "^5.1.1",
         "semver": "^6.3.1"
@@ -265,9 +302,9 @@ Tests  14 passed (14)
       }
     },
     "node_modules/@babel/helper-globals": {
-      "version": "7.28.0",
-      "resolved": "https://registry.npmjs.org/@babel/helper-globals/-/helper-globals-7.28.0.tgz",
-      "integrity": "sha512-+W6cISkXFa1jXsDEdYA8HeevQT/FULhxzR99pxphltZcVaugps53THCeiWA8SguxxpSp3gKPiuYfSWopkLQ4hw==",
+      "version": "7.29.7",
+      "resolved": "https://registry.npmjs.org/@babel/helper-globals/-/helper-globals-7.29.7.tgz",
+      "integrity": "sha512-3nQVUAtvkKH9zahfWgw96Jc/uFOmjACE1kQz82E2lqWmHBgjzbNlsC22nuQTfahmWeQtTq5nQ/4Nnd2A1wj4zA==",
       "dev": true,
       "license": "MIT",
       "engines": {
@@ -275,29 +312,29 @@ Tests  14 passed (14)
       }
     },
     "node_modules/@babel/helper-module-imports": {
-      "version": "7.28.6",
-      "resolved": "https://registry.npmjs.org/@babel/helper-module-imports/-/helper-module-imports-7.28.6.tgz",
-      "integrity": "sha512-l5XkZK7r7wa9LucGw9LwZyyCUscb4x37JWTPz7swwFE/0FMQAGpiWUZn8u9DzkSBWEcK25jmvubfpw2dnAMdbw==",
+      "version": "7.29.7",
+      "resolved": "https://registry.npmjs.org/@babel/helper-module-imports/-/helper-module-imports-7.29.7.tgz",
+      "integrity": "sha512-ejHwrQQYcm9xnTivShn2IDOlIzInN34AXskvq9QicvCtEzq1Vzclu/tKF8Jq1Cg8JG2GL6/EmjgsCT7lXepE3g==",
       "dev": true,
       "license": "MIT",
       "dependencies": {
-        "@babel/traverse": "^7.28.6",
-        "@babel/types": "^7.28.6"
+        "@babel/traverse": "^7.29.7",
+        "@babel/types": "^7.29.7"
       },
       "engines": {
         "node": ">=6.9.0"
       }
     },
     "node_modules/@babel/helper-module-transforms": {
-      "version": "7.28.6",
-      "resolved": "https://registry.npmjs.org/@babel/helper-module-transforms/-/helper-module-transforms-7.28.6.tgz",
-      "integrity": "sha512-67oXFAYr2cDLDVGLXTEABjdBJZ6drElUSI7WKp70NrpyISso3plG9SAGEF6y7zbha/wOzUByWWTJvEDVNIUGcA==",
+      "version": "7.29.7",
+      "resolved": "https://registry.npmjs.org/@babel/helper-module-transforms/-/helper-module-transforms-7.29.7.tgz",
+      "integrity": "sha512-UPUVSyXbOh627KiCIGQSgwWzGeBKLkaJ9PJEdrngIwMSzxLR4jS4+f1f1jb7VzBbg8nFLaYotvVPFCTqdrmTAg==",
       "dev": true,
       "license": "MIT",
       "dependencies": {
-        "@babel/helper-module-imports": "^7.28.6",
-        "@babel/helper-validator-identifier": "^7.28.5",
-        "@babel/traverse": "^7.28.6"
+        "@babel/helper-module-imports": "^7.29.7",
+        "@babel/helper-validator-identifier": "^7.29.7",
+        "@babel/traverse": "^7.29.7"
       },
       "engines": {
         "node": ">=6.9.0"
@@ -307,9 +344,9 @@ Tests  14 passed (14)
       }
     },
     "node_modules/@babel/helper-plugin-utils": {
-      "version": "7.28.6",
-      "resolved": "https://registry.npmjs.org/@babel/helper-plugin-utils/-/helper-plugin-utils-7.28.6.tgz",
-      "integrity": "sha512-S9gzZ/bz83GRysI7gAD4wPT/AI3uCnY+9xn+Mx/KPs2JwHJIz1W8PZkg2cqyt3RNOBM8ejcXhV6y8Og7ly/Dug==",
+      "version": "7.29.7",
+      "resolved": "https://registry.npmjs.org/@babel/helper-plugin-utils/-/helper-plugin-utils-7.29.7.tgz",
+      "integrity": "sha512-G7sHYigPY17oO5SYWnfD/0MTBwVR781S/JI643e/JhUYgVgWE/61SoW3NH9KWUKyKq5LVh3npif99Wkt6j86Jw==",
       "dev": true,
       "license": "MIT",
       "engines": {
@@ -317,9 +354,9 @@ Tests  14 passed (14)
       }
     },
     "node_modules/@babel/helper-string-parser": {
-      "version": "7.27.1",
-      "resolved": "https://registry.npmjs.org/@babel/helper-string-parser/-/helper-string-parser-7.27.1.tgz",
-      "integrity": "sha512-qMlSxKbpRlAridDExk92nSobyDdpPijUq2DW6oDnUqd0iOGxmQjyqhMIihI9+zv4LPyZdRje2cavWPbCbWm3eA==",
+      "version": "7.29.7",
+      "resolved": "https://registry.npmjs.org/@babel/helper-string-parser/-/helper-string-parser-7.29.7.tgz",
+      "integrity": "sha512-Pb5ijPrZ89GDH8223L4UP8i6QApWxs04RbPQJTeWDV0/keR2E36MeKnyr6LYmUUvqRRI+Iv87SuF1W6ErINzYw==",
       "dev": true,
       "license": "MIT",
       "engines": {
@@ -327,9 +364,9 @@ Tests  14 passed (14)
       }
     },
     "node_modules/@babel/helper-validator-identifier": {
-      "version": "7.28.5",
-      "resolved": "https://registry.npmjs.org/@babel/helper-validator-identifier/-/helper-validator-identifier-7.28.5.tgz",
-      "integrity": "sha512-qSs4ifwzKJSV39ucNjsvc6WVHs6b7S03sOh2OcHF9UHfVPqWWALUsNUVzhSBiItjRZoLHx7nIarVjqKVusUZ1Q==",
+      "version": "7.29.7",
+      "resolved": "https://registry.npmjs.org/@babel/helper-validator-identifier/-/helper-validator-identifier-7.29.7.tgz",
+      "integrity": "sha512-qehxGkRj55h/ff8EMaJ+cYhyaKlHIxqYDn682wQD7RNp9UujOQsHog2uS0r2vzr4pW+sXf90NeeayjcNaX3fFg==",
       "dev": true,
       "license": "MIT",
       "engines": {
@@ -337,9 +374,9 @@ Tests  14 passed (14)
       }
     },
     "node_modules/@babel/helper-validator-option": {
-      "version": "7.27.1",
-      "resolved": "https://registry.npmjs.org/@babel/helper-validator-option/-/helper-validator-option-7.27.1.tgz",
-      "integrity": "sha512-YvjJow9FxbhFFKDSuFnVCe2WxXk1zWc22fFePVNEaWJEu8IrZVlda6N0uHwzZrUM1il7NC9Mlp4MaJYbYd9JSg==",
+      "version": "7.29.7",
+      "resolved": "https://registry.npmjs.org/@babel/helper-validator-option/-/helper-validator-option-7.29.7.tgz",
+      "integrity": "sha512-N9ZErrD+yW5geCDtBqnOoxmR8+tNKiGuxKlDpuJxfsqpa2dFcexaziGAE/qoHLiDDreVNMupxGmSoNlyvsA3gw==",
       "dev": true,
       "license": "MIT",
       "engines": {
@@ -347,27 +384,27 @@ Tests  14 passed (14)
       }
     },
     "node_modules/@babel/helpers": {
-      "version": "7.29.2",
-      "resolved": "https://registry.npmjs.org/@babel/helpers/-/helpers-7.29.2.tgz",
-      "integrity": "sha512-HoGuUs4sCZNezVEKdVcwqmZN8GoHirLUcLaYVNBK2J0DadGtdcqgr3BCbvH8+XUo4NGjNl3VOtSjEKNzqfFgKw==",
+      "version": "7.29.7",
+      "resolved": "https://registry.npmjs.org/@babel/helpers/-/helpers-7.29.7.tgz",
+      "integrity": "sha512-1k2lAGRMfHTcwuNYcCNUmaUffmQv8KWMfh2iJUUeRlwlwH4FdNG7mfPI10NPfLHJFThE4Tyr4mv7kTNZOiPuBg==",
       "dev": true,
       "license": "MIT",
       "dependencies": {
-        "@babel/template": "^7.28.6",
-        "@babel/types": "^7.29.0"
+        "@babel/template": "^7.29.7",
+        "@babel/types": "^7.29.7"
       },
       "engines": {
         "node": ">=6.9.0"
       }
     },
     "node_modules/@babel/parser": {
-      "version": "7.29.3",
-      "resolved": "https://registry.npmjs.org/@babel/parser/-/parser-7.29.3.tgz",
-      "integrity": "sha512-b3ctpQwp+PROvU/cttc4OYl4MzfJUWy6FZg+PMXfzmt/+39iHVF0sDfqay8TQM3JA2EUOyKcFZt75jWriQijsA==",
+      "version": "7.29.7",
+      "resolved": "https://registry.npmjs.org/@babel/parser/-/parser-7.29.7.tgz",
+      "integrity": "sha512-hnORnjP/1P/zFEndoeX+n+t1RwWRJiJpM/jO7FW32Kn9r5+sJB2JWOdYo4L6k78j15eCwY3Gm/7364B1EMwtNg==",
       "dev": true,
       "license": "MIT",
       "dependencies": {
-        "@babel/types": "^7.29.0"
+        "@babel/types": "^7.29.7"
       },
       "bin": {
         "parser": "bin/babel-parser.js"
@@ -377,13 +414,13 @@ Tests  14 passed (14)
       }
     },
     "node_modules/@babel/plugin-transform-react-jsx-self": {
-      "version": "7.27.1",
-      "resolved": "https://registry.npmjs.org/@babel/plugin-transform-react-jsx-self/-/plugin-transform-react-jsx-self-7.27.1.tgz",
-      "integrity": "sha512-6UzkCs+ejGdZ5mFFC/OCUrv028ab2fp1znZmCZjAOBKiBK2jXD1O+BPSfX8X2qjJ75fZBMSnQn3Rq2mrBJK2mw==",
+      "version": "7.29.7",
+      "resolved": "https://registry.npmjs.org/@babel/plugin-transform-react-jsx-self/-/plugin-transform-react-jsx-self-7.29.7.tgz",
+      "integrity": "sha512-TL0hMc9xzy86VD31nUiwzd5otRAcyEPcsegCxolO0PvcXuH1v0kECe/UIznYFihpkvU5wg/jk4v0TTEFfm53fw==",
       "dev": true,
       "license": "MIT",
       "dependencies": {
-        "@babel/helper-plugin-utils": "^7.27.1"
+        "@babel/helper-plugin-utils": "^7.29.7"
       },
       "engines": {
         "node": ">=6.9.0"
@@ -393,13 +430,13 @@ Tests  14 passed (14)
       }
     },
     "node_modules/@babel/plugin-transform-react-jsx-source": {
-      "version": "7.27.1",
-      "resolved": "https://registry.npmjs.org/@babel/plugin-transform-react-jsx-source/-/plugin-transform-react-jsx-source-7.27.1.tgz",
-      "integrity": "sha512-zbwoTsBruTeKB9hSq73ha66iFeJHuaFkUbwvqElnygoNbj/jHRsSeokowZFN3CZ64IvEqcmmkVe89OPXc7ldAw==",
+      "version": "7.29.7",
+      "resolved": "https://registry.npmjs.org/@babel/plugin-transform-react-jsx-source/-/plugin-transform-react-jsx-source-7.29.7.tgz",
+      "integrity": "sha512-06IyK09H3wi4cGbhDBwp5gUGo0IKtnYa8tyTiephirPCK6fbobVGiXMMI5zLQ4aKEYP3wZ3ArU44o+8KMrSG/Q==",
       "dev": true,
       "license": "MIT",
       "dependencies": {
-        "@babel/helper-plugin-utils": "^7.27.1"
+        "@babel/helper-plugin-utils": "^7.29.7"
       },
       "engines": {
         "node": ">=6.9.0"
@@ -409,9 +446,9 @@ Tests  14 passed (14)
       }
     },
     "node_modules/@babel/runtime": {
-      "version": "7.29.2",
-      "resolved": "https://registry.npmjs.org/@babel/runtime/-/runtime-7.29.2.tgz",
-      "integrity": "sha512-JiDShH45zKHWyGe4ZNVRrCjBz8Nh9TMmZG1kh4QTK8hCBTWBi8Da+i7s1fJw7/lYpM4ccepSNfqzZ/QvABBi5g==",
+      "version": "7.29.7",
+      "resolved": "https://registry.npmjs.org/@babel/runtime/-/runtime-7.29.7.tgz",
+      "integrity": "sha512-Nq8OhGWiZIZGV6hLHoyAKLLcJihP/xFeBMGJoUrxTX2psI8dCifzLhZISFb+VWS3wFMRDmCGw5R+dOySCqPLhw==",
       "dev": true,
       "license": "MIT",
       "engines": {
@@ -419,33 +456,33 @@ Tests  14 passed (14)
       }
     },
     "node_modules/@babel/template": {
-      "version": "7.28.6",
-      "resolved": "https://registry.npmjs.org/@babel/template/-/template-7.28.6.tgz",
-      "integrity": "sha512-YA6Ma2KsCdGb+WC6UpBVFJGXL58MDA6oyONbjyF/+5sBgxY/dwkhLogbMT2GXXyU84/IhRw/2D1Os1B/giz+BQ==",
+      "version": "7.29.7",
+      "resolved": "https://registry.npmjs.org/@babel/template/-/template-7.29.7.tgz",
+      "integrity": "sha512-puq+Gf35oI24FeN11LkoUQFqv9uwNeWpxXZi/Ji3rRIoKAzKnxRaZ+Gkj0vKS9ZCiTESfng1N9LyOyXvo+m+Gg==",
       "dev": true,
       "license": "MIT",
       "dependencies": {
-        "@babel/code-frame": "^7.28.6",
-        "@babel/parser": "^7.28.6",
-        "@babel/types": "^7.28.6"
+        "@babel/code-frame": "^7.29.7",
+        "@babel/parser": "^7.29.7",
+        "@babel/types": "^7.29.7"
       },
       "engines": {
         "node": ">=6.9.0"
       }
     },
     "node_modules/@babel/traverse": {
-      "version": "7.29.0",
-      "resolved": "https://registry.npmjs.org/@babel/traverse/-/traverse-7.29.0.tgz",
-      "integrity": "sha512-4HPiQr0X7+waHfyXPZpWPfWL/J7dcN1mx9gL6WdQVMbPnF3+ZhSMs8tCxN7oHddJE9fhNE7+lxdnlyemKfJRuA==",
+      "version": "7.29.7",
+      "resolved": "https://registry.npmjs.org/@babel/traverse/-/traverse-7.29.7.tgz",
+      "integrity": "sha512-EhlfNQtZ+NK22w5BM61ciuiq1m58ed33Wr1Xan//ZRTy6hgjnwyCffRYwzsGXdASJSUJ1guZILsErh1eQcl+zw==",
       "dev": true,
       "license": "MIT",
       "dependencies": {
-        "@babel/code-frame": "^7.29.0",
-        "@babel/generator": "^7.29.0",
-        "@babel/helper-globals": "^7.28.0",
-        "@babel/parser": "^7.29.0",
-        "@babel/template": "^7.28.6",
-        "@babel/types": "^7.29.0",
+        "@babel/code-frame": "^7.29.7",
+        "@babel/generator": "^7.29.7",
+        "@babel/helper-globals": "^7.29.7",
+        "@babel/parser": "^7.29.7",
+        "@babel/template": "^7.29.7",
+        "@babel/types": "^7.29.7",
         "debug": "^4.3.1"
       },
       "engines": {
@@ -453,18 +490,25 @@ Tests  14 passed (14)
       }
     },
     "node_modules/@babel/types": {
-      "version": "7.29.0",
-      "resolved": "https://registry.npmjs.org/@babel/types/-/types-7.29.0.tgz",
-      "integrity": "sha512-LwdZHpScM4Qz8Xw2iKSzS+cfglZzJGvofQICy7W7v4caru4EaAmyUuO6BGrbyQ2mYV11W0U8j5mBhd14dd3B0A==",
+      "version": "7.29.7",
+      "resolved": "https://registry.npmjs.org/@babel/types/-/types-7.29.7.tgz",
+      "integrity": "sha512-4zBIxpPzowiZpusoFkyGVwakdRJUyuH5PxQ/PrqghfdFWWasvnCdPfQXHrenDai+gyLARulZjZowCOj6fjT4pA==",
       "dev": true,
       "license": "MIT",
       "dependencies": {
-        "@babel/helper-string-parser": "^7.27.1",
-        "@babel/helper-validator-identifier": "^7.28.5"
+        "@babel/helper-string-parser": "^7.29.7",
+        "@babel/helper-validator-identifier": "^7.29.7"
       },
       "engines": {
         "node": ">=6.9.0"
       }
+    },
+    "node_modules/@bcoe/v8-coverage": {
+      "version": "0.2.3",
+      "resolved": "https://registry.npmjs.org/@bcoe/v8-coverage/-/v8-coverage-0.2.3.tgz",
+      "integrity": "sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==",
+      "dev": true,
+      "license": "MIT"
     },
     "node_modules/@csstools/color-helpers": {
       "version": "5.1.0",
@@ -581,20 +625,10 @@ Tests  14 passed (14)
         "node": ">=18"
       }
     },
-    "node_modules/@emnapi/runtime": {
-      "version": "1.10.0",
-      "resolved": "https://registry.npmjs.org/@emnapi/runtime/-/runtime-1.10.0.tgz",
-      "integrity": "sha512-ewvYlk86xUoGI0zQRNq/mC+16R1QeDlKQy21Ki3oSYXNgLb45GV1P6A0M+/s6nyCuNDqe5VpaY84BzXGwVbwFA==",
-      "license": "MIT",
-      "optional": true,
-      "dependencies": {
-        "tslib": "^2.4.0"
-      }
-    },
     "node_modules/@esbuild/aix-ppc64": {
-      "version": "0.21.5",
-      "resolved": "https://registry.npmjs.org/@esbuild/aix-ppc64/-/aix-ppc64-0.21.5.tgz",
-      "integrity": "sha512-1SDgH6ZSPTlggy1yI6+Dbkiz8xzpHJEVAlF/AM1tHPLsf5STom9rwtjE4hKAF20FfXXNTFqEYXyJNWh1GiZedQ==",
+      "version": "0.27.7",
+      "resolved": "https://registry.npmjs.org/@esbuild/aix-ppc64/-/aix-ppc64-0.27.7.tgz",
+      "integrity": "sha512-EKX3Qwmhz1eMdEJokhALr0YiD0lhQNwDqkPYyPhiSwKrh7/4KRjQc04sZ8db+5DVVnZ1LmbNDI1uAMPEUBnQPg==",
       "cpu": [
         "ppc64"
       ],
@@ -604,14 +638,15 @@ Tests  14 passed (14)
       "os": [
         "aix"
       ],
+      "peer": true,
       "engines": {
-        "node": ">=12"
+        "node": ">=18"
       }
     },
     "node_modules/@esbuild/android-arm": {
-      "version": "0.21.5",
-      "resolved": "https://registry.npmjs.org/@esbuild/android-arm/-/android-arm-0.21.5.tgz",
-      "integrity": "sha512-vCPvzSjpPHEi1siZdlvAlsPxXl7WbOVUBBAowWug4rJHb68Ox8KualB+1ocNvT5fjv6wpkX6o/iEpbDrf68zcg==",
+      "version": "0.27.7",
+      "resolved": "https://registry.npmjs.org/@esbuild/android-arm/-/android-arm-0.27.7.tgz",
+      "integrity": "sha512-jbPXvB4Yj2yBV7HUfE2KHe4GJX51QplCN1pGbYjvsyCZbQmies29EoJbkEc+vYuU5o45AfQn37vZlyXy4YJ8RQ==",
       "cpu": [
         "arm"
       ],
@@ -621,14 +656,15 @@ Tests  14 passed (14)
       "os": [
         "android"
       ],
+      "peer": true,
       "engines": {
-        "node": ">=12"
+        "node": ">=18"
       }
     },
     "node_modules/@esbuild/android-arm64": {
-      "version": "0.21.5",
-      "resolved": "https://registry.npmjs.org/@esbuild/android-arm64/-/android-arm64-0.21.5.tgz",
-      "integrity": "sha512-c0uX9VAUBQ7dTDCjq+wdyGLowMdtR/GoC2U5IYk/7D1H1JYC0qseD7+11iMP2mRLN9RcCMRcjC4YMclCzGwS/A==",
+      "version": "0.27.7",
+      "resolved": "https://registry.npmjs.org/@esbuild/android-arm64/-/android-arm64-0.27.7.tgz",
+      "integrity": "sha512-62dPZHpIXzvChfvfLJow3q5dDtiNMkwiRzPylSCfriLvZeq0a1bWChrGx/BbUbPwOrsWKMn8idSllklzBy+dgQ==",
       "cpu": [
         "arm64"
       ],
@@ -638,14 +674,15 @@ Tests  14 passed (14)
       "os": [
         "android"
       ],
+      "peer": true,
       "engines": {
-        "node": ">=12"
+        "node": ">=18"
       }
     },
     "node_modules/@esbuild/android-x64": {
-      "version": "0.21.5",
-      "resolved": "https://registry.npmjs.org/@esbuild/android-x64/-/android-x64-0.21.5.tgz",
-      "integrity": "sha512-D7aPRUUNHRBwHxzxRvp856rjUHRFW1SdQATKXH2hqA0kAZb1hKmi02OpYRacl0TxIGz/ZmXWlbZgjwWYaCakTA==",
+      "version": "0.27.7",
+      "resolved": "https://registry.npmjs.org/@esbuild/android-x64/-/android-x64-0.27.7.tgz",
+      "integrity": "sha512-x5VpMODneVDb70PYV2VQOmIUUiBtY3D3mPBG8NxVk5CogneYhkR7MmM3yR/uMdITLrC1ml/NV1rj4bMJuy9MCg==",
       "cpu": [
         "x64"
       ],
@@ -655,14 +692,15 @@ Tests  14 passed (14)
       "os": [
         "android"
       ],
+      "peer": true,
       "engines": {
-        "node": ">=12"
+        "node": ">=18"
       }
     },
     "node_modules/@esbuild/darwin-arm64": {
-      "version": "0.21.5",
-      "resolved": "https://registry.npmjs.org/@esbuild/darwin-arm64/-/darwin-arm64-0.21.5.tgz",
-      "integrity": "sha512-DwqXqZyuk5AiWWf3UfLiRDJ5EDd49zg6O9wclZ7kUMv2WRFr4HKjXp/5t8JZ11QbQfUS6/cRCKGwYhtNAY88kQ==",
+      "version": "0.27.7",
+      "resolved": "https://registry.npmjs.org/@esbuild/darwin-arm64/-/darwin-arm64-0.27.7.tgz",
+      "integrity": "sha512-5lckdqeuBPlKUwvoCXIgI2D9/ABmPq3Rdp7IfL70393YgaASt7tbju3Ac+ePVi3KDH6N2RqePfHnXkaDtY9fkw==",
       "cpu": [
         "arm64"
       ],
@@ -672,14 +710,15 @@ Tests  14 passed (14)
       "os": [
         "darwin"
       ],
+      "peer": true,
       "engines": {
-        "node": ">=12"
+        "node": ">=18"
       }
     },
     "node_modules/@esbuild/darwin-x64": {
-      "version": "0.21.5",
-      "resolved": "https://registry.npmjs.org/@esbuild/darwin-x64/-/darwin-x64-0.21.5.tgz",
-      "integrity": "sha512-se/JjF8NlmKVG4kNIuyWMV/22ZaerB+qaSi5MdrXtd6R08kvs2qCN4C09miupktDitvh8jRFflwGFBQcxZRjbw==",
+      "version": "0.27.7",
+      "resolved": "https://registry.npmjs.org/@esbuild/darwin-x64/-/darwin-x64-0.27.7.tgz",
+      "integrity": "sha512-rYnXrKcXuT7Z+WL5K980jVFdvVKhCHhUwid+dDYQpH+qu+TefcomiMAJpIiC2EM3Rjtq0sO3StMV/+3w3MyyqQ==",
       "cpu": [
         "x64"
       ],
@@ -689,14 +728,15 @@ Tests  14 passed (14)
       "os": [
         "darwin"
       ],
+      "peer": true,
       "engines": {
-        "node": ">=12"
+        "node": ">=18"
       }
     },
     "node_modules/@esbuild/freebsd-arm64": {
-      "version": "0.21.5",
-      "resolved": "https://registry.npmjs.org/@esbuild/freebsd-arm64/-/freebsd-arm64-0.21.5.tgz",
-      "integrity": "sha512-5JcRxxRDUJLX8JXp/wcBCy3pENnCgBR9bN6JsY4OmhfUtIHe3ZW0mawA7+RDAcMLrMIZaf03NlQiX9DGyB8h4g==",
+      "version": "0.27.7",
+      "resolved": "https://registry.npmjs.org/@esbuild/freebsd-arm64/-/freebsd-arm64-0.27.7.tgz",
+      "integrity": "sha512-B48PqeCsEgOtzME2GbNM2roU29AMTuOIN91dsMO30t+Ydis3z/3Ngoj5hhnsOSSwNzS+6JppqWsuhTp6E82l2w==",
       "cpu": [
         "arm64"
       ],
@@ -706,14 +746,15 @@ Tests  14 passed (14)
       "os": [
         "freebsd"
       ],
+      "peer": true,
       "engines": {
-        "node": ">=12"
+        "node": ">=18"
       }
     },
     "node_modules/@esbuild/freebsd-x64": {
-      "version": "0.21.5",
-      "resolved": "https://registry.npmjs.org/@esbuild/freebsd-x64/-/freebsd-x64-0.21.5.tgz",
-      "integrity": "sha512-J95kNBj1zkbMXtHVH29bBriQygMXqoVQOQYA+ISs0/2l3T9/kj42ow2mpqerRBxDJnmkUDCaQT/dfNXWX/ZZCQ==",
+      "version": "0.27.7",
+      "resolved": "https://registry.npmjs.org/@esbuild/freebsd-x64/-/freebsd-x64-0.27.7.tgz",
+      "integrity": "sha512-jOBDK5XEjA4m5IJK3bpAQF9/Lelu/Z9ZcdhTRLf4cajlB+8VEhFFRjWgfy3M1O4rO2GQ/b2dLwCUGpiF/eATNQ==",
       "cpu": [
         "x64"
       ],
@@ -723,14 +764,15 @@ Tests  14 passed (14)
       "os": [
         "freebsd"
       ],
+      "peer": true,
       "engines": {
-        "node": ">=12"
+        "node": ">=18"
       }
     },
     "node_modules/@esbuild/linux-arm": {
-      "version": "0.21.5",
-      "resolved": "https://registry.npmjs.org/@esbuild/linux-arm/-/linux-arm-0.21.5.tgz",
-      "integrity": "sha512-bPb5AHZtbeNGjCKVZ9UGqGwo8EUu4cLq68E95A53KlxAPRmUyYv2D6F0uUI65XisGOL1hBP5mTronbgo+0bFcA==",
+      "version": "0.27.7",
+      "resolved": "https://registry.npmjs.org/@esbuild/linux-arm/-/linux-arm-0.27.7.tgz",
+      "integrity": "sha512-RkT/YXYBTSULo3+af8Ib0ykH8u2MBh57o7q/DAs3lTJlyVQkgQvlrPTnjIzzRPQyavxtPtfg0EopvDyIt0j1rA==",
       "cpu": [
         "arm"
       ],
@@ -740,14 +782,15 @@ Tests  14 passed (14)
       "os": [
         "linux"
       ],
+      "peer": true,
       "engines": {
-        "node": ">=12"
+        "node": ">=18"
       }
     },
     "node_modules/@esbuild/linux-arm64": {
-      "version": "0.21.5",
-      "resolved": "https://registry.npmjs.org/@esbuild/linux-arm64/-/linux-arm64-0.21.5.tgz",
-      "integrity": "sha512-ibKvmyYzKsBeX8d8I7MH/TMfWDXBF3db4qM6sy+7re0YXya+K1cem3on9XgdT2EQGMu4hQyZhan7TeQ8XkGp4Q==",
+      "version": "0.27.7",
+      "resolved": "https://registry.npmjs.org/@esbuild/linux-arm64/-/linux-arm64-0.27.7.tgz",
+      "integrity": "sha512-RZPHBoxXuNnPQO9rvjh5jdkRmVizktkT7TCDkDmQ0W2SwHInKCAV95GRuvdSvA7w4VMwfCjUiPwDi0ZO6Nfe9A==",
       "cpu": [
         "arm64"
       ],
@@ -757,14 +800,15 @@ Tests  14 passed (14)
       "os": [
         "linux"
       ],
+      "peer": true,
       "engines": {
-        "node": ">=12"
+        "node": ">=18"
       }
     },
     "node_modules/@esbuild/linux-ia32": {
-      "version": "0.21.5",
-      "resolved": "https://registry.npmjs.org/@esbuild/linux-ia32/-/linux-ia32-0.21.5.tgz",
-      "integrity": "sha512-YvjXDqLRqPDl2dvRODYmmhz4rPeVKYvppfGYKSNGdyZkA01046pLWyRKKI3ax8fbJoK5QbxblURkwK/MWY18Tg==",
+      "version": "0.27.7",
+      "resolved": "https://registry.npmjs.org/@esbuild/linux-ia32/-/linux-ia32-0.27.7.tgz",
+      "integrity": "sha512-GA48aKNkyQDbd3KtkplYWT102C5sn/EZTY4XROkxONgruHPU72l+gW+FfF8tf2cFjeHaRbWpOYa/uRBz/Xq1Pg==",
       "cpu": [
         "ia32"
       ],
@@ -774,14 +818,15 @@ Tests  14 passed (14)
       "os": [
         "linux"
       ],
+      "peer": true,
       "engines": {
-        "node": ">=12"
+        "node": ">=18"
       }
     },
     "node_modules/@esbuild/linux-loong64": {
-      "version": "0.21.5",
-      "resolved": "https://registry.npmjs.org/@esbuild/linux-loong64/-/linux-loong64-0.21.5.tgz",
-      "integrity": "sha512-uHf1BmMG8qEvzdrzAqg2SIG/02+4/DHB6a9Kbya0XDvwDEKCoC8ZRWI5JJvNdUjtciBGFQ5PuBlpEOXQj+JQSg==",
+      "version": "0.27.7",
+      "resolved": "https://registry.npmjs.org/@esbuild/linux-loong64/-/linux-loong64-0.27.7.tgz",
+      "integrity": "sha512-a4POruNM2oWsD4WKvBSEKGIiWQF8fZOAsycHOt6JBpZ+JN2n2JH9WAv56SOyu9X5IqAjqSIPTaJkqN8F7XOQ5Q==",
       "cpu": [
         "loong64"
       ],
@@ -791,14 +836,15 @@ Tests  14 passed (14)
       "os": [
         "linux"
       ],
+      "peer": true,
       "engines": {
-        "node": ">=12"
+        "node": ">=18"
       }
     },
     "node_modules/@esbuild/linux-mips64el": {
-      "version": "0.21.5",
-      "resolved": "https://registry.npmjs.org/@esbuild/linux-mips64el/-/linux-mips64el-0.21.5.tgz",
-      "integrity": "sha512-IajOmO+KJK23bj52dFSNCMsz1QP1DqM6cwLUv3W1QwyxkyIWecfafnI555fvSGqEKwjMXVLokcV5ygHW5b3Jbg==",
+      "version": "0.27.7",
+      "resolved": "https://registry.npmjs.org/@esbuild/linux-mips64el/-/linux-mips64el-0.27.7.tgz",
+      "integrity": "sha512-KabT5I6StirGfIz0FMgl1I+R1H73Gp0ofL9A3nG3i/cYFJzKHhouBV5VWK1CSgKvVaG4q1RNpCTR2LuTVB3fIw==",
       "cpu": [
         "mips64el"
       ],
@@ -808,14 +854,15 @@ Tests  14 passed (14)
       "os": [
         "linux"
       ],
+      "peer": true,
       "engines": {
-        "node": ">=12"
+        "node": ">=18"
       }
     },
     "node_modules/@esbuild/linux-ppc64": {
-      "version": "0.21.5",
-      "resolved": "https://registry.npmjs.org/@esbuild/linux-ppc64/-/linux-ppc64-0.21.5.tgz",
-      "integrity": "sha512-1hHV/Z4OEfMwpLO8rp7CvlhBDnjsC3CttJXIhBi+5Aj5r+MBvy4egg7wCbe//hSsT+RvDAG7s81tAvpL2XAE4w==",
+      "version": "0.27.7",
+      "resolved": "https://registry.npmjs.org/@esbuild/linux-ppc64/-/linux-ppc64-0.27.7.tgz",
+      "integrity": "sha512-gRsL4x6wsGHGRqhtI+ifpN/vpOFTQtnbsupUF5R5YTAg+y/lKelYR1hXbnBdzDjGbMYjVJLJTd2OFmMewAgwlQ==",
       "cpu": [
         "ppc64"
       ],
@@ -825,14 +872,15 @@ Tests  14 passed (14)
       "os": [
         "linux"
       ],
+      "peer": true,
       "engines": {
-        "node": ">=12"
+        "node": ">=18"
       }
     },
     "node_modules/@esbuild/linux-riscv64": {
-      "version": "0.21.5",
-      "resolved": "https://registry.npmjs.org/@esbuild/linux-riscv64/-/linux-riscv64-0.21.5.tgz",
-      "integrity": "sha512-2HdXDMd9GMgTGrPWnJzP2ALSokE/0O5HhTUvWIbD3YdjME8JwvSCnNGBnTThKGEB91OZhzrJ4qIIxk/SBmyDDA==",
+      "version": "0.27.7",
+      "resolved": "https://registry.npmjs.org/@esbuild/linux-riscv64/-/linux-riscv64-0.27.7.tgz",
+      "integrity": "sha512-hL25LbxO1QOngGzu2U5xeXtxXcW+/GvMN3ejANqXkxZ/opySAZMrc+9LY/WyjAan41unrR3YrmtTsUpwT66InQ==",
       "cpu": [
         "riscv64"
       ],
@@ -842,14 +890,15 @@ Tests  14 passed (14)
       "os": [
         "linux"
       ],
+      "peer": true,
       "engines": {
-        "node": ">=12"
+        "node": ">=18"
       }
     },
     "node_modules/@esbuild/linux-s390x": {
-      "version": "0.21.5",
-      "resolved": "https://registry.npmjs.org/@esbuild/linux-s390x/-/linux-s390x-0.21.5.tgz",
-      "integrity": "sha512-zus5sxzqBJD3eXxwvjN1yQkRepANgxE9lgOW2qLnmr8ikMTphkjgXu1HR01K4FJg8h1kEEDAqDcZQtbrRnB41A==",
+      "version": "0.27.7",
+      "resolved": "https://registry.npmjs.org/@esbuild/linux-s390x/-/linux-s390x-0.27.7.tgz",
+      "integrity": "sha512-2k8go8Ycu1Kb46vEelhu1vqEP+UeRVj2zY1pSuPdgvbd5ykAw82Lrro28vXUrRmzEsUV0NzCf54yARIK8r0fdw==",
       "cpu": [
         "s390x"
       ],
@@ -859,14 +908,15 @@ Tests  14 passed (14)
       "os": [
         "linux"
       ],
+      "peer": true,
       "engines": {
-        "node": ">=12"
+        "node": ">=18"
       }
     },
     "node_modules/@esbuild/linux-x64": {
-      "version": "0.21.5",
-      "resolved": "https://registry.npmjs.org/@esbuild/linux-x64/-/linux-x64-0.21.5.tgz",
-      "integrity": "sha512-1rYdTpyv03iycF1+BhzrzQJCdOuAOtaqHTWJZCWvijKD2N5Xu0TtVC8/+1faWqcP9iBCWOmjmhoH94dH82BxPQ==",
+      "version": "0.27.7",
+      "resolved": "https://registry.npmjs.org/@esbuild/linux-x64/-/linux-x64-0.27.7.tgz",
+      "integrity": "sha512-hzznmADPt+OmsYzw1EE33ccA+HPdIqiCRq7cQeL1Jlq2gb1+OyWBkMCrYGBJ+sxVzve2ZJEVeePbLM2iEIZSxA==",
       "cpu": [
         "x64"
       ],
@@ -876,14 +926,33 @@ Tests  14 passed (14)
       "os": [
         "linux"
       ],
+      "peer": true,
       "engines": {
-        "node": ">=12"
+        "node": ">=18"
+      }
+    },
+    "node_modules/@esbuild/netbsd-arm64": {
+      "version": "0.27.7",
+      "resolved": "https://registry.npmjs.org/@esbuild/netbsd-arm64/-/netbsd-arm64-0.27.7.tgz",
+      "integrity": "sha512-b6pqtrQdigZBwZxAn1UpazEisvwaIDvdbMbmrly7cDTMFnw/+3lVxxCTGOrkPVnsYIosJJXAsILG9XcQS+Yu6w==",
+      "cpu": [
+        "arm64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "netbsd"
+      ],
+      "peer": true,
+      "engines": {
+        "node": ">=18"
       }
     },
     "node_modules/@esbuild/netbsd-x64": {
-      "version": "0.21.5",
-      "resolved": "https://registry.npmjs.org/@esbuild/netbsd-x64/-/netbsd-x64-0.21.5.tgz",
-      "integrity": "sha512-Woi2MXzXjMULccIwMnLciyZH4nCIMpWQAs049KEeMvOcNADVxo0UBIQPfSmxB3CWKedngg7sWZdLvLczpe0tLg==",
+      "version": "0.27.7",
+      "resolved": "https://registry.npmjs.org/@esbuild/netbsd-x64/-/netbsd-x64-0.27.7.tgz",
+      "integrity": "sha512-OfatkLojr6U+WN5EDYuoQhtM+1xco+/6FSzJJnuWiUw5eVcicbyK3dq5EeV/QHT1uy6GoDhGbFpprUiHUYggrw==",
       "cpu": [
         "x64"
       ],
@@ -893,14 +962,33 @@ Tests  14 passed (14)
       "os": [
         "netbsd"
       ],
+      "peer": true,
       "engines": {
-        "node": ">=12"
+        "node": ">=18"
+      }
+    },
+    "node_modules/@esbuild/openbsd-arm64": {
+      "version": "0.27.7",
+      "resolved": "https://registry.npmjs.org/@esbuild/openbsd-arm64/-/openbsd-arm64-0.27.7.tgz",
+      "integrity": "sha512-AFuojMQTxAz75Fo8idVcqoQWEHIXFRbOc1TrVcFSgCZtQfSdc1RXgB3tjOn/krRHENUB4j00bfGjyl2mJrU37A==",
+      "cpu": [
+        "arm64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "openbsd"
+      ],
+      "peer": true,
+      "engines": {
+        "node": ">=18"
       }
     },
     "node_modules/@esbuild/openbsd-x64": {
-      "version": "0.21.5",
-      "resolved": "https://registry.npmjs.org/@esbuild/openbsd-x64/-/openbsd-x64-0.21.5.tgz",
-      "integrity": "sha512-HLNNw99xsvx12lFBUwoT8EVCsSvRNDVxNpjZ7bPn947b8gJPzeHWyNVhFsaerc0n3TsbOINvRP2byTZ5LKezow==",
+      "version": "0.27.7",
+      "resolved": "https://registry.npmjs.org/@esbuild/openbsd-x64/-/openbsd-x64-0.27.7.tgz",
+      "integrity": "sha512-+A1NJmfM8WNDv5CLVQYJ5PshuRm/4cI6WMZRg1by1GwPIQPCTs1GLEUHwiiQGT5zDdyLiRM/l1G0Pv54gvtKIg==",
       "cpu": [
         "x64"
       ],
@@ -910,14 +998,33 @@ Tests  14 passed (14)
       "os": [
         "openbsd"
       ],
+      "peer": true,
       "engines": {
-        "node": ">=12"
+        "node": ">=18"
+      }
+    },
+    "node_modules/@esbuild/openharmony-arm64": {
+      "version": "0.27.7",
+      "resolved": "https://registry.npmjs.org/@esbuild/openharmony-arm64/-/openharmony-arm64-0.27.7.tgz",
+      "integrity": "sha512-+KrvYb/C8zA9CU/g0sR6w2RBw7IGc5J2BPnc3dYc5VJxHCSF1yNMxTV5LQ7GuKteQXZtspjFbiuW5/dOj7H4Yw==",
+      "cpu": [
+        "arm64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "openharmony"
+      ],
+      "peer": true,
+      "engines": {
+        "node": ">=18"
       }
     },
     "node_modules/@esbuild/sunos-x64": {
-      "version": "0.21.5",
-      "resolved": "https://registry.npmjs.org/@esbuild/sunos-x64/-/sunos-x64-0.21.5.tgz",
-      "integrity": "sha512-6+gjmFpfy0BHU5Tpptkuh8+uw3mnrvgs+dSPQXQOv3ekbordwnzTVEb4qnIvQcYXq6gzkyTnoZ9dZG+D4garKg==",
+      "version": "0.27.7",
+      "resolved": "https://registry.npmjs.org/@esbuild/sunos-x64/-/sunos-x64-0.27.7.tgz",
+      "integrity": "sha512-ikktIhFBzQNt/QDyOL580ti9+5mL/YZeUPKU2ivGtGjdTYoqz6jObj6nOMfhASpS4GU4Q/Clh1QtxWAvcYKamA==",
       "cpu": [
         "x64"
       ],
@@ -927,573 +1034,73 @@ Tests  14 passed (14)
       "os": [
         "sunos"
       ],
-      "engines": {
-        "node": ">=12"
-      }
-    },
-    "node_modules/@esbuild/win32-arm64": {
-      "version": "0.21.5",
-      "resolved": "https://registry.npmjs.org/@esbuild/win32-arm64/-/win32-arm64-0.21.5.tgz",
-      "integrity": "sha512-Z0gOTd75VvXqyq7nsl93zwahcTROgqvuAcYDUr+vOv8uHhNSKROyU961kgtCD1e95IqPKSQKH7tBTslnS3tA8A==",
-      "cpu": [
-        "arm64"
-      ],
-      "dev": true,
-      "license": "MIT",
-      "optional": true,
-      "os": [
-        "win32"
-      ],
-      "engines": {
-        "node": ">=12"
-      }
-    },
-    "node_modules/@esbuild/win32-ia32": {
-      "version": "0.21.5",
-      "resolved": "https://registry.npmjs.org/@esbuild/win32-ia32/-/win32-ia32-0.21.5.tgz",
-      "integrity": "sha512-SWXFF1CL2RVNMaVs+BBClwtfZSvDgtL//G/smwAc5oVK/UPu2Gu9tIaRgFmYFFKrmg3SyAjSrElf0TiJ1v8fYA==",
-      "cpu": [
-        "ia32"
-      ],
-      "dev": true,
-      "license": "MIT",
-      "optional": true,
-      "os": [
-        "win32"
-      ],
-      "engines": {
-        "node": ">=12"
-      }
-    },
-    "node_modules/@esbuild/win32-x64": {
-      "version": "0.21.5",
-      "resolved": "https://registry.npmjs.org/@esbuild/win32-x64/-/win32-x64-0.21.5.tgz",
-      "integrity": "sha512-tQd/1efJuzPC6rCFwEvLtci/xNFcTZknmXs98FYDfGE4wP9ClFV98nyKrzJKVPMhdDnjzLhdUyMX4PsQAPjwIw==",
-      "cpu": [
-        "x64"
-      ],
-      "dev": true,
-      "license": "MIT",
-      "optional": true,
-      "os": [
-        "win32"
-      ],
-      "engines": {
-        "node": ">=12"
-      }
-    },
-    "node_modules/@img/colour": {
-      "version": "1.1.0",
-      "resolved": "https://registry.npmjs.org/@img/colour/-/colour-1.1.0.tgz",
-      "integrity": "sha512-Td76q7j57o/tLVdgS746cYARfSyxk8iEfRxewL9h4OMzYhbW4TAcppl0mT4eyqXddh6L/jwoM75mo7ixa/pCeQ==",
-      "license": "MIT",
-      "optional": true,
+      "peer": true,
       "engines": {
         "node": ">=18"
       }
     },
-    "node_modules/@img/sharp-darwin-arm64": {
-      "version": "0.34.5",
-      "resolved": "https://registry.npmjs.org/@img/sharp-darwin-arm64/-/sharp-darwin-arm64-0.34.5.tgz",
-      "integrity": "sha512-imtQ3WMJXbMY4fxb/Ndp6HBTNVtWCUI0WdobyheGf5+ad6xX8VIDO8u2xE4qc/fr08CKG/7dDseFtn6M6g/r3w==",
+    "node_modules/@esbuild/win32-arm64": {
+      "version": "0.27.7",
+      "resolved": "https://registry.npmjs.org/@esbuild/win32-arm64/-/win32-arm64-0.27.7.tgz",
+      "integrity": "sha512-7yRhbHvPqSpRUV7Q20VuDwbjW5kIMwTHpptuUzV+AA46kiPze5Z7qgt6CLCK3pWFrHeNfDd1VKgyP4O+ng17CA==",
       "cpu": [
         "arm64"
       ],
-      "license": "Apache-2.0",
-      "optional": true,
-      "os": [
-        "darwin"
-      ],
-      "engines": {
-        "node": "^18.17.0 || ^20.3.0 || >=21.0.0"
-      },
-      "funding": {
-        "url": "https://opencollective.com/libvips"
-      },
-      "optionalDependencies": {
-        "@img/sharp-libvips-darwin-arm64": "1.2.4"
-      }
-    },
-    "node_modules/@img/sharp-darwin-x64": {
-      "version": "0.34.5",
-      "resolved": "https://registry.npmjs.org/@img/sharp-darwin-x64/-/sharp-darwin-x64-0.34.5.tgz",
-      "integrity": "sha512-YNEFAF/4KQ/PeW0N+r+aVVsoIY0/qxxikF2SWdp+NRkmMB7y9LBZAVqQ4yhGCm/H3H270OSykqmQMKLBhBJDEw==",
-      "cpu": [
-        "x64"
-      ],
-      "license": "Apache-2.0",
-      "optional": true,
-      "os": [
-        "darwin"
-      ],
-      "engines": {
-        "node": "^18.17.0 || ^20.3.0 || >=21.0.0"
-      },
-      "funding": {
-        "url": "https://opencollective.com/libvips"
-      },
-      "optionalDependencies": {
-        "@img/sharp-libvips-darwin-x64": "1.2.4"
-      }
-    },
-    "node_modules/@img/sharp-libvips-darwin-arm64": {
-      "version": "1.2.4",
-      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-darwin-arm64/-/sharp-libvips-darwin-arm64-1.2.4.tgz",
-      "integrity": "sha512-zqjjo7RatFfFoP0MkQ51jfuFZBnVE2pRiaydKJ1G/rHZvnsrHAOcQALIi9sA5co5xenQdTugCvtb1cuf78Vf4g==",
-      "cpu": [
-        "arm64"
-      ],
-      "license": "LGPL-3.0-or-later",
-      "optional": true,
-      "os": [
-        "darwin"
-      ],
-      "funding": {
-        "url": "https://opencollective.com/libvips"
-      }
-    },
-    "node_modules/@img/sharp-libvips-darwin-x64": {
-      "version": "1.2.4",
-      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-darwin-x64/-/sharp-libvips-darwin-x64-1.2.4.tgz",
-      "integrity": "sha512-1IOd5xfVhlGwX+zXv2N93k0yMONvUlANylbJw1eTah8K/Jtpi15KC+WSiaX/nBmbm2HxRM1gZ0nSdjSsrZbGKg==",
-      "cpu": [
-        "x64"
-      ],
-      "license": "LGPL-3.0-or-later",
-      "optional": true,
-      "os": [
-        "darwin"
-      ],
-      "funding": {
-        "url": "https://opencollective.com/libvips"
-      }
-    },
-    "node_modules/@img/sharp-libvips-linux-arm": {
-      "version": "1.2.4",
-      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linux-arm/-/sharp-libvips-linux-arm-1.2.4.tgz",
-      "integrity": "sha512-bFI7xcKFELdiNCVov8e44Ia4u2byA+l3XtsAj+Q8tfCwO6BQ8iDojYdvoPMqsKDkuoOo+X6HZA0s0q11ANMQ8A==",
-      "cpu": [
-        "arm"
-      ],
-      "libc": [
-        "glibc"
-      ],
-      "license": "LGPL-3.0-or-later",
-      "optional": true,
-      "os": [
-        "linux"
-      ],
-      "funding": {
-        "url": "https://opencollective.com/libvips"
-      }
-    },
-    "node_modules/@img/sharp-libvips-linux-arm64": {
-      "version": "1.2.4",
-      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linux-arm64/-/sharp-libvips-linux-arm64-1.2.4.tgz",
-      "integrity": "sha512-excjX8DfsIcJ10x1Kzr4RcWe1edC9PquDRRPx3YVCvQv+U5p7Yin2s32ftzikXojb1PIFc/9Mt28/y+iRklkrw==",
-      "cpu": [
-        "arm64"
-      ],
-      "libc": [
-        "glibc"
-      ],
-      "license": "LGPL-3.0-or-later",
-      "optional": true,
-      "os": [
-        "linux"
-      ],
-      "funding": {
-        "url": "https://opencollective.com/libvips"
-      }
-    },
-    "node_modules/@img/sharp-libvips-linux-ppc64": {
-      "version": "1.2.4",
-      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linux-ppc64/-/sharp-libvips-linux-ppc64-1.2.4.tgz",
-      "integrity": "sha512-FMuvGijLDYG6lW+b/UvyilUWu5Ayu+3r2d1S8notiGCIyYU/76eig1UfMmkZ7vwgOrzKzlQbFSuQfgm7GYUPpA==",
-      "cpu": [
-        "ppc64"
-      ],
-      "libc": [
-        "glibc"
-      ],
-      "license": "LGPL-3.0-or-later",
-      "optional": true,
-      "os": [
-        "linux"
-      ],
-      "funding": {
-        "url": "https://opencollective.com/libvips"
-      }
-    },
-    "node_modules/@img/sharp-libvips-linux-riscv64": {
-      "version": "1.2.4",
-      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linux-riscv64/-/sharp-libvips-linux-riscv64-1.2.4.tgz",
-      "integrity": "sha512-oVDbcR4zUC0ce82teubSm+x6ETixtKZBh/qbREIOcI3cULzDyb18Sr/Wcyx7NRQeQzOiHTNbZFF1UwPS2scyGA==",
-      "cpu": [
-        "riscv64"
-      ],
-      "libc": [
-        "glibc"
-      ],
-      "license": "LGPL-3.0-or-later",
-      "optional": true,
-      "os": [
-        "linux"
-      ],
-      "funding": {
-        "url": "https://opencollective.com/libvips"
-      }
-    },
-    "node_modules/@img/sharp-libvips-linux-s390x": {
-      "version": "1.2.4",
-      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linux-s390x/-/sharp-libvips-linux-s390x-1.2.4.tgz",
-      "integrity": "sha512-qmp9VrzgPgMoGZyPvrQHqk02uyjA0/QrTO26Tqk6l4ZV0MPWIW6LTkqOIov+J1yEu7MbFQaDpwdwJKhbJvuRxQ==",
-      "cpu": [
-        "s390x"
-      ],
-      "libc": [
-        "glibc"
-      ],
-      "license": "LGPL-3.0-or-later",
-      "optional": true,
-      "os": [
-        "linux"
-      ],
-      "funding": {
-        "url": "https://opencollective.com/libvips"
-      }
-    },
-    "node_modules/@img/sharp-libvips-linux-x64": {
-      "version": "1.2.4",
-      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linux-x64/-/sharp-libvips-linux-x64-1.2.4.tgz",
-      "integrity": "sha512-tJxiiLsmHc9Ax1bz3oaOYBURTXGIRDODBqhveVHonrHJ9/+k89qbLl0bcJns+e4t4rvaNBxaEZsFtSfAdquPrw==",
-      "cpu": [
-        "x64"
-      ],
-      "libc": [
-        "glibc"
-      ],
-      "license": "LGPL-3.0-or-later",
-      "optional": true,
-      "os": [
-        "linux"
-      ],
-      "funding": {
-        "url": "https://opencollective.com/libvips"
-      }
-    },
-    "node_modules/@img/sharp-libvips-linuxmusl-arm64": {
-      "version": "1.2.4",
-      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linuxmusl-arm64/-/sharp-libvips-linuxmusl-arm64-1.2.4.tgz",
-      "integrity": "sha512-FVQHuwx1IIuNow9QAbYUzJ+En8KcVm9Lk5+uGUQJHaZmMECZmOlix9HnH7n1TRkXMS0pGxIJokIVB9SuqZGGXw==",
-      "cpu": [
-        "arm64"
-      ],
-      "libc": [
-        "musl"
-      ],
-      "license": "LGPL-3.0-or-later",
-      "optional": true,
-      "os": [
-        "linux"
-      ],
-      "funding": {
-        "url": "https://opencollective.com/libvips"
-      }
-    },
-    "node_modules/@img/sharp-libvips-linuxmusl-x64": {
-      "version": "1.2.4",
-      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linuxmusl-x64/-/sharp-libvips-linuxmusl-x64-1.2.4.tgz",
-      "integrity": "sha512-+LpyBk7L44ZIXwz/VYfglaX/okxezESc6UxDSoyo2Ks6Jxc4Y7sGjpgU9s4PMgqgjj1gZCylTieNamqA1MF7Dg==",
-      "cpu": [
-        "x64"
-      ],
-      "libc": [
-        "musl"
-      ],
-      "license": "LGPL-3.0-or-later",
-      "optional": true,
-      "os": [
-        "linux"
-      ],
-      "funding": {
-        "url": "https://opencollective.com/libvips"
-      }
-    },
-    "node_modules/@img/sharp-linux-arm": {
-      "version": "0.34.5",
-      "resolved": "https://registry.npmjs.org/@img/sharp-linux-arm/-/sharp-linux-arm-0.34.5.tgz",
-      "integrity": "sha512-9dLqsvwtg1uuXBGZKsxem9595+ujv0sJ6Vi8wcTANSFpwV/GONat5eCkzQo/1O6zRIkh0m/8+5BjrRr7jDUSZw==",
-      "cpu": [
-        "arm"
-      ],
-      "libc": [
-        "glibc"
-      ],
-      "license": "Apache-2.0",
-      "optional": true,
-      "os": [
-        "linux"
-      ],
-      "engines": {
-        "node": "^18.17.0 || ^20.3.0 || >=21.0.0"
-      },
-      "funding": {
-        "url": "https://opencollective.com/libvips"
-      },
-      "optionalDependencies": {
-        "@img/sharp-libvips-linux-arm": "1.2.4"
-      }
-    },
-    "node_modules/@img/sharp-linux-arm64": {
-      "version": "0.34.5",
-      "resolved": "https://registry.npmjs.org/@img/sharp-linux-arm64/-/sharp-linux-arm64-0.34.5.tgz",
-      "integrity": "sha512-bKQzaJRY/bkPOXyKx5EVup7qkaojECG6NLYswgktOZjaXecSAeCWiZwwiFf3/Y+O1HrauiE3FVsGxFg8c24rZg==",
-      "cpu": [
-        "arm64"
-      ],
-      "libc": [
-        "glibc"
-      ],
-      "license": "Apache-2.0",
-      "optional": true,
-      "os": [
-        "linux"
-      ],
-      "engines": {
-        "node": "^18.17.0 || ^20.3.0 || >=21.0.0"
-      },
-      "funding": {
-        "url": "https://opencollective.com/libvips"
-      },
-      "optionalDependencies": {
-        "@img/sharp-libvips-linux-arm64": "1.2.4"
-      }
-    },
-    "node_modules/@img/sharp-linux-ppc64": {
-      "version": "0.34.5",
-      "resolved": "https://registry.npmjs.org/@img/sharp-linux-ppc64/-/sharp-linux-ppc64-0.34.5.tgz",
-      "integrity": "sha512-7zznwNaqW6YtsfrGGDA6BRkISKAAE1Jo0QdpNYXNMHu2+0dTrPflTLNkpc8l7MUP5M16ZJcUvysVWWrMefZquA==",
-      "cpu": [
-        "ppc64"
-      ],
-      "libc": [
-        "glibc"
-      ],
-      "license": "Apache-2.0",
-      "optional": true,
-      "os": [
-        "linux"
-      ],
-      "engines": {
-        "node": "^18.17.0 || ^20.3.0 || >=21.0.0"
-      },
-      "funding": {
-        "url": "https://opencollective.com/libvips"
-      },
-      "optionalDependencies": {
-        "@img/sharp-libvips-linux-ppc64": "1.2.4"
-      }
-    },
-    "node_modules/@img/sharp-linux-riscv64": {
-      "version": "0.34.5",
-      "resolved": "https://registry.npmjs.org/@img/sharp-linux-riscv64/-/sharp-linux-riscv64-0.34.5.tgz",
-      "integrity": "sha512-51gJuLPTKa7piYPaVs8GmByo7/U7/7TZOq+cnXJIHZKavIRHAP77e3N2HEl3dgiqdD/w0yUfiJnII77PuDDFdw==",
-      "cpu": [
-        "riscv64"
-      ],
-      "libc": [
-        "glibc"
-      ],
-      "license": "Apache-2.0",
-      "optional": true,
-      "os": [
-        "linux"
-      ],
-      "engines": {
-        "node": "^18.17.0 || ^20.3.0 || >=21.0.0"
-      },
-      "funding": {
-        "url": "https://opencollective.com/libvips"
-      },
-      "optionalDependencies": {
-        "@img/sharp-libvips-linux-riscv64": "1.2.4"
-      }
-    },
-    "node_modules/@img/sharp-linux-s390x": {
-      "version": "0.34.5",
-      "resolved": "https://registry.npmjs.org/@img/sharp-linux-s390x/-/sharp-linux-s390x-0.34.5.tgz",
-      "integrity": "sha512-nQtCk0PdKfho3eC5MrbQoigJ2gd1CgddUMkabUj+rBevs8tZ2cULOx46E7oyX+04WGfABgIwmMC0VqieTiR4jg==",
-      "cpu": [
-        "s390x"
-      ],
-      "libc": [
-        "glibc"
-      ],
-      "license": "Apache-2.0",
-      "optional": true,
-      "os": [
-        "linux"
-      ],
-      "engines": {
-        "node": "^18.17.0 || ^20.3.0 || >=21.0.0"
-      },
-      "funding": {
-        "url": "https://opencollective.com/libvips"
-      },
-      "optionalDependencies": {
-        "@img/sharp-libvips-linux-s390x": "1.2.4"
-      }
-    },
-    "node_modules/@img/sharp-linux-x64": {
-      "version": "0.34.5",
-      "resolved": "https://registry.npmjs.org/@img/sharp-linux-x64/-/sharp-linux-x64-0.34.5.tgz",
-      "integrity": "sha512-MEzd8HPKxVxVenwAa+JRPwEC7QFjoPWuS5NZnBt6B3pu7EG2Ge0id1oLHZpPJdn3OQK+BQDiw9zStiHBTJQQQQ==",
-      "cpu": [
-        "x64"
-      ],
-      "libc": [
-        "glibc"
-      ],
-      "license": "Apache-2.0",
-      "optional": true,
-      "os": [
-        "linux"
-      ],
-      "engines": {
-        "node": "^18.17.0 || ^20.3.0 || >=21.0.0"
-      },
-      "funding": {
-        "url": "https://opencollective.com/libvips"
-      },
-      "optionalDependencies": {
-        "@img/sharp-libvips-linux-x64": "1.2.4"
-      }
-    },
-    "node_modules/@img/sharp-linuxmusl-arm64": {
-      "version": "0.34.5",
-      "resolved": "https://registry.npmjs.org/@img/sharp-linuxmusl-arm64/-/sharp-linuxmusl-arm64-0.34.5.tgz",
-      "integrity": "sha512-fprJR6GtRsMt6Kyfq44IsChVZeGN97gTD331weR1ex1c1rypDEABN6Tm2xa1wE6lYb5DdEnk03NZPqA7Id21yg==",
-      "cpu": [
-        "arm64"
-      ],
-      "libc": [
-        "musl"
-      ],
-      "license": "Apache-2.0",
-      "optional": true,
-      "os": [
-        "linux"
-      ],
-      "engines": {
-        "node": "^18.17.0 || ^20.3.0 || >=21.0.0"
-      },
-      "funding": {
-        "url": "https://opencollective.com/libvips"
-      },
-      "optionalDependencies": {
-        "@img/sharp-libvips-linuxmusl-arm64": "1.2.4"
-      }
-    },
-    "node_modules/@img/sharp-linuxmusl-x64": {
-      "version": "0.34.5",
-      "resolved": "https://registry.npmjs.org/@img/sharp-linuxmusl-x64/-/sharp-linuxmusl-x64-0.34.5.tgz",
-      "integrity": "sha512-Jg8wNT1MUzIvhBFxViqrEhWDGzqymo3sV7z7ZsaWbZNDLXRJZoRGrjulp60YYtV4wfY8VIKcWidjojlLcWrd8Q==",
-      "cpu": [
-        "x64"
-      ],
-      "libc": [
-        "musl"
-      ],
-      "license": "Apache-2.0",
-      "optional": true,
-      "os": [
-        "linux"
-      ],
-      "engines": {
-        "node": "^18.17.0 || ^20.3.0 || >=21.0.0"
-      },
-      "funding": {
-        "url": "https://opencollective.com/libvips"
-      },
-      "optionalDependencies": {
-        "@img/sharp-libvips-linuxmusl-x64": "1.2.4"
-      }
-    },
-    "node_modules/@img/sharp-wasm32": {
-      "version": "0.34.5",
-      "resolved": "https://registry.npmjs.org/@img/sharp-wasm32/-/sharp-wasm32-0.34.5.tgz",
-      "integrity": "sha512-OdWTEiVkY2PHwqkbBI8frFxQQFekHaSSkUIJkwzclWZe64O1X4UlUjqqqLaPbUpMOQk6FBu/HtlGXNblIs0huw==",
-      "cpu": [
-        "wasm32"
-      ],
-      "license": "Apache-2.0 AND LGPL-3.0-or-later AND MIT",
-      "optional": true,
-      "dependencies": {
-        "@emnapi/runtime": "^1.7.0"
-      },
-      "engines": {
-        "node": "^18.17.0 || ^20.3.0 || >=21.0.0"
-      },
-      "funding": {
-        "url": "https://opencollective.com/libvips"
-      }
-    },
-    "node_modules/@img/sharp-win32-arm64": {
-      "version": "0.34.5",
-      "resolved": "https://registry.npmjs.org/@img/sharp-win32-arm64/-/sharp-win32-arm64-0.34.5.tgz",
-      "integrity": "sha512-WQ3AgWCWYSb2yt+IG8mnC6Jdk9Whs7O0gxphblsLvdhSpSTtmu69ZG1Gkb6NuvxsNACwiPV6cNSZNzt0KPsw7g==",
-      "cpu": [
-        "arm64"
-      ],
-      "license": "Apache-2.0 AND LGPL-3.0-or-later",
+      "dev": true,
+      "license": "MIT",
       "optional": true,
       "os": [
         "win32"
       ],
+      "peer": true,
       "engines": {
-        "node": "^18.17.0 || ^20.3.0 || >=21.0.0"
-      },
-      "funding": {
-        "url": "https://opencollective.com/libvips"
+        "node": ">=18"
       }
     },
-    "node_modules/@img/sharp-win32-ia32": {
-      "version": "0.34.5",
-      "resolved": "https://registry.npmjs.org/@img/sharp-win32-ia32/-/sharp-win32-ia32-0.34.5.tgz",
-      "integrity": "sha512-FV9m/7NmeCmSHDD5j4+4pNI8Cp3aW+JvLoXcTUo0IqyjSfAZJ8dIUmijx1qaJsIiU+Hosw6xM5KijAWRJCSgNg==",
+    "node_modules/@esbuild/win32-ia32": {
+      "version": "0.27.7",
+      "resolved": "https://registry.npmjs.org/@esbuild/win32-ia32/-/win32-ia32-0.27.7.tgz",
+      "integrity": "sha512-SmwKXe6VHIyZYbBLJrhOoCJRB/Z1tckzmgTLfFYOfpMAx63BJEaL9ExI8x7v0oAO3Zh6D/Oi1gVxEYr5oUCFhw==",
       "cpu": [
         "ia32"
       ],
-      "license": "Apache-2.0 AND LGPL-3.0-or-later",
+      "dev": true,
+      "license": "MIT",
       "optional": true,
       "os": [
         "win32"
       ],
+      "peer": true,
       "engines": {
-        "node": "^18.17.0 || ^20.3.0 || >=21.0.0"
-      },
-      "funding": {
-        "url": "https://opencollective.com/libvips"
+        "node": ">=18"
       }
     },
-    "node_modules/@img/sharp-win32-x64": {
-      "version": "0.34.5",
-      "resolved": "https://registry.npmjs.org/@img/sharp-win32-x64/-/sharp-win32-x64-0.34.5.tgz",
-      "integrity": "sha512-+29YMsqY2/9eFEiW93eqWnuLcWcufowXewwSNIT6UwZdUUCrM3oFjMWH/Z6/TMmb4hlFenmfAVbpWeup2jryCw==",
+    "node_modules/@esbuild/win32-x64": {
+      "version": "0.27.7",
+      "resolved": "https://registry.npmjs.org/@esbuild/win32-x64/-/win32-x64-0.27.7.tgz",
+      "integrity": "sha512-56hiAJPhwQ1R4i+21FVF7V8kSD5zZTdHcVuRFMW0hn753vVfQN8xlx4uOPT4xoGH0Z/oVATuR82AiqSTDIpaHg==",
       "cpu": [
         "x64"
       ],
-      "license": "Apache-2.0 AND LGPL-3.0-or-later",
+      "dev": true,
+      "license": "MIT",
       "optional": true,
       "os": [
         "win32"
       ],
+      "peer": true,
       "engines": {
-        "node": "^18.17.0 || ^20.3.0 || >=21.0.0"
-      },
-      "funding": {
-        "url": "https://opencollective.com/libvips"
+        "node": ">=18"
+      }
+    },
+    "node_modules/@istanbuljs/schema": {
+      "version": "0.1.6",
+      "resolved": "https://registry.npmjs.org/@istanbuljs/schema/-/schema-0.1.6.tgz",
+      "integrity": "sha512-+Sg6GCR/wy1oSmQDFq4LQDAhm3ETKnorxN+y5nbLULOR3P0c14f2Wurzj3/xqPXtasLFfHd5iRFQ7AJt4KH2cw==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=8"
       }
     },
     "node_modules/@jest/schemas": {
@@ -1560,15 +1167,15 @@ Tests  14 passed (14)
       }
     },
     "node_modules/@next/env": {
-      "version": "15.5.15",
-      "resolved": "https://registry.npmjs.org/@next/env/-/env-15.5.15.tgz",
-      "integrity": "sha512-vcmyu5/MyFzN7CdqRHO3uHO44p/QPCZkuTUXroeUmhNP8bL5PHFEhik22JUazt+CDDoD6EpBYRCaS2pISL+/hg==",
+      "version": "14.2.35",
+      "resolved": "https://registry.npmjs.org/@next/env/-/env-14.2.35.tgz",
+      "integrity": "sha512-DuhvCtj4t9Gwrx80dmz2F4t/zKQ4ktN8WrMwOuVzkJfBilwAwGr6v16M5eI8yCuZ63H9TTuEU09Iu2HqkzFPVQ==",
       "license": "MIT"
     },
     "node_modules/@next/swc-darwin-arm64": {
-      "version": "15.5.15",
-      "resolved": "https://registry.npmjs.org/@next/swc-darwin-arm64/-/swc-darwin-arm64-15.5.15.tgz",
-      "integrity": "sha512-6PvFO2Tzt10GFK2Ro9tAVEtacMqRmTarYMFKAnV2vYMdwWc73xzmDQyAV7SwEdMhzmiRoo7+m88DuiXlJlGeaw==",
+      "version": "14.2.33",
+      "resolved": "https://registry.npmjs.org/@next/swc-darwin-arm64/-/swc-darwin-arm64-14.2.33.tgz",
+      "integrity": "sha512-HqYnb6pxlsshoSTubdXKu15g3iivcbsMXg4bYpjL2iS/V6aQot+iyF4BUc2qA/J/n55YtvE4PHMKWBKGCF/+wA==",
       "cpu": [
         "arm64"
       ],
@@ -1582,9 +1189,9 @@ Tests  14 passed (14)
       }
     },
     "node_modules/@next/swc-darwin-x64": {
-      "version": "15.5.15",
-      "resolved": "https://registry.npmjs.org/@next/swc-darwin-x64/-/swc-darwin-x64-15.5.15.tgz",
-      "integrity": "sha512-G+YNV+z6FDZTp/+IdGyIMFqalBTaQSnvAA+X/hrt+eaTRFSznRMz9K7rTmzvM6tDmKegNtyzgufZW0HwVzEqaQ==",
+      "version": "14.2.33",
+      "resolved": "https://registry.npmjs.org/@next/swc-darwin-x64/-/swc-darwin-x64-14.2.33.tgz",
+      "integrity": "sha512-8HGBeAE5rX3jzKvF593XTTFg3gxeU4f+UWnswa6JPhzaR6+zblO5+fjltJWIZc4aUalqTclvN2QtTC37LxvZAA==",
       "cpu": [
         "x64"
       ],
@@ -1598,9 +1205,9 @@ Tests  14 passed (14)
       }
     },
     "node_modules/@next/swc-linux-arm64-gnu": {
-      "version": "15.5.15",
-      "resolved": "https://registry.npmjs.org/@next/swc-linux-arm64-gnu/-/swc-linux-arm64-gnu-15.5.15.tgz",
-      "integrity": "sha512-eVkrMcVIBqGfXB+QUC7jjZ94Z6uX/dNStbQFabewAnk13Uy18Igd1YZ/GtPRzdhtm7QwC0e6o7zOQecul4iC1w==",
+      "version": "14.2.33",
+      "resolved": "https://registry.npmjs.org/@next/swc-linux-arm64-gnu/-/swc-linux-arm64-gnu-14.2.33.tgz",
+      "integrity": "sha512-JXMBka6lNNmqbkvcTtaX8Gu5by9547bukHQvPoLe9VRBx1gHwzf5tdt4AaezW85HAB3pikcvyqBToRTDA4DeLw==",
       "cpu": [
         "arm64"
       ],
@@ -1617,9 +1224,9 @@ Tests  14 passed (14)
       }
     },
     "node_modules/@next/swc-linux-arm64-musl": {
-      "version": "15.5.15",
-      "resolved": "https://registry.npmjs.org/@next/swc-linux-arm64-musl/-/swc-linux-arm64-musl-15.5.15.tgz",
-      "integrity": "sha512-RwSHKMQ7InLy5GfkY2/n5PcFycKA08qI1VST78n09nN36nUPqCvGSMiLXlfUmzmpQpF6XeBYP2KRWHi0UW3uNg==",
+      "version": "14.2.33",
+      "resolved": "https://registry.npmjs.org/@next/swc-linux-arm64-musl/-/swc-linux-arm64-musl-14.2.33.tgz",
+      "integrity": "sha512-Bm+QulsAItD/x6Ih8wGIMfRJy4G73tu1HJsrccPW6AfqdZd0Sfm5Imhgkgq2+kly065rYMnCOxTBvmvFY1BKfg==",
       "cpu": [
         "arm64"
       ],
@@ -1636,9 +1243,9 @@ Tests  14 passed (14)
       }
     },
     "node_modules/@next/swc-linux-x64-gnu": {
-      "version": "15.5.15",
-      "resolved": "https://registry.npmjs.org/@next/swc-linux-x64-gnu/-/swc-linux-x64-gnu-15.5.15.tgz",
-      "integrity": "sha512-nplqvY86LakS+eeiuWsNWvfmK8pFcOEW7ZtVRt4QH70lL+0x6LG/m1OpJ/tvrbwjmR8HH9/fH2jzW1GlL03TIg==",
+      "version": "14.2.33",
+      "resolved": "https://registry.npmjs.org/@next/swc-linux-x64-gnu/-/swc-linux-x64-gnu-14.2.33.tgz",
+      "integrity": "sha512-FnFn+ZBgsVMbGDsTqo8zsnRzydvsGV8vfiWwUo1LD8FTmPTdV+otGSWKc4LJec0oSexFnCYVO4hX8P8qQKaSlg==",
       "cpu": [
         "x64"
       ],
@@ -1655,45 +1262,479 @@ Tests  14 passed (14)
       }
     },
     "node_modules/@next/swc-linux-x64-musl": {
-      "version": 
+      "version": "14.2.33",
+      "resolved": "https://registry.npmjs.org/@next/swc-linux-x64-musl/-/swc-linux-x64-musl-14.2.33.tgz",
+      "integrity": "sha512-345tsIWMzoXaQndUTDv1qypDRiebFxGYx9pYkhwY4hBRaOLt8UGfiWKr9FSSHs25dFIf8ZqIFaPdy5MljdoawA==",
+      "cpu": [
+        "x64"
+      ],
+      "libc": [
+        "musl"
+      ],
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ],
+      "engines": {
+        "node": ">= 10"
+      }
+    },
+    "node_modules/@next/swc-win32-arm64-msvc": {
+      "version": "14.2.33",
+      "resolved": "https://registry.npmjs.org/@next/swc-win32-arm64-msvc/-/swc-win32-arm64-msvc-14.2.33.tgz",
+      "integrity": "sha512-nscpt0G6UCTkrT2ppnJnFsYbPDQwmum4GNXYTeoTIdsmMydSKFz9Iny2jpaRupTb+Wl298+Rh82WKzt9LCcqSQ==",
+      "cpu": [
+        "arm64"
+      ],
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "win32"
+      ],
+      "engines": {
+        "node": ">= 10"
+      }
+    },
+    "node_modules/@next/swc-win32-ia32-msvc": {
+      "version": "14.2.33",
+      "resolved": "https://registry.npmjs.org/@next/swc-win32-ia32-msvc/-/swc-win32-ia32-msvc-14.2.33.tgz",
+      "integrity": "sha512-pc9LpGNKhJ0dXQhZ5QMmYxtARwwmWLpeocFmVG5Z0DzWq5Uf0izcI8tLc+qOpqxO1PWqZ5A7J1blrUIKrIFc7Q==",
+      "cpu": [
+        "ia32"
+      ],
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "win32"
+      ],
+      "engines": {
+        "node": ">= 10"
+      }
+    },
+    "node_modules/@next/swc-win32-x64-msvc": {
+      "version": "14.2.33",
+      "resolved": "https://registry.npmjs.org/@next/swc-win32-x64-msvc/-/swc-win32-x64-msvc-14.2.33.tgz",
+      "integrity": "sha512-nOjfZMy8B94MdisuzZo9/57xuFVLHJaDj5e/xrduJp9CV2/HrfxTRH2fbyLe+K9QT41WBLUd4iXX3R7jBp0EUg==",
+      "cpu": [
+        "x64"
+      ],
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "win32"
+      ],
+      "engines": {
+        "node": ">= 10"
+      }
+    },
+    "node_modules/@rolldown/pluginutils": {
+      "version": "1.0.0-beta.27",
+      "resolved": "https://registry.npmjs.org/@rolldown/pluginutils/-/pluginutils-1.0.0-beta.27.tgz",
+      "integrity": "sha512-+d0F4MKMCbeVUJwG96uQ4SgAznZNSq93I3V+9NHA4OpvqG8mRCpGdKmK8l/dl02h2CCDHwW2FqilnTyDcAnqjA==",
+      "dev": true,
+      "license": "MIT"
+    },
+    "node_modules/@rollup/rollup-android-arm-eabi": {
+      "version": "4.60.4",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-android-arm-eabi/-/rollup-android-arm-eabi-4.60.4.tgz",
+      "integrity": "sha512-F5QXMSiFebS9hKZj02XhWLLnRpJ3B3AROP0tWbFBSj+6kCbg5m9j5JoHKd4mmSVy5mS/IMQloYgYxCuJC0fxEQ==",
+      "cpu": [
+        "arm"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "android"
+      ]
+    },
+    "node_modules/@rollup/rollup-android-arm64": {
+      "version": "4.60.4",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-android-arm64/-/rollup-android-arm64-4.60.4.tgz",
+      "integrity": "sha512-GxxTKApUpzRhof7poWvCJHRF51C67u1R7D6DiluBE8wKU1u5GWE8t+v81JvJYtbawoBFX1hLv5Ei4eVjkWokaw==",
+      "cpu": [
+        "arm64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "android"
+      ]
+    },
+    "node_modules/@rollup/rollup-darwin-arm64": {
+      "version": "4.60.4",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-darwin-arm64/-/rollup-darwin-arm64-4.60.4.tgz",
+      "integrity": "sha512-tua0TaJxMOB1R0V0RS1jFZ/RpURFDJIOR2A6jWwQeawuFyS4gBW+rntLRaQd0EQ4bd6Vp44Z2rXW+YYDBsj6IA==",
+      "cpu": [
+        "arm64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "darwin"
+      ]
+    },
+    "node_modules/@rollup/rollup-darwin-x64": {
+      "version": "4.60.4",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-darwin-x64/-/rollup-darwin-x64-4.60.4.tgz",
+      "integrity": "sha512-CSKq7MsP+5PFIcydhAiR1K0UhEI1A2jWXVKHPCBZ151yOutENwvnPocgVHkivu2kviURtCEB6zUQw0vs8RrhMg==",
+      "cpu": [
+        "x64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "darwin"
+      ]
+    },
+    "node_modules/@rollup/rollup-freebsd-arm64": {
+      "version": "4.60.4",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-freebsd-arm64/-/rollup-freebsd-arm64-4.60.4.tgz",
+      "integrity": "sha512-+O8OkVdyvXMtJEciu2wS/pzm1IxntEEQx3z5TAVy4l32G0etZn+RsA48ARRrFm6Ri8fvqPQfgrvNxSjKAbnd3g==",
+      "cpu": [
+        "arm64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "freebsd"
+      ]
+    },
+    "node_modules/@rollup/rollup-freebsd-x64": {
+      "version": "4.60.4",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-freebsd-x64/-/rollup-freebsd-x64-4.60.4.tgz",
+      "integrity": "sha512-Iw3oMskH3AfNuhU0MSN7vNbdi4me/NiYo2azqPz/Le16zHSa+3RRmliCMWWQmh4lcndccU40xcJuTYJZxNo/lw==",
+      "cpu": [
+        "x64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "freebsd"
+      ]
+    },
+    "node_modules/@rollup/rollup-linux-arm-gnueabihf": {
+      "version": "4.60.4",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-linux-arm-gnueabihf/-/rollup-linux-arm-gnueabihf-4.60.4.tgz",
+      "integrity": "sha512-EIPRXTVQpHyF8WOo219AD2yEltPehLTcTMz2fn6JsatLYSzQf00hj3rulF+yauOlF9/FtM2WpkT/hJh/KJFGhA==",
+      "cpu": [
+        "arm"
+      ],
+      "dev": true,
+      "libc": [
+        "glibc"
+      ],
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ]
+    },
+    "node_modules/@rollup/rollup-linux-arm-musleabihf": {
+      "version": "4.60.4",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-linux-arm-musleabihf/-/rollup-linux-arm-musleabihf-4.60.4.tgz",
+      "integrity": "sha512-J3Yh9PzzF1Ovah2At+lHiGQdsYgArxBbXv/zHfSyaiFQEqvNv7DcW98pCrmdjCZBrqBiKrKKe2V+aaSGWuBe/w==",
+      "cpu": [
+        "arm"
+      ],
+      "dev": true,
+      "libc": [
+        "musl"
+      ],
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ]
+    },
+    "node_modules/@rollup/rollup-linux-arm64-gnu": {
+      "version": "4.60.4",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-linux-arm64-gnu/-/rollup-linux-arm64-gnu-4.60.4.tgz",
+      "integrity": "sha512-BFDEZMYfUvLn37ONE1yMBojPxnMlTFsdyNoqncT0qFq1mAfllL+ATMMJd8TeuVMiX84s1KbcxcZbXInmcO2mRg==",
+      "cpu": [
+        "arm64"
+      ],
+      "dev": true,
+      "libc": [
+        "glibc"
+      ],
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ]
+    },
+    "node_modules/@rollup/rollup-linux-arm64-musl": {
+      "version": "4.60.4",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-linux-arm64-musl/-/rollup-linux-arm64-musl-4.60.4.tgz",
+      "integrity": "sha512-pc9EYOSlOgdQ2uPl1o9PF6/kLSgaUosia7gOuS8mB69IxJvlclko1MECXysjs5ryez1/5zjYqx3+xYU0TU6R1A==",
+      "cpu": [
+        "arm64"
+      ],
+      "dev": true,
+      "libc": [
+        "musl"
+      ],
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ]
+    },
+    "node_modules/@rollup/rollup-linux-loong64-gnu": {
+      "version": "4.60.4",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-linux-loong64-gnu/-/rollup-linux-loong64-gnu-4.60.4.tgz",
+      "integrity": "sha512-NxnomyxYerDh5n4iLrNa+sH+Z+U4BMEE46V2PgQ/hoB909i8gV1M5wPojWg9fk1jWpO3IQnOs20K4wyZuFLEFQ==",
+      "cpu": [
+        "loong64"
+      ],
+      "dev": true,
+      "libc": [
+        "glibc"
+      ],
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ]
+    },
+    "node_modules/@rollup/rollup-linux-loong64-musl": {
+      "version": "4.60.4",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-linux-loong64-musl/-/rollup-linux-loong64-musl-4.60.4.tgz",
+      "integrity": "sha512-nbJnQ8a3z1mtmrwImCYhc6BGpThAyYVRQxw9uKSKG4wR6aAYno9sVjJ0zaZcW9BPJX1GbrDPf+SvdWjgTuDmnw==",
+      "cpu": [
+        "loong64"
+      ],
+      "dev": true,
+      "libc": [
+        "musl"
+      ],
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ]
+    },
+    "node_modules/@rollup/rollup-linux-ppc64-gnu": {
+      "version": "4.60.4",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-linux-ppc64-gnu/-/rollup-linux-ppc64-gnu-4.60.4.tgz",
+      "integrity": "sha512-2EU6acNrQLd8tYvo/LXW535wupT3m6fo7HKo6lr7ktQoItxTyOL1ZCR/GfGCuXl2vR+zmfI6eRXkSemafv+iVg==",
+      "cpu": [
+        "ppc64"
+      ],
+      "dev": true,
+      "libc": [
+        "glibc"
+      ],
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ]
+    },
+    "node_modules/@rollup/rollup-linux-ppc64-musl": {
+      "version": "4.60.4",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-linux-ppc64-musl/-/rollup-linux-ppc64-musl-4.60.4.tgz",
+      "integrity": "sha512-WeBtoMuaMxiiIrO2IYP3xs6GMWkJP2C0EoT8beTLkUPmzV1i/UcOSVw1d5r9KBODtHKilG5yFxsGRnBbK3wJ4A==",
+      "cpu": [
+        "ppc64"
+      ],
+      "dev": true,
+      "libc": [
+        "musl"
+      ],
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ]
+    },
+    "node_modules/@rollup/rollup-linux-riscv64-gnu": {
+      "version": "4.60.4",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-linux-riscv64-gnu/-/rollup-linux-riscv64-gnu-4.60.4.tgz",
+      "integrity": "sha512-FJHFfqpKUI3A10WrWKiFbBZ7yVbGT4q4B5o1qKFFojqpaYoh9LrQgqWCmmcxQzVSXYtyB5bzkXrYzlHTs21MYA==",
+      "cpu": [
+        "riscv64"
+      ],
+      "dev": true,
+      "libc": [
+        "glibc"
+      ],
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ]
+    },
+    "node_modules/@rollup/rollup-linux-riscv64-musl": {
+      "version": "4.60.4",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-linux-riscv64-musl/-/rollup-linux-riscv64-musl-4.60.4.tgz",
+      "integrity": "sha512-mcEl6CUT5IAUmQf1m9FYSmVqCJlpQ8r8eyftFUHG8i9OhY7BkBXSUdnLH5DOf0wCOjcP9v/QO93zpmF1SptCCw==",
+      "cpu": [
+        "riscv64"
+      ],
+      "dev": true,
+      "libc": [
+        "musl"
+      ],
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ]
+    },
+    "node_modules/@rollup/rollup-linux-s390x-gnu": {
+      "version": "4.60.4",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-linux-s390x-gnu/-/rollup-linux-s390x-gnu-4.60.4.tgz",
+      "integrity": "sha512-ynt3JxVd2w2buzoKDWIyiV1pJW93xlQic1THVLXilz429oijRpSHivZAgp65KBu+cMcgf1eVVjdnTLvPxgCuoQ==",
+      "cpu": [
+        "s390x"
+      ],
+      "dev": true,
+      "libc": [
+        "glibc"
+      ],
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ]
+    },
+    "node_modules/@rollup/rollup-linux-x64-gnu": {
+      "version": "4.60.4",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-linux-x64-gnu/-/rollup-linux-x64-gnu-4.60.4.tgz",
+      "integrity": "sha512-Boiz5+MsaROEWDf+GGEwF8VMHGhlUoQMtIPjOgA5fv4osupqTVnJteQNKJwUcnUog2G55jYXH7KZFFiJe0TEzQ==",
+      "cpu": [
+        "x64"
+      ],
+      "dev": true,
+      "libc": [
+        "glibc"
+      ],
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ]
+    },
+    "node_modules/@rollup/rollup-linux-x64-musl": {
+      "version": "4.60.4",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-linux-x64-musl/-/rollup-linux-x64-musl-4.60.4.tgz",
+      "integrity": "sha512-+qfSY27qIrFfI/Hom04KYFw3GKZSGU4lXus51wsb5EuySfFlWRwjkKWoE9emgRw/ukoT4Udsj4W/+xxG8VbPKg==",
+      "cpu": [
+        "x64"
+      ],
+      "dev": true,
+      "libc": [
+        "musl"
+      ],
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ]
+    },
+    "node_modules/@rollup/rollup-openbsd-x64": {
+      "version": "4.60.4",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-openbsd-x64/-/rollup-openbsd-x64-4.60.4.tgz",
+      "integrity": "sha512-VpTfOPHgVXEBeeR8hZ2O0F3aSso+JDWqTWmTmzcQKted54IAdUVbxE+j/MVxUsKa8L20HJhv3vUezVPoquqWjA==",
+      "cpu": [
+        "x64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "openbsd"
+      ]
+    },
+    "node_modules/@rollup/rollup-openharmony-arm64": {
+      "version": "4.60.4",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-openharmony-arm64/-/rollup-openharmony-arm64-4.60.4.tgz",
+      "integrity": "sha512-IPOsh5aRYuLv/nkU51X10Bf75Bsf6+gZdx1X+QP5QM6lIJFHHqbHLG0uJn/hWthzo13UAc2umiUorqZy3axoZg==",
+      "cpu": [
+        "arm64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "openharmony"
+      ]
+    },
+    "node_modules/@rollup/rollup-win32-arm64-msvc": {
+      "version": "4.60.4",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-win32-arm64-msvc/-/rollup-win32-arm64-msvc-4.60.4.tgz",
+      "integrity": "sha512-4QzE9E81OohJ/HKzHhsqU+zcYYojVOXlFMs1DdyMT6qXl/niOH7AVElmmEdUNHHS/oRkc++d5k6Vy85zFs0DEw==",
+      "cpu": [
+        "arm64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "win32"
+      ]
+    },
+    "node_modules/@rollup/rollup-win32-ia32-msvc": {
+      "version": "4.60.4",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-win32-ia32-msvc/-/rollup-win32-ia32-msvc-4.60.4.tgz",
+      "integrity": "sha512-zTPgT1YuHHcd+Tmx7h8aml0FWFVelV5N54oHow9SLj+GfoDy/huQ+UV396N/C7KpMDMiPspRktzM1/0r1usYEA==",
+      "cpu": [
+        "ia32"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "win32"
+      ]
+    },
+    "node_modules/@rollup/rollup-win32-x64-gnu": {
+      "version": "4.60.4",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-win32-x64-gnu/-/rollup-win32-x64-gnu-4.60.4.tgz",
+      "integrity": "sha512-DRS4G7mi9lJxqEDezIkKCaUIKCrLUUDCUaCsTPCi/rtqaC6D/jjwslMQyiDU50Ka0JKpeXeRBFBAXwArY52vBw==",
+      "cpu": [
+        "x64"
+      ],
+      "dev": true
 
-[truncated]
+[truncated — over 50KB]
 ```
 
 #### `work/package.json`
 
 ```
 {
-  "name": "admin-tables",
+  "name": "next-app",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
-    "test": "vitest",
-    "test:ui": "vitest --ui"
+    "test": "vitest run"
   },
   "dependencies": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "next": "^15.0.0",
-    "clsx": "^2.0.0"
+    "clsx": "^2.1.1",
+    "next": "^14.2.35",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0"
   },
   "devDependencies": {
-    "typescript": "^5.0.0",
-    "@types/node": "^20.0.0",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
-    "tailwindcss": "^3.4.0",
-    "postcss": "^8.4.0",
-    "autoprefixer": "^10.4.0",
-    "vitest": "^1.0.0",
-    "@testing-library/react": "^14.0.0",
-    "@testing-library/jest-dom": "^6.0.0",
-    "jsdom": "^23.0.0",
-    "@vitejs/plugin-react": "^4.0.0"
+    "@testing-library/jest-dom": "^6.4.0",
+    "@testing-library/react": "^15.0.0",
+    "@testing-library/user-event": "^14.5.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "@vitest/coverage-v8": "^1.6.0",
+    "jsdom": "^24.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^1.6.0"
   }
 }
 
@@ -1704,24 +1745,23 @@ Tests  14 passed (14)
 ```
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "jsx": "preserve",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "strict": true,
-    "esModuleInterop": true,
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": true,
-    "baseUrl": ".",
+    "jsx": "react-jsx",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./src/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
+  "include": ["**/*.ts", "**/*.tsx"],
   "exclude": ["node_modules"]
 }
 
@@ -1730,9 +1770,9 @@ Tests  14 passed (14)
 #### `work/vitest.config.ts`
 
 ```
-import { defineConfig } from 'vitest/config';
-import react from '@vitejs/plugin-react';
-import path from 'path';
+import { defineConfig } from 'vitest/config'
+import react from '@vitejs/plugin-react'
+import path from 'path'
 
 export default defineConfig({
   plugins: [react()],
@@ -1743,748 +1783,498 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './'),
+      '@': path.resolve(__dirname, './src'),
+      // Redirect next/* to local stubs so Vite can resolve them in test mode.
+      // Individual tests override with vi.mock() as needed.
+      'next/navigation': path.resolve(__dirname, './src/__mocks__/next/navigation.ts'),
     },
   },
-});
+})
 
 ```
 
 #### `work/vitest.setup.ts`
 
 ```
-import '@testing-library/jest-dom';
+import '@testing-library/jest-dom'
 
 ```
 
-#### `work/src/components/DataTable.tsx`
+#### `work/src/components/DataTable/DataTable.tsx`
 
 ```
-'use client';
+'use client'
 
-import { useCallback, useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import clsx from 'clsx';
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
+import clsx from 'clsx'
 
-export interface ColumnConfig {
-  label: string;
-  key: string;
-  sortable?: boolean;
+export interface ColumnConfig<T> {
+  key: keyof T & string
+  label: string
+  sortable?: boolean
 }
 
-export interface DataTableProps<T> {
-  columns: ColumnConfig[];
-  data: T[];
-  isLoading?: boolean;
-  totalCount?: number;
-  pageSize?: number;
-  ariaLabel?: string;
+export interface DataTableProps<T extends Record<string, unknown>> {
+  columns: ColumnConfig<T>[]
+  rows: T[]
+  isLoading?: boolean
+  totalPages?: number
+  currentPage?: number
+  'aria-label'?: string
 }
 
-const SKELETON_ROWS = 8;
-const DEFAULT_PAGE_SIZE = 20;
-const DEBOUNCE_DELAY = 300;
+const SKELETON_ROWS = 5
+const FILTER_DEBOUNCE_MS = 300
 
-function SkeletonRow({ columnCount }: { columnCount: number }) {
-  return (
-    <tr data-testid="skeleton-row">
-      {Array.from({ length: columnCount }).map((_, i) => (
-        <td key={i} className="px-6 py-4">
-          <div className="h-4 bg-gray-200 rounded animate-pulse" />
-        </td>
-      ))}
-    </tr>
-  );
-}
-
-function SortIcon({
-  sortKey,
-  currentSort,
-  currentOrder,
-}: {
-  sortKey: string;
-  currentSort: string | null;
-  currentOrder: string | null;
-}) {
-  if (currentSort !== sortKey) {
-    return (
-      <svg
-        className="w-4 h-4 text-gray-400 ml-1 inline"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M7 16V4m0 0L3 8m4-4l4 4M17 20v-4m0 0l4 4m-4-4l-4 4"
-        />
-      </svg>
-    );
+function buildUrl(
+  pathname: string,
+  params: URLSearchParams,
+  updates: Record<string, string | null>,
+): string {
+  const next = new URLSearchParams(params.toString())
+  for (const [k, v] of Object.entries(updates)) {
+    if (v === null) next.delete(k)
+    else next.set(k, v)
   }
-
-  if (currentOrder === 'asc') {
-    return (
-      <svg
-        className="w-4 h-4 text-blue-600 ml-1 inline"
-        fill="currentColor"
-        viewBox="0 0 20 20"
-      >
-        <path d="M3 3a1 1 0 000 2h11a1 1 0 100-2H3zM3 7a1 1 0 000 2h5a1 1 0 000-2H3zM3 11a1 1 0 100 2h4a1 1 0 100-2H3zM13 16a1 1 0 102 0v-5.586l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 101.414 1.414L13 10.414V16z" />
-      </svg>
-    );
-  }
-
-  return (
-    <svg
-      className="w-4 h-4 text-blue-600 ml-1 inline"
-      fill="currentColor"
-      viewBox="0 0 20 20"
-    >
-      <path d="M3 3a1 1 0 000 2h11a1 1 0 100-2H3zM3 7a1 1 0 000 2h7a1 1 0 100-2H3zM3 11a1 1 0 100 2h4a1 1 0 100-2H3zM15 8a1 1 0 10-2 0v5.586l-1.293-1.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L15 13.586V8z" />
-    </svg>
-  );
+  const qs = next.toString()
+  return qs ? `${pathname}?${qs}` : pathname
 }
 
-export function DataTable<T extends Record<string, any>>({
+export function DataTable<T extends Record<string, unknown>>({
   columns,
-  data,
+  rows,
   isLoading = false,
-  totalCount = 0,
-  pageSize = DEFAULT_PAGE_SIZE,
-  ariaLabel,
+  totalPages = 1,
+  currentPage = 1,
+  'aria-label': ariaLabel = 'Data table',
 }: DataTableProps<T>) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const router = useRouter()
+  const params = useSearchParams()
+  const pathname = usePathname()
 
-  const currentPage = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
-  const currentSort = searchParams.get('sort');
-  const currentOrder = searchParams.get('order');
-  const currentQuery = searchParams.get('q') || '';
+  const activeSort = params.get('sort') ?? ''
+  const activeDir = (params.get('dir') ?? 'asc') as 'asc' | 'desc'
+  const activePage = currentPage
 
-  const [searchInput, setSearchInput] = useState(currentQuery);
-  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(
-    null
-  );
+  // ── filter input with debounce ───────────────────────────────────────────
+  const [filterValue, setFilterValue] = useState(params.get('q') ?? '')
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const totalPages = Math.ceil(totalCount / pageSize);
+  const handleFilterChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const val = e.target.value
+      setFilterValue(val)
+      if (debounceTimer.current) clearTimeout(debounceTimer.current)
+      debounceTimer.current = setTimeout(() => {
+        router.replace(
+          buildUrl(pathname, params, { q: val || null, page: null }),
+          { scroll: false },
+        )
+      }, FILTER_DEBOUNCE_MS)
+    },
+    [router, pathname, params],
+  )
 
+  useEffect(() => () => { if (debounceTimer.current) clearTimeout(debounceTimer.current) }, [])
+
+  // ── sort ─────────────────────────────────────────────────────────────────
   const handleSort = useCallback(
     (key: string) => {
-      const params = new URLSearchParams(searchParams.toString());
-      const isSameSortKey = currentSort === key;
-
-      if (isSameSortKey) {
-        // Toggle order: asc -> desc -> none
-        if (currentOrder === 'asc') {
-          params.set('sort', key);
-          params.set('order', 'desc');
-        } else {
-          params.delete('sort');
-          params.delete('order');
-        }
-      } else {
-        // New sort key: default to asc
-        params.set('sort', key);
-        params.set('order', 'asc');
-        params.set('page', '1'); // Reset to first page on sort change
-      }
-
-      router.replace(`?${params.toString()}`, { scroll: false });
+      const nextDir: 'asc' | 'desc' =
+        activeSort === key && activeDir === 'asc' ? 'desc' : 'asc'
+      router.replace(
+        buildUrl(pathname, params, { sort: key, dir: nextDir, page: null }),
+        { scroll: false },
+      )
     },
-    [currentSort, currentOrder, searchParams, router]
-  );
-
-  const handleSearch = useCallback(
-    (query: string) => {
-      setSearchInput(query);
-
-      if (searchTimeout) {
-        clearTimeout(searchTimeout);
-      }
-
-      const newTimeout = setTimeout(() => {
-        const params = new URLSearchParams(searchParams.toString());
-        if (query) {
-          params.set('q', query);
-        } else {
-          params.delete('q');
-        }
-        params.set('page', '1'); // Reset to first page on search
-        router.replace(`?${params.toString()}`, { scroll: false });
-      }, DEBOUNCE_DELAY);
-
-      setSearchTimeout(newTimeout);
-    },
-    [searchParams, router, searchTimeout]
-  );
-
-  const handlePageChange = useCallback(
-    (newPage: number) => {
-      if (newPage < 1 || newPage > totalPages) return;
-      const params = new URLSearchParams(searchParams.toString());
-      params.set('page', newPage.toString());
-      router.replace(`?${params.toString()}`, { scroll: false });
-    },
-    [searchParams, totalPages, router]
-  );
+    [router, pathname, params, activeSort, activeDir],
+  )
 
   const handleHeaderKeyDown = useCallback(
-    (e: React.KeyboardEvent, key: string) => {
+    (e: React.KeyboardEvent<HTMLTableCellElement>, key: string) => {
       if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        handleSort(key);
+        e.preventDefault()
+        handleSort(key)
       }
     },
-    [handleSort]
-  );
+    [handleSort],
+  )
 
-  useEffect(() => {
-    return () => {
-      if (searchTimeout) {
-        clearTimeout(searchTimeout);
-      }
-    };
-  }, [searchTimeout]);
+  // ── pagination ───────────────────────────────────────────────────────────
+  const goToPage = useCallback(
+    (page: number) => {
+      router.replace(
+        buildUrl(pathname, params, { page: String(page) }),
+        { scroll: false },
+      )
+    },
+    [router, pathname, params],
+  )
 
-  const getSortAriaSort = (key: string): 'ascending' | 'descending' | 'none' => {
-    if (currentSort !== key) return 'none';
-    return currentOrder === 'desc' ? 'descending' : 'ascending';
-  };
-
-  const isEmpty = !isLoading && data.length === 0;
+  // ── aria-sort helper ─────────────────────────────────────────────────────
+  const ariaSortFor = (key: string): 'ascending' | 'descending' | 'none' => {
+    if (activeSort !== key) return 'none'
+    return activeDir === 'asc' ? 'ascending' : 'descending'
+  }
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Search input */}
-      <div className="flex gap-2">
-        <input
-          type="text"
-          placeholder="Search..."
-          value={searchInput}
-          onChange={(e) => handleSearch(e.target.value)}
-          className={clsx(
-            'px-4 py-2 border border-gray-300 rounded-lg',
-            'focus:outline-none focus:ring-2 focus:ring-blue-500',
-            'transition-colors'
-          )}
-        />
-      </div>
+      {/* Filter */}
+      <input
+        type="search"
+        placeholder="Filter…"
+        value={filterValue}
+        onChange={handleFilterChange}
+        className="w-full max-w-sm rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        aria-label="Filter rows"
+      />
 
       {/* Table */}
-      <div className="overflow-x-auto border border-gray-200 rounded-lg">
+      <div className="overflow-x-auto rounded-lg border border-gray-200">
         <table
-          className="w-full"
-          role="table"
-          aria-label={ariaLabel || 'Data table'}
+          aria-label={ariaLabel}
+          className="min-w-full divide-y divide-gray-200 text-sm"
         >
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="bg-gray-50">
             <tr>
-              {columns.map((col) => (
-                <th
-                  key={col.key}
-                  className={clsx(
-                    'px-6 py-3 text-left text-sm font-semibold text-gray-900',
-                    col.sortable ? 'cursor-pointer hover:bg-gray-100' : ''
-                  )}
-                  aria-sort={col.sortable ? getSortAriaSort(col.key) : undefined}
-                  {...(col.sortable && {
-                    role: 'button',
-                    tabIndex: 0,
-                    onClick: () => handleSort(col.key),
-                    onKeyDown: (e) => handleHeaderKeyDown(e, col.key),
-                  })}
-                >
-                  <span className="flex items-center">
-                    {col.label}
-                    {col.sortable && (
-                      <SortIcon
-                        sortKey={col.key}
-                        currentSort={currentSort}
-                        currentOrder={currentOrder}
-                      />
+              {columns.map((col) =>
+                col.sortable ? (
+                  <th
+                    key={col.key}
+                    scope="col"
+                    aria-sort={ariaSortFor(col.key)}
+                    tabIndex={0}
+                    onClick={() => handleSort(col.key)}
+                    onKeyDown={(e) => handleHeaderKeyDown(e, col.key)}
+                    className={clsx(
+                      'cursor-pointer select-none px-4 py-3 text-left font-medium text-gray-700',
+                      'hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500',
                     )}
-                  </span>
-                </th>
-              ))}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      {col.label}
+                      {activeSort === col.key && (
+                        <span aria-hidden="true">
+                          {activeDir === 'asc' ? '↑' : '↓'}
+                        </span>
+                      )}
+                    </span>
+                  </th>
+                ) : (
+                  <th
+                    key={col.key}
+                    scope="col"
+                    className="px-4 py-3 text-left font-medium text-gray-700"
+                  >
+                    {col.label}
+                  </th>
+                ),
+              )}
             </tr>
           </thead>
-          <tbody>
-            {isLoading ? (
-              Array.from({ length: SKELETON_ROWS }).map((_, i) => (
-                <SkeletonRow key={i} columnCount={columns.length} />
-              ))
-            ) : isEmpty ? (
-              <tr>
-                <td
-                  colSpan={columns.length}
-                  className="px-6 py-12 text-center text-gray-500"
-                >
-                  No records found.
-                </td>
-              </tr>
-            ) : (
-              data.map((row, rowIdx) => (
-                <tr
-                  key={rowIdx}
-                  className="border-t border-gray-200 hover:bg-gray-50 transition-colors"
-                >
-                  {columns.map((col) => (
-                    <td
-                      key={`${rowIdx}-${col.key}`}
-                      className="px-6 py-4 text-sm text-gray-900"
-                    >
-                      {String(row[col.key])}
-                    </td>
-                  ))}
-                </tr>
-              ))
-            )}
+
+          <tbody className="divide-y divide-gray-100 bg-white">
+            {isLoading
+              ? Array.from({ length: SKELETON_ROWS }).map((_, i) => (
+                  <tr key={i} data-testid="skeleton-row">
+                    {columns.map((col) => (
+                      <td key={col.key} className="px-4 py-3">
+                        <div className="h-4 animate-pulse rounded bg-gray-200" />
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              : rows.map((row, i) => (
+                  <tr key={i} className="hover:bg-gray-50">
+                    {columns.map((col) => (
+                      <td key={col.key} className="px-4 py-3 text-gray-800">
+                        {String(row[col.key] ?? '')}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
           </tbody>
         </table>
       </div>
 
+      {/* Empty state */}
+      {!isLoading && rows.length === 0 && (
+        <p className="py-8 text-center text-sm text-gray-500">No results found.</p>
+      )}
+
       {/* Pagination */}
-      {totalCount > 0 && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-600">
-            Page {currentPage} of {totalPages}
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-              className={clsx(
-                'px-4 py-2 text-sm font-medium rounded-lg',
-                'border border-gray-300 transition-colors',
-                currentPage === 1
-                  ? 'text-gray-400 cursor-not-allowed'
-                  : 'text-gray-700 hover:bg-gray-50'
-              )}
-            >
-              Previous
-            </button>
-            <button
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage >= totalPages}
-              className={clsx(
-                'px-4 py-2 text-sm font-medium rounded-lg',
-                'border border-gray-300 transition-colors',
-                currentPage >= totalPages
-                  ? 'text-gray-400 cursor-not-allowed'
-                  : 'text-gray-700 hover:bg-gray-50'
-              )}
-            >
-              Next
-            </button>
-          </div>
+      {totalPages > 1 && (
+        <div className="flex items-center gap-3 text-sm">
+          <button
+            type="button"
+            onClick={() => goToPage(activePage - 1)}
+            disabled={activePage <= 1}
+            aria-label="Previous page"
+            className="rounded border border-gray-300 px-3 py-1.5 text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Previous
+          </button>
+
+          <span className="text-gray-600">
+            Page {activePage} of {totalPages}
+          </span>
+
+          <button
+            type="button"
+            onClick={() => goToPage(activePage + 1)}
+            disabled={activePage >= totalPages}
+            aria-label="Next page"
+            className="rounded border border-gray-300 px-3 py-1.5 text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Next
+          </button>
         </div>
       )}
     </div>
-  );
+  )
 }
 
 ```
 
-#### `work/src/components/index.ts`
+#### `work/src/components/DataTable/index.ts`
 
 ```
-export { DataTable, type DataTableProps, type ColumnConfig } from './DataTable';
+export { DataTable } from './DataTable'
+export type { DataTableProps, ColumnConfig } from './DataTable'
 
 ```
 
-#### `work/src/components/DataTable.test.tsx`
+#### `work/src/components/DataTable/DataTable.test.tsx`
 
 ```
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { DataTable, DataTableProps } from './DataTable';
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { DataTable, type DataTableProps } from './DataTable'
+
+// --- next/navigation mock ---
+const mockReplace = vi.fn()
+const mockSearchParams = new URLSearchParams()
 
 vi.mock('next/navigation', () => ({
-  useRouter: vi.fn(),
-  useSearchParams: vi.fn(),
-}));
-
-describe('DataTable', () => {
-  let mockRouter: any;
-  let mockSearchParams: any;
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockRouter = {
-      replace: vi.fn(),
-    };
-    mockSearchParams = new URLSearchParams();
-    (useRouter as any).mockReturnValue(mockRouter);
-    (useSearchParams as any).mockReturnValue(mockSearchParams);
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
-  describe('renders data correctly', () => {
-    it('renders table with data and column headers', () => {
-      const columns = [
-        { label: 'Name', key: 'name', sortable: true },
-        { label: 'Email', key: 'email', sortable: false },
-      ];
-
-      const data = [
-        { name: 'Alice', email: 'alice@example.com' },
-        { name: 'Bob', email: 'bob@example.com' },
-      ];
-
-      render(
-        <DataTable<(typeof data)[0]>
-          columns={columns}
-          data={data}
-          isLoading={false}
-        />
-      );
-
-      expect(screen.getByRole('table')).toBeInTheDocument();
-      expect(screen.getByText('Name')).toBeInTheDocument();
-      expect(screen.getByText('Email')).toBeInTheDocument();
-      expect(screen.getByText('Alice')).toBeInTheDocument();
-      expect(screen.getByText('bob@example.com')).toBeInTheDocument();
-    });
-  });
-
-  describe('empty state', () => {
-    it('renders empty state when data is empty', () => {
-      const columns = [
-        { label: 'Name', key: 'name', sortable: true },
-      ];
-
-      render(
-        <DataTable<{ name: string }>
-          columns={columns}
-          data={[]}
-          isLoading={false}
-        />
-      );
-
-      expect(screen.getByText(/no records found/i)).toBeInTheDocument();
-    });
-  });
-
-  describe('loading skeleton', () => {
-    it('renders skeleton when isLoading is true', () => {
-      const columns = [
-        { label: 'Name', key: 'name' },
-        { label: 'Email', key: 'email' },
-      ];
-
-      const { container } = render(
-        <DataTable<{ name: string; email: string }>
-          columns={columns}
-          data={[]}
-          isLoading={true}
-        />
-      );
-
-      const skeletonRows = container.querySelectorAll('[data-testid="skeleton-row"]');
-      expect(skeletonRows.length).toBeGreaterThan(0);
-    });
-  });
-
-  describe('sorting', () => {
-    it('updates URL on column header click when sortable', async () => {
-      const columns = [
-        { label: 'Name', key: 'name', sortable: true },
-        { label: 'Email', key: 'email', sortable: false },
-      ];
-
-      const data = [{ name: 'Alice', email: 'alice@example.com' }];
-
-      render(
-        <DataTable<(typeof data)[0]>
-          columns={columns}
-          data={data}
-          isLoading={false}
-        />
-      );
-
-      const nameHeader = screen.getByRole('button', { name: /name/i });
-      fireEvent.click(nameHeader);
-
-      await waitFor(() => {
-        expect(mockRouter.replace).toHaveBeenCalledWith(
-          expect.stringContaining('sort=name'),
-          { scroll: false }
-        );
-      });
-    });
-
-    it('clicking same sort column toggles to desc', async () => {
-      const columns = [
-        { label: 'Name', key: 'name', sortable: true },
-      ];
-
-      const data = [{ name: 'Alice' }];
-
-      // Initially sorted by name asc
-      mockSearchParams = new URLSearchParams('sort=name&order=asc');
-      (useSearchParams as any).mockReturnValue(mockSearchParams);
-
-      render(
-        <DataTable<(typeof data)[0]>
-          columns={columns}
-          data={data}
-          isLoading={false}
-        />
-      );
-
-      const header = screen.getByRole('button', { name: /name/i });
-      fireEvent.click(header);
-
-      await waitFor(() => {
-        expect(mockRouter.replace).toHaveBeenCalledWith(
-          expect.stringContaining('sort=name&order=desc'),
-          { scroll: false }
-        );
-      });
-    });
-
-    it('header has aria-sort attribute reflecting current sort state', async () => {
-      mockSearchParams.set('sort', 'name');
-      mockSearchParams.set('order', 'asc');
-
-      const columns = [
-        { label: 'Name', key: 'name', sortable: true },
-      ];
-
-      const data = [{ name: 'Alice' }];
-
-      render(
-        <DataTable<(typeof data)[0]>
-          columns={columns}
-          data={data}
-          isLoading={false}
-        />
-      );
-
-      const header = screen.getByRole('button', { name: /name/i });
-      expect(header).toHaveAttribute('aria-sort', 'ascending');
-    });
-
-    it('keyboard: pressing Enter on sortable header triggers sort', async () => {
-      const columns = [
-        { label: 'Name', key: 'name', sortable: true },
-      ];
-
-      const data = [{ name: 'Alice' }];
-
-      render(
-        <DataTable<(typeof data)[0]>
-          columns={columns}
-          data={data}
-          isLoading={false}
-        />
-      );
-
-      const header = screen.getByRole('button', { name: /name/i });
-      fireEvent.keyDown(header, { key: 'Enter' });
-
-      await waitFor(() => {
-        expect(mockRouter.replace).toHaveBeenCalled();
-      });
-    });
-
-    it('keyboard: pressing Space on sortable header triggers sort', async () => {
-      const columns = [
-        { label: 'Name', key: 'name', sortable: true },
-      ];
-
-      const data = [{ name: 'Alice' }];
-
-      render(
-        <DataTable<(typeof data)[0]>
-          columns={columns}
-          data={data}
-          isLoading={false}
-        />
-      );
-
-      const header = screen.getByRole('button', { name: /name/i });
-      fireEvent.keyDown(header, { key: ' ' });
-
-      await waitFor(() => {
-        expect(mockRouter.replace).toHaveBeenCalled();
-      });
-    });
-  });
-
-  describe('filtering', () => {
-    it('updates search input and triggers debounced router call', async () => {
-      vi.useFakeTimers();
-
-      const columns = [
-        { label: 'Name', key: 'name' },
-      ];
-
-      const data = [
-        { name: 'Alice' },
-        { name: 'Bob' },
-      ];
-
-      render(
-        <DataTable<(typeof data)[0]>
-          columns={columns}
-          data={data}
-          isLoading={false}
-        />
-      );
-
-      const searchInput = screen.getByPlaceholderText(/search/i) as HTMLInputElement;
-      fireEvent.change(searchInput, { target: { value: 'alice' } });
-
-      // Search input updates immediately
-      expect(searchInput.value).toBe('alice');
-      // But router.replace is not called yet (debouncing)
-      expect(mockRouter.replace).not.toHaveBeenCalled();
-
-      // Advance timers past debounce delay
-      vi.runAllTimers();
-
-      // Now the router call should have been made
-      expect(mockRouter.replace).toHaveBeenCalledWith(
-        expect.stringContaining('q=alice'),
-        { scroll: false }
-      );
-
-      vi.useRealTimers();
-    });
-  });
-
-  describe('pagination', () => {
-    it('renders pagination controls', () => {
-      const columns = [
-        { label: 'Name', key: 'name' },
-      ];
-
-      const data = Array.from({ length: 20 }, (_, i) => ({
-        name: `User ${i + 1}`,
-      }));
-
-      render(
-        <DataTable<(typeof data)[0]>
-          columns={columns}
-          data={data}
-          isLoading={false}
-          totalCount={50}
-          pageSize={20}
-        />
-      );
-
-      expect(screen.getByRole('button', { name: /previous/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /next/i })).toBeInTheDocument();
-      expect(screen.getByText(/page 1 of/i)).toBeInTheDocument();
-    });
-
-    it('updates ?page= param on next/previous click', async () => {
-      const columns = [
-        { label: 'Name', key: 'name' },
-      ];
-
-      const data = Array.from({ length: 20 }, (_, i) => ({
-        name: `User ${i + 1}`,
-      }));
-
-      render(
-        <DataTable<(typeof data)[0]>
-          columns={columns}
-          data={data}
-          isLoading={false}
-          totalCount={50}
-          pageSize={20}
-        />
-      );
-
-      const nextButton = screen.getByRole('button', { name: /next/i });
-      fireEvent.click(nextButton);
-
-      await waitFor(() => {
-        expect(mockRouter.replace).toHaveBeenCalledWith(
-          expect.stringContaining('page=2'),
-          { scroll: false }
-        );
-      });
-    });
-
-    it('disables previous button on first page', () => {
-      mockSearchParams = new URLSearchParams('page=1');
-      (useSearchParams as any).mockReturnValue(mockSearchParams);
-
-      const columns = [
-        { label: 'Name', key: 'name' },
-      ];
-
-      const data = Array.from({ length: 20 }, (_, i) => ({
-        name: `User ${i + 1}`,
-      }));
-
-      render(
-        <DataTable<(typeof data)[0]>
-          columns={columns}
-          data={data}
-          isLoading={false}
-          totalCount={50}
-          pageSize={20}
-        />
-      );
-
-      const prevButton = screen.getByRole('button', { name: /previous/i });
-      expect(prevButton).toBeDisabled();
-    });
-  });
-
-  describe('accessibility', () => {
-    it('table has aria-label', () => {
-      const columns = [
-        { label: 'Name', key: 'name' },
-      ];
-
-      const data = [{ name: 'Alice' }];
-
-      render(
-        <DataTable<(typeof data)[0]>
-          columns={columns}
-          data={data}
-          isLoading={false}
-          ariaLabel="Orders table"
-        />
-      );
-
-      expect(screen.getByRole('table')).toHaveAttribute(
-        'aria-label',
-        'Orders table'
-      );
-    });
-
-    it('sortable header has role=button and tabIndex', () => {
-      const columns = [
-        { label: 'Name', key: 'name', sortable: true },
-      ];
-
-      const data = [{ name: 'Alice' }];
-
-      render(
-        <DataTable<(typeof data)[0]>
-          columns={columns}
-          data={data}
-          isLoading={false}
-        />
-      );
-
-      const header = screen.getByRole('button', { name: /name/i });
-      expect(header).toHaveAttribute('tabindex', '0');
-    });
-  });
-});
+  useRouter: () => ({ replace: mockReplace }),
+  useSearchParams: () => mockSearchParams,
+  usePathname: () => '/admin/orders',
+}))
+
+// --- fixtures ---
+type Order = { id: string; customer: string; total: number }
+
+const columns: DataTableProps<Order>['columns'] = [
+  { key: 'id', label: 'Order ID', sortable: false },
+  { key: 'customer', label: 'Customer', sortable: true },
+  { key: 'total', label: 'Total', sortable: true },
+]
+
+const rows: Order[] = [
+  { id: 'ORD-1', customer: 'Alice', total: 100 },
+  { id: 'ORD-2', customer: 'Bob', total: 200 },
+]
+
+function setup(props: Partial<DataTableProps<Order>> = {}) {
+  return render(
+    <DataTable<Order>
+      columns={columns}
+      rows={rows}
+      totalPages={3}
+      currentPage={1}
+      {...props}
+    />,
+  )
+}
+
+beforeEach(() => {
+  mockReplace.mockClear()
+  mockSearchParams.delete('sort')
+  mockSearchParams.delete('dir')
+  mockSearchParams.delete('q')
+  mockSearchParams.delete('page')
+})
+
+// ── 1. Renders with data ───────────────────────────────────────────────────
+describe('renders with data', () => {
+  it('shows column headers', () => {
+    setup()
+    expect(screen.getByRole('columnheader', { name: /order id/i })).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: /customer/i })).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: /total/i })).toBeInTheDocument()
+  })
+
+  it('shows all row data', () => {
+    setup()
+    expect(screen.getByText('Alice')).toBeInTheDocument()
+    expect(screen.getByText('Bob')).toBeInTheDocument()
+    expect(screen.getByText('ORD-1')).toBeInTheDocument()
+  })
+
+  it('has an accessible aria-label on the table', () => {
+    setup()
+    expect(screen.getByRole('table')).toHaveAttribute('aria-label')
+  })
+})
+
+// ── 2. Empty state ─────────────────────────────────────────────────────────
+describe('empty state', () => {
+  it('renders empty message when rows is empty', () => {
+    setup({ rows: [] })
+    expect(screen.getByText(/no results/i)).toBeInTheDocument()
+  })
+
+  it('does not render table rows when empty', () => {
+    setup({ rows: [] })
+    // header row exists, but no data rows
+    const table = screen.getByRole('table')
+    const bodyRows = within(table).queryAllByRole('row').filter(
+      (r) => !r.closest('thead'),
+    )
+    expect(bodyRows).toHaveLength(0)
+  })
+})
+
+// ── 3. Loading skeleton ────────────────────────────────────────────────────
+describe('loading skeleton', () => {
+  it('renders skeleton rows instead of data when isLoading=true', () => {
+    setup({ isLoading: true })
+    // data should NOT appear
+    expect(screen.queryByText('Alice')).not.toBeInTheDocument()
+    // skeleton elements should be present
+    expect(document.querySelectorAll('[data-testid="skeleton-row"]').length).toBeGreaterThan(0)
+  })
+
+  it('still renders column headers during loading', () => {
+    setup({ isLoading: true })
+    expect(screen.getByRole('columnheader', { name: /customer/i })).toBeInTheDocument()
+  })
+})
+
+// ── 4. Sort click updates URL ──────────────────────────────────────────────
+describe('sort interaction', () => {
+  it('calls router.replace with sort param on header click', async () => {
+    const user = userEvent.setup()
+    setup()
+    const customerHeader = screen.getByRole('columnheader', { name: /customer/i })
+    await user.click(customerHeader)
+    expect(mockReplace).toHaveBeenCalledOnce()
+    const calledUrl = mockReplace.mock.calls[0][0] as string
+    expect(calledUrl).toContain('sort=customer')
+    expect(calledUrl).toContain('dir=asc')
+  })
+
+  it('toggles direction to desc on second click', async () => {
+    const user = userEvent.setup()
+    // pre-seed: already sorted asc by customer
+    mockSearchParams.set('sort', 'customer')
+    mockSearchParams.set('dir', 'asc')
+    setup()
+    const customerHeader = screen.getByRole('columnheader', { name: /customer/i })
+    await user.click(customerHeader)
+    expect(mockReplace).toHaveBeenCalledOnce()
+    const calledUrl = mockReplace.mock.calls[0][0] as string
+    expect(calledUrl).toContain('dir=desc')
+  })
+
+  it('passes scroll:false to router.replace', async () => {
+    const user = userEvent.setup()
+    setup()
+    const customerHeader = screen.getByRole('columnheader', { name: /customer/i })
+    await user.click(customerHeader)
+    expect(mockReplace).toHaveBeenCalledWith(expect.any(String), { scroll: false })
+  })
+
+  it('non-sortable column does not call router.replace on click', async () => {
+    const user = userEvent.setup()
+    setup()
+    // "Order ID" column has sortable: false — it renders a plain th, not a button
+    const idHeader = screen.getByRole('columnheader', { name: /order id/i })
+    await user.click(idHeader)
+    expect(mockReplace).not.toHaveBeenCalled()
+  })
+
+  it('sortable header has aria-sort="none" initially', () => {
+    setup()
+    const customerHeader = screen.getByRole('columnheader', { name: /customer/i })
+    expect(customerHeader).toHaveAttribute('aria-sort', 'none')
+  })
+
+  it('sorted header has correct aria-sort attribute', () => {
+    mockSearchParams.set('sort', 'customer')
+    mockSearchParams.set('dir', 'asc')
+    setup()
+    const customerHeader = screen.getByRole('columnheader', { name: /customer/i })
+    expect(customerHeader).toHaveAttribute('aria-sort', 'ascending')
+  })
+
+  it('activates sort via keyboard Enter', async () => {
+    const user = userEvent.setup()
+    setup()
+    const customerHeader = screen.getByRole('columnheader', { name: /customer/i })
+    customerHeader.focus()
+    await user.keyboard('{Enter}')
+    expect(mockReplace).toHaveBeenCalledOnce()
+  })
+
+  it('activates sort via keyboard Space', async () => {
+    const user = userEvent.setup()
+    setup()
+    const customerHeader = screen.getByRole('columnheader', { name: /customer/i })
+    customerHeader.focus()
+    await user.keyboard(' ')
+    expect(mockReplace).toHaveBeenCalledOnce()
+  })
+})
+
+// ── 5. Pagination ──────────────────────────────────────────────────────────
+describe('pagination', () => {
+  it('shows page display text', () => {
+    setup({ currentPage: 2, totalPages: 5 })
+    expect(screen.getByText(/page 2 of 5/i)).toBeInTheDocument()
+  })
+
+  it('previous button calls router.replace with page-1', async () => {
+    const user = userEvent.setup()
+    setup({ currentPage: 3, totalPages: 5 })
+    await user.click(screen.getByRole('button', { name: /previous/i }))
+    expect(mockReplace).toHaveBeenCalledOnce()
+    const url = mockReplace.mock.calls[0][0] as string
+    expect(url).toContain('page=2')
+  })
+
+  it('next button calls router.replace with page+1', async () => {
+    const user = userEvent.setup()
+    setup({ currentPage: 3, totalPages: 5 })
+    await user.click(screen.getByRole('button', { name: /next/i }))
+    expect(mockReplace).toHaveBeenCalledOnce()
+    const url = mockReplace.mock.calls[0][0] as string
+    expect(url).toContain('page=4')
+  })
+
+  it('previous button is disabled on page 1', () => {
+    setup({ currentPage: 1, totalPages: 5 })
+    expect(screen.getByRole('button', { name: /previous/i })).toBeDisabled()
+  })
+
+  it('next button is disabled on last page', () => {
+    setup({ currentPage: 5, totalPages: 5 })
+    expect(screen.getByRole('button', { name: /next/i })).toBeDisabled()
+  })
+})
+
+```
+
+#### `work/src/__mocks__/next/navigation.ts`
+
+```
+// Stub — overridden by vi.mock() in each test file
+export const useRouter = () => ({ replace: () => {}, push: () => {}, back: () => {} })
+export const useSearchParams = () => new URLSearchParams()
+export const usePathname = () => '/'
+export const redirect = () => {}
 
 ```
 
@@ -2493,36 +2283,38 @@ describe('DataTable', () => {
 | Field | Value |
 |---|---|
 | Verdict | PASS |
-| Score | 16.5/18.0 (92%) |
-| Evaluated | 2026-05-03 |
-| Target duration | 366299 ms |
-| Target cost | $0.4441 |
+| Score | 15.5/18.0 (86%) |
+| Evaluated | 2026-05-27 |
+| Target model | claude-sonnet-4-6 |
+| Judge model | claude-sonnet-4-6 |
+| Target duration | 757200 ms |
+| Target cost | $0.8403 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | Agent reads CLAUDE.md and scans existing components before writing any code | FAIL | The captured chat output opens with 'Done. Here's the component...' with no evidence of running `find src/components` or `cat CLAUDE.md`. Neither greenfield confirmation nor existing-component scan output appears anywhere in the response. |
-| c2 | Agent identifies that sorting, filtering, and pagination state must live in URL search params (not useState) | PASS | DataTable.tsx reads all state from `useSearchParams()`: `currentPage`, `currentSort`, `currentOrder`, `currentQuery`. Local `useState` is used only for the debounce-controlled text input value, which is appropriate. All URL updates go through `router.replace()`. |
-| c3 | Agent writes a failing Vitest test first (RED) before implementing the component | PASS | TDD Evidence section shows RED: `npx vitest run src/components/DataTable.test.tsx` → 'Exit code 1 (10 failed tests) — component didn't exist', followed by GREEN: same command → 'Exit code 0 (14 passed tests)'. |
-| c4 | Agent defines a typed `DataTableProps` interface with exported type | PASS | `export interface DataTableProps<T>` is defined and exported from `DataTable.tsx`, then re-exported from `src/components/index.ts`. Used in the test file via `import { DataTable, DataTableProps } from './DataTable'`. No divergent inline definition exists. |
-| c5 | Agent handles all required states: loading (skeleton), empty, and populated | PASS | Component conditionally renders: `isLoading` → 8 `SkeletonRow` components with `animate-pulse`; `isEmpty` (`!isLoading && data.length === 0`) → 'No records found.' cell; otherwise → data rows. All three branches present in the `<tbody>`. |
-| c6 | Agent uses `clsx` for conditional class composition, not string concatenation | PASS | `clsx` is imported and used throughout: on the search input, sortable header `<th>`, and pagination buttons. No template-literal string concatenation for class names appears anywhere in the component. |
-| c7 | Agent flags the decision checkpoint for adding a new shared component (checks UI library for existing primitives) | PARTIAL | Assumptions section states 'Tailwind for styling (Headless UI — no shadcn dependencies)' which implicitly acknowledges the library check. However, the prompt required an explicit one-line 'Decision Checkpoint: Checked for existing Table primitive in shadcn/ui, Radix UI — none found; building from scratch' statement, which is absent. |
-| c8 | Agent covers accessibility requirements — keyboard navigation for sortable headers, appropriate ARIA attributes | PARTIAL | Sortable headers have `role='button'`, `tabIndex={0}`, `aria-sort` (ascending/descending/none via `getSortAriaSort`), and `onKeyDown` handling Enter/Space. Table has `aria-label` prop. Tests verify `aria-sort`, `tabindex`, and keyboard activation. Full compliance — ceiling caps at PARTIAL. |
-| c9 | Output includes TDD Evidence (RED/GREEN commands with exit codes) and a Checklist section | PASS | '## TDD Evidence' section shows RED command with 'Exit code 1' and GREEN command with 'Exit code 0 (14 passed)'. '## Checklist' section enumerates all 12 completed items with checkboxes. |
-| c10 | Output places `DataTable` in the shared components folder (e.g. `components/ui/data-table.tsx` or `components/shared/`), not co-located with `/admin/orders` or `/admin/users` | PASS | Files created at `work/src/components/DataTable.tsx` and `work/src/components/index.ts` — a shared components directory, not inside any admin-specific route folder. |
-| c11 | Output's `DataTableProps` is a typed and exported interface with at least: `columns: ColumnConfig[]`, `data: T[]`, `loading?: boolean`, `total?: number`, with a generic `<T>` type parameter | PASS | `export interface DataTableProps<T>` includes `columns: ColumnConfig[]`, `data: T[]`, `isLoading?: boolean`, `totalCount?: number`, `pageSize?: number`, `ariaLabel?: string`. Generic `<T extends Record<string, any>>` parameter on the component function. |
-| c12 | Output stores sort, filter, and page state in URL search params using `useSearchParams` / `usePathname` from `next/navigation` (App Router) and updates them via `router.replace` with `scroll: false` | PASS | `useSearchParams()` and `useRouter()` imported from `next/navigation`. All three handlers (`handleSort`, `handleSearch`, `handlePageChange`) call `router.replace('?' + params.toString(), { scroll: false })`. |
-| c13 | Output's text filter uses a debounce (e.g. 300-500ms) before updating the URL `?q=` param, preventing a navigation per keystroke | PASS | `DEBOUNCE_DELAY = 300` constant. `handleSearch` uses `clearTimeout` + `setTimeout(300ms)` stored in `searchTimeout` state before calling `router.replace`. Test uses `vi.useFakeTimers()` / `vi.runAllTimers()` to verify debounce behavior. |
-| c14 | Output's column header click handler toggles sort direction (asc → desc → unset) and updates the URL `?sort=` and `?dir=` params | PASS | `handleSort` logic: same key + asc → sets order=desc; same key + desc → deletes sort/order (unset); different key → sets sort+order=asc, resets page=1. Uses `?sort=` and `?order=` params. Test verifies asc→desc toggle. |
-| c15 | Output renders three distinct UI states — loading skeleton (matches column layout, not generic shimmer), empty state (when data.length === 0 and not loading), populated table | PASS | `SkeletonRow` accepts `columnCount` and renders one animated `<div>` per column — layout-aware. Empty state: `<td colSpan={columns.length}>No records found.</td>`. Populated: rows keyed by index with per-column cells. |
-| c16 | Output uses `clsx` (or `cn` wrapper) for conditional classNames — never string concatenation | PASS | Every conditional className in the component uses `clsx(...)`. Search input, sortable header, and both pagination buttons all use `clsx`. No backtick template concatenation for class names exists in the file. |
-| c17 | Output writes the failing Vitest test first — RED command with exit code 1 shown — then implements, then GREEN with exit code 0; tests cover at minimum: renders with data, renders empty state, renders skeleton when loading, sort click updates URL | PASS | TDD Evidence shows RED (exit 1, 10 failures) then GREEN (exit 0, 14 passes). Test file has: 'renders table with data' ✓, 'renders empty state when data is empty' ✓, 'renders skeleton when isLoading is true' ✓, 'updates URL on column header click when sortable' ✓. |
-| c18 | Output addresses accessibility — sortable headers use `<th aria-sort>` with `ascending`/`descending`/`none` values, are keyboard-activatable (button or proper role), and the table has appropriate ARIA labels | PASS | `getSortAriaSort` returns 'ascending'/'descending'/'none'; applied as `aria-sort` on `<th>`. Sortable headers get `role='button'`, `tabIndex={0}`, `onKeyDown` (Enter/Space). Table has `aria-label={ariaLabel \|\| 'Data table'}`. Tests assert all three properties. |
-| c19 | Output checks the project's existing UI library (shadcn/ui, Material UI, or custom) for an existing Table primitive before building from scratch — flagged as a decision checkpoint | PARTIAL | Assumptions list notes 'Tailwind for styling (Headless UI — no shadcn dependencies)' implying the library was checked. No explicit 'Decision Checkpoint' label or verbatim statement as the prompt required. Ceiling caps at PARTIAL. |
+| c1 | Agent reads CLAUDE.md and scans existing components before writing any code | FAIL | Output begins immediately with 'Exit code 0 — all 20 tests GREEN' then assumptions. No find or cat command results shown; no greenfield declaration present. |
+| c2 | Agent identifies that sorting, filtering, and pagination state must live in URL search params (not useState) | PASS | Checklist: 'router.replace with scroll: false everywhere (not router.push)'. Component uses useSearchParams/usePathname; sort, filter, page all update via router.replace, not useState. |
+| c3 | Agent writes a failing Vitest test first (RED) before implementing the component | PASS | TDD Evidence shows RED: 'Error: Failed to resolve import "./DataTable" EXIT_CODE: 1' before implementation, then GREEN EXIT_CODE: 0 after. |
+| c4 | Agent defines a typed `DataTableProps` interface with exported type | PASS | DataTable.tsx exports `export interface DataTableProps<T extends Record<string, unknown>>`. Re-exported from index.ts. Used in test file via `import { DataTable, type DataTableProps }`. |
+| c5 | Agent handles all required states: loading (skeleton), empty, and populated | PASS | Component renders skeleton rows with data-testid='skeleton-row' when isLoading, 'No results found.' when empty, and row data when populated. All three branches present in DataTable.tsx. |
+| c6 | Agent uses `clsx` for conditional class composition, not string concatenation | PASS | DataTable.tsx: `import clsx from 'clsx'` and `className={clsx('cursor-pointer...', 'hover:bg-gray-100...')}` on sortable headers. |
+| c7 | Agent flags the decision checkpoint for adding a new shared component (checks UI library for existing primitives) | FAIL | Output has no 'Decision Checkpoint' statement. Prompt explicitly required: 'Checked for existing Table primitive in shadcn/ui, Radix UI — none found; building from scratch.' Absent entirely. |
+| c8 | Agent covers accessibility requirements — keyboard navigation for sortable headers, appropriate ARIA attributes | PARTIAL | tabIndex={0}, onKeyDown handling Enter/Space, aria-sort with ascending/descending/none, aria-label on table/inputs/buttons. role='button' omitted (noted as intentional WAI-ARIA decision). |
+| c9 | Output includes TDD Evidence (RED/GREEN commands with exit codes) and a Checklist section | PASS | '## TDD Evidence' section with EXIT_CODE: 1 (RED) and EXIT_CODE: 0 (GREEN). '## Checklist' section with 18 checked items follow the TDD Evidence. |
+| c10 | Output places `DataTable` in the shared components folder (e.g. `components/ui/data-table.tsx` or `components/shared/`), not co-located with `/admin/orders` or `/admin/users`, since the prompt says it's used on both | PASS | Files written to `work/src/components/DataTable/`. Checklist: 'Placed in src/components/DataTable/ — shared, suitable for both /admin/orders and /admin/users'. |
+| c11 | Output's `DataTableProps` is a typed and exported interface with at least: `columns: ColumnConfig[]`, `data: T[]`, `loading?: boolean`, `total?: number`, with a generic `<T>` type parameter so consumers get typed row data | PASS | Interface has columns: ColumnConfig<T>[], rows: T[], isLoading?: boolean, totalPages?: number, generic <T extends Record<string, unknown>>. Names differ slightly but semantics match. |
+| c12 | Output stores sort, filter, and page state in URL search params using `useSearchParams` / `usePathname` from `next/navigation` (App Router) and updates them via `router.replace` with `scroll: false` — NOT in component-local `useState` | PASS | Uses useRouter, useSearchParams, usePathname from 'next/navigation'. All router.replace calls pass `{ scroll: false }`. Sort, page, and filter URL updates confirmed in test assertions. |
+| c13 | Output's text filter uses a debounce (e.g. 300-500ms) before updating the URL `?q=` param, preventing a navigation per keystroke — and the debounce is implemented in the component or via a hook, not via an external library if a hook will do | PASS | FILTER_DEBOUNCE_MS = 300. debounceTimer.current = setTimeout(() => router.replace(...), 300). Implemented inline with useRef + setTimeout, no external library. |
+| c14 | Output's column header click handler toggles sort direction (asc → desc → unset, or asc ↔ desc) and updates the URL `?sort=` and `?dir=` params — not in-place sorting of the data array | PASS | handleSort: `nextDir = activeSort === key && activeDir === 'asc' ? 'desc' : 'asc'`. Calls buildUrl with {sort: key, dir: nextDir}. No array mutation. |
+| c15 | Output renders three distinct UI states — loading skeleton (matches column layout, not generic shimmer), empty state (when data.length === 0 and not loading), populated table — with clear conditional rendering | PASS | Skeleton: per-column cells with animate-pulse. Empty: `!isLoading && rows.length === 0` renders 'No results found.' Populated: rows.map(). Column-matched skeleton confirmed by test 'still renders column headers during loading'. |
+| c16 | Output uses `clsx` (or `cn` wrapper) for conditional classNames — never string concatenation like `` `${base} ${active ? 'bg-blue-500' : ''}` `` | PASS | clsx imported and used: `className={clsx('cursor-pointer...', 'hover:bg-gray-100...')}`. No template-literal className concatenation found in the component. |
+| c17 | Output writes the failing Vitest test first — RED command with exit code 1 shown — then implements, then GREEN with exit code 0; tests cover at minimum: renders with data, renders empty state, renders skeleton when loading, sort click updates URL | PASS | TDD Evidence: RED EXIT_CODE:1 (import resolve failure), GREEN EXIT_CODE:0 (20 tests). Test file has 'renders with data', 'empty state', 'loading skeleton', 'sort interaction' describe blocks covering all four required scenarios. |
+| c18 | Output addresses accessibility — sortable headers use `<th aria-sort>` with `ascending`/`descending`/`none` values, are keyboard-activatable (button or proper role), and the table has appropriate ARIA labels | PASS | ariaSortFor() returns 'ascending'\|'descending'\|'none'. tabIndex={0} + onKeyDown Enter/Space on sortable th. aria-label on table, filter input, and pagination buttons. |
+| c19 | Output checks the project's existing UI library (shadcn/ui, Material UI, or custom) for an existing Table primitive before building from scratch — flagged as a decision checkpoint | FAIL | No decision checkpoint appears anywhere in the output. The prompt required explicit: 'Checked for existing Table primitive in shadcn/ui, Radix UI — none found.' Completely absent. |
 
 ### Notes
 
-Strong overall delivery: the component is well-structured with correct URL-state management, clsx usage, three UI states, full accessibility attributes, debounced filtering, and a genuine TDD workflow. The two notable gaps are (1) the recon step — no `find` command output or CLAUDE.md read is shown before writing code, which c1 explicitly required; and (2) the decision checkpoint is implicit (mentioned in assumptions as 'no shadcn dependencies') rather than the explicit labeled statement the prompt demanded. All functional and accessibility requirements land correctly in the implementation and tests.
+The implementation is technically strong — correct URL state management, clsx, debounce, skeleton, accessibility, TDD evidence, and checklist are all present and well-executed. The two failures are process-level: the agent skipped the required recon step (CLAUDE.md + find existing components) and never surfaced the Decision Checkpoint for the UI-library check, both of which were explicitly mandated by the prompt.

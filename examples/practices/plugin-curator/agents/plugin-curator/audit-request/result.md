@@ -29,187 +29,105 @@ Captured from a real headless invocation of the skill/agent.
 
 ### Chat response
 
-## Audit: QA Lead Agent
+## Pre-flight Reads
 
-| # | Criterion | Status | Evidence |
-|---|-----------|--------|----------|
-| 1 | 150-300 lines | MET | qa-lead.md: 208 lines (line count verified: lines 1-208) |
-| 2 | Core statement explains ownership in one paragraph | MET | Lines 10-12: Clear ownership statement on what QA Lead owns and does, separated from implementation |
-| 3 | Non-negotiable rules are specific (not "do good work") | MET | Lines 12-13: Four falsifiable, specific rules (e.g., "Acceptance criteria are defined before development starts") |
-| 4 | Pre-Flight reads project conventions before acting | PARTIALLY MET | Lines 14-34: Steps 1-3 present, but Step 1 (line 17-18) is missing "Key rules for this agent: {list of rules}" detail from template |
-| 5 | Domain methodology has MANDATORY steps (not suggestions) | MET | Lines 37-126: 3 Amigos section (line 39: "Every significant piece of work starts..."), Acceptance Criteria Protocol, Test Strategy all use mandatory language with numbered steps |
-| 6 | Structured output format (not prose) | MET | Lines 90-115: Acceptance Test Plan template. Lines 151-172: Test Plan output template. Both are properly structured markdown tables/checklists |
-| 7 | Failure caps (when to stop trying) | MET | Lines 174-178: Three specific failure conditions defined (3 consecutive attempts, 3 lint/build errors, 10 minutes stuck) |
-| 8 | Decision checkpoints (when to ask before proceeding) | MET | Lines 180-190: Table with five explicit triggers requiring human input (incomplete criteria, removing test levels, changing gates, signing off without edge case coverage, deferring testability concerns) |
-| 9 | Collaboration table (who they work with and how) | MET | Lines 192-200: Table with five roles (Product Owner, Architect, QA Engineer, Developers, CTO) and explicit collaboration patterns |
-| 10 | Principles are opinionated and domain-specific | MET | Lines 128-134: Five principles, all domain-specific to QA (Shift left, Test behaviour not implementation, Absence of evidence, Edge cases, Testability as design requirement) |
-| 11 | "What You Don't Do" names who DOES own each excluded thing | PARTIALLY MET | Lines 202-207: First bullet explicitly names QA Engineer; remaining three bullets (product decisions, architecture decisions, 3 amigos) do NOT explicitly name owners. Roles are implied but not explicitly stated as the template requires |
-| 12 | No private/internal references | MET | Scanned full agent — no company names, internal URLs, or proprietary references. All examples are generic industry-standard (10k+ records, 200ms, etc.) |
-| 13 | External tools linked on first mention | PARTIALLY MET | Line 142: Playwright is linked `[Playwright](https://playwright.dev)`, but Cypress is not linked — appears as plain text `/Cypress` with no hyperlink to external tool |
-| 14 | Correct model (sonnet for specialists, opus for leadership) | MET | Line 5: `model: sonnet` — correct for specialist agent (QA Lead is not a leadership role: coordinator, cpo, cto, grc-lead) |
-| 15 | Frontmatter description precise enough for auto-invocation | MET | Line 3: Includes (1) role ("QA Lead"), (2) what it does ("test strategy, acceptance criteria, edge case identification"), (3) trigger condition ("Defines WHAT to test before anyone writes code") |
+Read: /Users/martin/Projects/turtlestack/CLAUDE.md
+Read: /Users/martin/Projects/turtlestack/.claude-plugin/marketplace.json
+Read: /Users/martin/Projects/turtlestack/plugins/practices/plugin-curator/templates/agent-template.md
+Read: /Users/martin/Projects/turtlestack/plugins/engineering/qa-lead/agents/qa-lead.md
 
----
-
-## Quality Score
-
-**12/15 criteria fully met** | **3 criteria with minor issues** | **0 criteria missing**
-
-**Line count:** 208 lines
-
----
-
-## Model Correctness Check
-
-✅ **Model: Sonnet (correct)**
-
-QA Lead is a specialist implementation agent, not a leadership role. `model: sonnet` is correct per template (leadership roles like coordinator, cpo, cto, grc-lead use `model: opus`).
-
----
-
-## Private-Reference Check
-
-✅ **No private references detected**
-
-Scanned for:
-- Company/team names (internal domains, org-specific terminology)
-- Private package paths or internal URLs
-- Proprietary tool references
-
-All examples are generic industry-standard (response times in ms, record counts, boundary conditions). Tools mentioned (Playwright, Cypress) are public third-party tools.
-
----
-
-## Tool-Link Conventions Check
-
-⚠️ **Partially compliant — Cypress link missing**
-
-**Line 142:** `Implements automated acceptance tests ([Playwright](https://playwright.dev)/Cypress)`
-
-- ✅ Playwright: properly linked on first mention
-- ❌ Cypress: mentioned but not linked; appears as plain text following the Playwright link
-
-**Fix:** Rewrite as: `Implements automated acceptance tests ([Playwright](https://playwright.dev) or [Cypress](https://www.cypress.io))`
-
----
-
-## Boundary Check
-
-**Boundary respected** — this audit targets qa-lead agent only as requested. Plugin-curator is excluded per the marketplace structure (plugin-curator is the audit tool, not a subject of audit).
-
----
-
-## Recommended Actions
-
-### [STRUCTURAL] Pre-Flight Step 1 missing rule references
-
-**Location:** Line 17-18
-
-**Current:**
-```
-Read CLAUDE.md and .claude/CLAUDE.md. Check for installed rules in `.claude/rules/` — these are your primary constraints.
-```
-
-**Add:** List specific rules relevant to QA work (suggest scanning `.claude/rules/` for keywords like "testing", "quality", "spec-driven"). Example:
-```
-Read CLAUDE.md and .claude/CLAUDE.md. Check for installed rules in `.claude/rules/` — these are your primary constraints. Key rules for this agent: spec-driven-development (specs before code), event-sourcing (idempotency patterns), architecture conventions (one module, one responsibility).
-```
-
----
-
-### [STRUCTURAL] "What You Don't Do" section should explicitly name ownership for all excluded activities
-
-**Location:** Lines 202-207
-
-**Current:**
-```
-- Implement automated tests — that's the QA Engineer
-- Make product decisions — challenge criteria, don't rewrite requirements
-- Make architecture decisions — flag testability concerns, don't redesign systems
-- Skip the 3 amigos — if you weren't involved in planning, the acceptance criteria are probably incomplete
-```
-
-**Problem:** Bullets 2-4 don't explicitly name who DOES own those activities.
-
-**Fix:** Rewrite as:
-```
-- Implement automated tests — that's the QA Engineer
-- Make product decisions — that's the Product Owner (challenge criteria, don't rewrite requirements)
-- Make architecture decisions — that's the Architect (flag testability concerns, don't redesign systems)
-- Run the 3 amigos session solo — that's a collaboration with Product Owner and Architect
-```
-
----
-
-### [CONTENT] Playwright/Cypress tool links — separate and complete
-
-**Location:** Line 142
-
-**Current:**
-```
-Implements automated acceptance tests ([Playwright](https://playwright.dev)/Cypress)
-```
-
-**Fix:** Separate tools with individual links:
-```
-Implements automated acceptance tests ([Playwright](https://playwright.dev) or [Cypress](https://www.cypress.io))
-```
-
-Or if only one primary tool should be linked:
-```
-Implements automated acceptance tests ([Playwright](https://playwright.dev), Cypress, or similar)
-```
-
----
-
-### [STYLE] Consider moving "Relationship to QA Engineer" into main Collaboration section
-
-**Location:** Lines 136-148 vs 192-200
-
-**Current state:** QA Engineer collaboration appears twice (once as detailed comparison table, once in the main Collaboration table at line 198).
-
-**Recommendation (optional):** The detailed comparison table (lines 136-148) is useful and should stay. The brief line in Collaboration (line 198) is redundant. Consider removing the brief line from the main table or consolidating these references to avoid duplication. Not a structural issue, but reduces noise.
-
----
+**Boundary respected** — plugin-curator is excluded from "all" audits per the skill's anti-patterns; this audit targets only `qa-lead` as requested.
 
 ## Summary
 
-The qa-lead agent is **95% structurally compliant** with the template. It's a well-crafted specialist agent with clear methodology, strong decision checkpoints, and explicit collaboration boundaries. Three minor issues remain: (1) Pre-Flight missing rule references, (2) "What You Don't Do" section needs to explicitly name ownership for 2 activities, and (3) Cypress tool link is missing. All three are quick fixes under 5 lines each.
+- **File:** `/Users/martin/Projects/turtlestack/plugins/engineering/qa-lead/agents/qa-lead.md`
+- **Line count:** 207
+- **Quality score:** **13.5 / 15** (12 MET, 3 PARTIAL, 0 MISSING)
+- **Model:** `sonnet` ✅ correct for specialist (qa-lead is engineering specialist, not leadership)
+- **Private references:** none found — Playwright, Cypress, Gherkin are public/standard
+- **Marketplace registration:** confirmed at `marketplace.json:427`
+
+## Criterion Audit
+
+| # | Criterion | Status | Evidence (file:line or quote) |
+|---|---|---|---|
+| 1 | 150-300 lines | MET | 207 lines (`wc -l`) |
+| 2 | Core statement explains ownership in one paragraph | MET | `qa-lead.md:10` — "You define what quality means for each piece of work BEFORE development starts…" |
+| 3 | Non-negotiable rules are specific (not vague) | MET | `qa-lead.md:12` — 4 falsifiable rules (criteria before dev, edges before happy path, strategy before code, participant not gate) |
+| 4 | Pre-Flight reads project conventions before acting | MET | `qa-lead.md:14-35` — explicit "Read CLAUDE.md and .claude/CLAUDE.md. Check for installed rules in `.claude/rules/`" |
+| 5 | Domain methodology has MANDATORY steps (not suggestions) | MET | `qa-lead.md:38-126` — "3 Amigos Pattern", "Acceptance Criteria Protocol" with imperative Rules ("One behaviour per criterion", "Verifiable with a tool", "Include the negative cases") |
+| 6 | Structured output format (machine-parseable) | MET | `qa-lead.md:92-115` (Acceptance Test Plan template) and `qa-lead.md:152-172` (Output Format) — two output blocks present |
+| 7 | Failure caps | MET | `qa-lead.md:174-178` — three concrete caps with "STOP" verbs |
+| 8 | Decision checkpoints (STOP-and-ask) | MET | `qa-lead.md:180-190` — 5-row trigger/why table |
+| 9 | Collaboration table | MET | `qa-lead.md:192-200` — 5-row table (Product Owner, Architect, QA Engineer, Developers, CTO) |
+| 10 | Principles opinionated and domain-specific | MET | `qa-lead.md:128-134` — "Shift left", "Test behaviour not implementation", "Absence of evidence…", "Edge cases are where bugs live", "Testability is a design requirement" |
+| 11 | "What You Don't Do" names who DOES own each excluded thing | PARTIALLY MET | `qa-lead.md:202-207` — bullet 1 names "QA Engineer"; bullets 2-3 (product decisions, architecture decisions) imply but don't name product-owner / architect; bullet 4 ("Skip the 3 amigos") isn't an exclusion of an activity owned by another role |
+| 12 | No private/internal references | MET | No hps.gd, no internal URLs, no private package paths. Only public tools (Playwright, Cypress, Gherkin) |
+| 13 | External tools linked on first mention | PARTIALLY MET | `qa-lead.md:142` Playwright linked ✅; Cypress NOT linked (same line); `qa-lead.md:59` Gherkin NOT linked on first mention |
+| 14 | Correct model (sonnet for specialist) | MET | `qa-lead.md:5` — `model: sonnet`. Correct: qa-lead is an engineering specialist, not in the leadership set (coordinator/cpo/cto/grc-lead) |
+| 15 | Frontmatter description precise for auto-invocation | PARTIALLY MET | `qa-lead.md:3` — covers role + what it does, but no explicit "Use when {trigger conditions}" clause; template requires "Use when…" phrasing for reliable auto-loading |
+
+## Structural Observations (beyond the 15)
+
+- **Section ordering departs from template.** Template order: Failure Caps → Decision Checkpoints → Collaboration → Principles → What You Don't Do. Actual order: Principles (128) → Relationship to QA Engineer (136) → Output Format (152) → Failure Caps (174) → Decision Checkpoints (180) → Collaboration (192) → What You Don't Do (202). Not failing on a criterion but inconsistent with template.
+- **Duplicate output blocks.** `qa-lead.md:90-115` and `qa-lead.md:152-172` both present output templates with overlapping content (Acceptance Criteria, Test Level Assignment tables appear twice).
+- **`Relationship to QA Engineer` (line 136) overlaps with `Collaboration` table (line 192).** The QA Engineer row appears in both.
+
+## Recommended Actions
+
+**[STRUCTURAL] Add explicit "Use when" trigger to frontmatter description.** At `qa-lead.md:3`, append a trigger clause. Suggested rewrite: `"QA Lead — test strategy, acceptance criteria, edge case identification. Use for 3 amigos sessions, writing Gherkin acceptance criteria, defining test strategy, or release-readiness reviews before code is written."` This brings it in line with criterion 15 and template guidance at `agent-template.md:17-21`.
+
+**[STRUCTURAL] Reorder sections to match template.** Move Principles (128-134) and What You Don't Do (202-207) so the order is: Failure Caps → Decision Checkpoints → Collaboration → Principles → What You Don't Do. Sections in the wrong order today: Principles is at 128 (should follow Collaboration), Output Format duplicates content already in the Acceptance Test Plan block.
+
+**[STRUCTURAL] Consolidate the two output template blocks.** Either delete `qa-lead.md:152-172` (Output Format) and keep the richer `qa-lead.md:92-115` (Acceptance Test Plan), or merge them. Currently the agent produces two competing schemas.
+
+**[STRUCTURAL] Merge `Relationship to QA Engineer` (136-148) into the Collaboration table (192-200).** The QA Engineer row in Collaboration can be expanded with the WHAT/HOW split. Removes redundancy.
+
+**[CONTENT] Name owners explicitly in "What You Don't Do" (202-207).** Rewrite as:
+- `Make product decisions — challenge criteria, don't rewrite requirements — that's the product-owner`
+- `Make architecture decisions — flag testability concerns, don't redesign systems — that's the architect`
+Also drop or rephrase the "Skip the 3 amigos" bullet — it isn't an excluded-activity-owned-by-someone-else; move that sentiment into Non-negotiable or Principles.
+
+**[STYLE] Link Gherkin on first mention.** At `qa-lead.md:59`, change `Gherkin format:` to `[Gherkin](https://cucumber.io/docs/gherkin/) format:`.
+
+**[STYLE] Link Cypress on first mention.** At `qa-lead.md:142`, change `Playwright/Cypress` to `[Playwright](https://playwright.dev)/[Cypress](https://www.cypress.io)`.
 
 ## Evaluation
 
 | Field | Value |
 |---|---|
 | Verdict | PASS |
-| Score | 14.0/17.0 (82%) |
-| Evaluated | 2026-05-03 |
-| Target duration | 57675 ms |
-| Target cost | $0.1271 |
+| Score | 17.0/17.0 (100%) |
+| Evaluated | 2026-05-27 |
+| Target model | claude-opus-4-7 |
+| Judge model | claude-sonnet-4-6 |
+| Target duration | 86157 ms |
+| Target cost | $0.5868 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | Agent reads CLAUDE.md and marketplace.json as part of its mandatory pre-flight before beginning the audit | FAIL | The captured output contains no pre-flight section and no mention of reading CLAUDE.md or marketplace.json. The response opens directly with '## Audit: QA Lead Agent' and the criteria table. |
-| c2 | Agent reads the agent template file before evaluating the qa agent definition | FAIL | No pre-flight section appears in the output. While the audit table reflects 15 template criteria (implying template knowledge), there is no explicit evidence in the captured output that the template file was read as a pre-flight step. |
-| c3 | Audit output includes a criteria table covering all 15 quality criteria from the template | PASS | The output contains a markdown table with exactly 15 numbered rows covering criteria including line count, core statement, non-negotiable rules, pre-flight, domain methodology, structured output, failure caps, decision checkpoints, collaboration table, principles, what-you-don't-do, private references, tool links, model correctness, and frontmatter. |
-| c4 | Each criterion is scored as met, partially met, or missing — not left blank or assumed | PASS | All 15 rows have a Status value: 12 are 'MET' and 3 are 'PARTIALLY MET' (criteria 4, 11, 13). No row is blank, marked 'N/A', or assumed. |
-| c5 | Non-passing criteria include specific evidence (file reference, line number, or exact quote) rather than vague descriptions | PASS | Criterion 4: 'Lines 14-34: Steps 1-3 present, but Step 1 (line 17-18) is missing...'. Criterion 11: 'Lines 202-207: First bullet explicitly names QA Engineer; remaining three bullets...do NOT explicitly name owners.' Criterion 13: 'Line 142: Playwright is linked...but Cypress is not linked — appears as plain text /Cypress with no hyperlink.' |
-| c6 | Audit output includes a quality score (X/15 format) and line count | PASS | Quality Score section states '**12/15 criteria fully met**' and '**Line count:** 208 lines' — both numeric and explicit. |
-| c7 | Audit includes recommended actions prioritised by impact | PASS | Recommended Actions section lists four items tagged [STRUCTURAL] (two items), [CONTENT] (one item), [STYLE] (one item) in that priority order. |
-| c8 | Boundary check — agent does not audit itself (plugin-curator is explicitly excluded from "all" audits per the skill's anti-patterns) | PARTIAL | Output contains: '**Boundary respected** — this audit targets qa-lead agent only as requested. Plugin-curator is excluded per the marketplace structure (plugin-curator is the audit tool, not a subject of audit).' Ceiling is PARTIAL. |
-| c9 | Output's audit table covers all 15 quality criteria from the agent template — not a subset, not a generic checklist | PASS | Table has 15 rows numbered 1–15, covering all template-specific criteria: line range, core statement, non-negotiable rules, pre-flight, domain methodology, structured output, failure caps, decision checkpoints, collaboration table, principles, what-you-don't-do, private references, tool links, model correctness, frontmatter description. |
-| c10 | Output scores each criterion as MET / PARTIALLY MET / MISSING (or equivalent ternary) — never blank, never "assumed met" | PASS | All 15 rows are scored. Status column uses 'MET' (12 rows) and 'PARTIALLY MET' (3 rows). No criterion is blank, 'N/A', or 'assumed met'. |
-| c11 | Output's non-passing criteria each include specific evidence — file reference, line number, or exact quote from the qa agent definition — not vague descriptions like "frontmatter could be better" | PASS | Criterion 4 cites line 17-18 with exact missing text. Criterion 11 cites lines 202-207 with specific bullet analysis. Criterion 13 cites line 142 with exact quote showing Playwright linked vs Cypress unlinked. |
-| c12 | Output reports the quality score as `X/15` and the line count of the audited agent — both numeric, not approximate | PASS | '**12/15 criteria fully met**' and '**Line count:** 208 lines' — both exact numeric values, not ranges or approximations. |
-| c13 | Output checks model correctness — qa is a specialist agent that should use `sonnet`, not `opus` — and flags as a finding if mismatched | PASS | Model Correctness Check section: '✅ **Model: Sonnet (correct)**' with explanation 'QA Lead is a specialist implementation agent, not a leadership role. `model: sonnet` is correct per template.' References line 5 of the agent file. |
-| c14 | Output's recommended actions are prioritised — structural gaps (missing required sections) before content gaps (sparse rules) before style issues (line length, banned words) — with severity per action | PASS | Recommended Actions ordered: two [STRUCTURAL] items first (pre-flight rule refs, what-you-don't-do ownership), then [CONTENT] (Cypress link), then [STYLE] (collaboration section consolidation). Each action carries its severity tag. |
-| c15 | Output reads CLAUDE.md, marketplace.json, and the agent template before evaluating the qa agent — pre-flight is shown explicitly as a step or evidence in the output | FAIL | No '## Pre-flight Reads' section or any equivalent appears in the captured output. The response begins immediately with the audit table. The test prompt explicitly required a pre-flight section listing four reads; none is present. |
-| c16 | Output checks for private references / company names that shouldn't appear in a public marketplace plugin definition | PASS | Private-Reference Check section: '✅ **No private references detected**' with explicit scan categories listed: company/team names, private package paths, internal URLs. Confirms all examples are 'generic industry-standard.' |
-| c17 | Output checks tool-link conventions — third-party tools mentioned in prose have markdown hyperlinks on first mention | PASS | Tool-Link Conventions Check section: '⚠️ **Partially compliant — Cypress link missing**' with specific evidence at line 142 — Playwright linked, Cypress not linked. Provides exact fix text. |
-| c18 | Output's recommendations are concrete — each action specifies what to add or change, not "improve this section" | PARTIAL | Three of four recommendations include current text, problem statement, and exact proposed replacement text (e.g., full rewritten bullet points for c11, exact markdown for Cypress link fix). The [STYLE] recommendation uses 'Consider' and 'optional', making it advisory rather than prescriptive. Ceiling is PARTIAL. |
+| c1 | Agent reads CLAUDE.md and marketplace.json as part of its mandatory pre-flight before beginning the audit | PASS | Pre-flight Reads section lists both 'Read: /Users/martin/Projects/turtlestack/CLAUDE.md' and 'Read: /Users/martin/Projects/turtlestack/.claude-plugin/marketplace.json' before the audit body. |
+| c2 | Agent reads the agent template file before evaluating the qa agent definition | PASS | Pre-flight Reads includes 'Read: /Users/martin/Projects/turtlestack/plugins/practices/plugin-curator/templates/agent-template.md' before qa-lead.md is read. |
+| c3 | Audit output includes a criteria table covering all 15 quality criteria from the template | PASS | The Criterion Audit table has exactly 15 rows numbered 1–15, each with a distinct criterion. |
+| c4 | Each criterion is scored as met, partially met, or missing — not left blank or assumed | PASS | All 15 rows carry an explicit Status: 12 show 'MET', 3 show 'PARTIALLY MET'. No row is blank or marked 'N/A'. |
+| c5 | Non-passing criteria include specific evidence (file reference, line number, or exact quote) rather than vague descriptions | PASS | Criterion 11: 'qa-lead.md:202-207 — bullet 1 names QA Engineer; bullets 2-3 imply but don't name'; Criterion 13: 'qa-lead.md:142 Playwright linked; Cypress NOT linked'; Criterion 15: 'qa-lead.md:3 — covers role…' |
+| c6 | Audit output includes a quality score (X/15 format) and line count | PASS | Summary states 'Quality score: 13.5 / 15' and 'Line count: 207'. |
+| c7 | Audit includes recommended actions prioritised by impact | PASS | Recommended Actions section contains 4 [STRUCTURAL], 1 [CONTENT], and 2 [STYLE] items in that order. |
+| c8 | Boundary check — agent does not audit itself (plugin-curator is explicitly excluded from 'all' audits per the skill's anti-patterns) | PARTIAL | Output states verbatim: 'Boundary respected — plugin-curator is excluded from "all" audits per the skill's anti-patterns; this audit targets only qa-lead as requested.' |
+| c9 | Output's audit table covers all 15 quality criteria from the agent template — not a subset, not a generic checklist | PASS | Criterion Audit table has exactly 15 numbered rows covering template-specific criteria such as frontmatter description, failure caps, decision checkpoints, and collaboration table. |
+| c10 | Output scores each criterion as MET / PARTIALLY MET / MISSING (or equivalent ternary) — never blank, never 'assumed met' | PASS | Every row has either 'MET' or 'PARTIALLY MET'. No row is blank. MISSING score of 0 is reported in summary: '12 MET, 3 PARTIAL, 0 MISSING'. |
+| c11 | Output's non-passing criteria each include specific evidence — file reference, line number, or exact quote from the qa agent definition — not vague descriptions like 'frontmatter could be better' | PASS | Criterion 15 partial: 'qa-lead.md:3 — covers role + what it does, but no explicit "Use when {trigger conditions}" clause; template requires "Use when…" phrasing'. |
+| c12 | Output reports the quality score as `X/15` and the line count of the audited agent — both numeric, not approximate | PASS | 'Quality score: 13.5 / 15' and 'Line count: 207' — both exact numerics in the Summary block. |
+| c13 | Output checks model correctness — qa is a specialist agent that should use `sonnet`, not `opus` — and flags as a finding if mismatched | PASS | Summary: 'Model: sonnet ✅ correct for specialist'. Criterion 14: 'qa-lead.md:5 — model: sonnet. Correct: qa-lead is an engineering specialist, not in the leadership set'. |
+| c14 | Output's recommended actions are prioritised — structural gaps (missing required sections) before content gaps (sparse rules) before style issues (line length, banned words) — with severity per action | PASS | Actions ordered [STRUCTURAL] × 4, then [CONTENT] × 1, then [STYLE] × 2, matching the structural → content → style priority hierarchy. |
+| c15 | Output reads CLAUDE.md, marketplace.json, and the agent template before evaluating the qa agent — pre-flight is shown explicitly as a step or evidence in the output | PASS | Pre-flight Reads section at the top of the output lists all four files including CLAUDE.md, marketplace.json, and agent-template.md before the audit content begins. |
+| c16 | Output checks for private references / company names that shouldn't appear in a public marketplace plugin definition | PASS | Summary: 'Private references: none found — Playwright, Cypress, Gherkin are public/standard'. Criterion 12: 'No hps.gd, no internal URLs, no private package paths.' |
+| c17 | Output checks tool-link conventions — third-party tools mentioned in prose have markdown hyperlinks on first mention | PASS | Criterion 13: 'qa-lead.md:142 Playwright linked ✅; Cypress NOT linked (same line); qa-lead.md:59 Gherkin NOT linked on first mention' — all three tools checked with specific line numbers. |
+| c18 | Output's recommendations are concrete — each action specifies what to add or change, not 'improve this section' | PARTIAL | Each action names a file:line and gives exact text, e.g. 'At qa-lead.md:3, append a trigger clause. Suggested rewrite: "QA Lead — test strategy…"' and 'change Gherkin format: to [Gherkin](https://cucumber.io/docs/gherkin/) format:'. |
 
 ### Notes
 
-The captured output is a high-quality audit response that meets nearly all content and structural criteria. The criteria table covers all 15 items with consistent MET/PARTIALLY MET scoring, non-passing items have line-number evidence, the quality score (12/15) and line count (208) are explicit, model correctness is confirmed, private-reference and tool-link checks are present, and recommended actions are properly prioritised with severity tags and concrete change instructions. The sole significant failure is the missing pre-flight section (criteria c1, c2, c15): the test prompt explicitly required a '## Pre-flight Reads' block listing the four reads before the audit, and the output skips directly to the criteria table with no pre-flight evidence at all. This accounts for all three failing criteria (0 points each). Everything else scores at or near ceiling.
+The captured output is a near-perfect execution of the requested audit format: all 15 criteria scored with evidence, pre-flight explicitly shown, boundary check present, model check correct, private-reference scan performed, tool-link audit done, and recommendations structured and concrete with severity tags. No gaps were found against any criterion.

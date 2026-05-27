@@ -50,1172 +50,2083 @@ Captured from a real headless invocation of the skill/agent.
 
 ### Chat response
 
-I've created comprehensive webhook API documentation at `docs/api/webhooks.md`. Here's what's included:
+The documentation is written to `docs/webhooks-api.md`. Here it is in full:
 
-## Document Structure
+---
 
-**Overview sections:**
-- Authentication with scope requirements (`webhooks:read`, `webhooks:write`)
-- Rate limiting (100 req/min with 429 responses and `Retry-After` headers)
-- HMAC-SHA256 signature verification in Python, JavaScript, and Bash
-- Complete webhook receiving guide with payload structure and retry behavior
+# Webhooks API Reference
 
-**Four fully documented endpoints:**
+> **Assumptions documented inline:** Base URL uses `api.example.com` — replace with your actual domain. Token scopes follow `resource:action` format. Webhook IDs use a `wh_<uuid>` prefix. Signing secrets are 64-character hex strings returned once at registration. Default page size is 20; maximum is 100. `Idempotency-Key` is required on all POST requests. The `X-Signature` header carries the HMAC-SHA256 hex digest.
 
-1. **POST /v1/webhooks** — Register a webhook
-   - Complete request with all headers (Authorization, Content-Type, Idempotency-Key)
-   - 201 Created response with webhook secret
-   - Error examples: 400, 401, 403, 409, 422, 429
-   - Code examples in curl, JavaScript, Python
+---
 
-2. **GET /v1/webhooks** — List webhooks
-   - Pagination with `limit`, `cursor`, `next_cursor`, `has_more`
-   - 200 OK response with multiple webhook objects
-   - Error examples: 401, 403, 429
-   - Pagination-aware code examples
-
-3. **DELETE /v1/webhooks/{id}** — Remove a webhook
-   - 204 No Content on success
-   - Error examples: 401, 403, 404, 429
-
-4. **POST /v1/webhooks/{id}/test** — Send test event
-   - 202 Accepted response
-   - Test payload structure example
-   - Error examples: 401, 403, 404, 422, 429
-
-**Bonus:**
-- Full production-ready webhook receivers in Flask (Python) and Express (JavaScript)
-- Signature verification examples with timing-safe comparison
-- Complete event handling patterns
-- Quality checklist with 4 verification items
-
-All code examples are syntactically correct and copy-pasteable, with proper error handling and no broken syntax.
-
-### Artifacts written
-
-#### `work/docs/api/webhooks.md`
+## Base URL
 
 ```
-# Webhooks API
+Production:  https://api.example.com/v1
+Staging:     https://api-staging.example.com/v1
+```
 
-Webhooks allow you to receive real-time event notifications at your application's HTTP endpoint. Register an endpoint, and we'll send signed events as they occur.
+Versioning strategy: path-based (`/v1/`). Breaking changes are released under a new version prefix; the prior version remains available for a deprecation window.
+
+---
 
 ## Authentication
 
-All webhook API endpoints require Bearer token authentication in the `Authorization` header. Tokens are scoped — different scopes grant different permissions.
+### Bearer token
+
+All endpoints require a Bearer token in the `Authorization` header:
 
 ```
-Authorization: Bearer YOUR_TOKEN_HERE
+Authorization: Bearer <YOUR_TOKEN>
 ```
 
-Replace `YOUR_TOKEN_HERE` with your actual API token.
+> **Replace `<YOUR_TOKEN>`** with the token issued in your dashboard under **Settings → API Tokens**. All subsequent examples use this placeholder.
 
-### Required Scopes
+#### Token scopes
 
-- `webhooks:read` — List webhooks
-- `webhooks:write` — Register webhooks, delete webhooks, send test events
-- `webhooks:admin` — Manage scopes and token permissions (not required for basic usage)
+| Scope | Grants |
+|---|---|
+| `webhooks:read` | List registered webhooks |
+| `webhooks:write` | Register new webhooks, delete webhooks, send test events |
 
-Attempting an action without the required scope returns a 403 Forbidden response.
+**Authentication failure (401):**
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid Bearer token"
+  }
+}
+```
+
+**Insufficient scope (403):**
+
+```json
+{
+  "error": {
+    "code": "FORBIDDEN",
+    "message": "Token does not have the required scope: webhooks:write"
+  }
+}
+```
+
+---
 
 ## Rate Limiting
 
-All webhook API endpoints are rate-limited to **100 requests per minute** per token.
+**Limit:** 100 requests per minute, per token.
 
-When you exceed the limit, the API returns a **429 Too Many Requests** response with headers indicating when you can retry:
+When the limit is exceeded the API responds with:
 
-- `Retry-After: <seconds>` — Wait this many seconds before retrying
-- `X-RateLimit-Limit: 100` — Your rate limit
-- `X-RateLimit-Remaining: 0` — Requests remaining in the current window
-- `X-RateLimit-Reset: <unix_timestamp>` — When your limit resets
-
-Example 429 response:
+```
+HTTP/1.1 429 Too Many Requests
+Retry-After: 42
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1716825060
+```
 
 ```json
 {
-  "error": "rate_limit_exceeded",
-  "message": "You have exceeded the rate limit of 100 requests per minute",
-  "retry_after": 45
-}
-```
-
-## HMAC Signature Verification
-
-Every webhook payload we send to your endpoint is signed with HMAC-SHA256 using a secret key we provide at registration time. Verify the signature to ensure the payload came from us and hasn't been tampered with.
-
-The signature is included in the `X-Signature` header of every webhook POST to your endpoint.
-
-### Verification Algorithm
-
-Compute the HMAC of the raw request body using the secret key, then compare against the header:
-
-**Python**
-
-```python
-import hmac
-import hashlib
-
-def verify_webhook(body: bytes, signature: str, secret: str) -> bool:
-    """Verify an incoming webhook payload.
-    
-    Args:
-        body: Raw request body as bytes
-        signature: Value from X-Signature header
-        secret: Your webhook secret
-    
-    Returns:
-        True if signature is valid, False otherwise
-    """
-    expected = hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
-    return hmac.compare_digest(expected, signature)
-
-# Usage in Flask
-from flask import request
-
-@app.route('/webhooks/incoming', methods=['POST'])
-def handle_webhook():
-    signature = request.headers.get('X-Signature')
-    body = request.get_data()
-    secret = 'whsec_your_secret_key_here'
-    
-    if not verify_webhook(body, signature, secret):
-        return {'error': 'invalid_signature'}, 401
-    
-    payload = request.json
-    # Process payload...
-    return {'status': 'ok'}, 200
-```
-
-**JavaScript (Node.js)**
-
-```javascript
-import crypto from 'crypto';
-
-function verifyWebhook(body, signature, secret) {
-  /**
-   * Verify an incoming webhook payload.
-   * @param {string|Buffer} body - Raw request body as string or buffer
-   * @param {string} signature - Value from X-Signature header
-   * @param {string} secret - Your webhook secret
-   * @returns {boolean} True if signature is valid
-   */
-  const expected = crypto
-    .createHmac('sha256', secret)
-    .update(body)
-    .digest('hex');
-  
-  return crypto.timingSafeEqual(
-    Buffer.from(expected),
-    Buffer.from(signature)
-  );
-}
-
-// Usage in Express
-app.post('/webhooks/incoming', (req, res) => {
-  const signature = req.headers['x-signature'];
-  const body = req.rawBody; // Express middleware must provide raw body
-  const secret = 'whsec_your_secret_key_here';
-  
-  if (!verifyWebhook(body, signature, secret)) {
-    return res.status(401).json({ error: 'invalid_signature' });
-  }
-  
-  const payload = req.body;
-  // Process payload...
-  res.json({ status: 'ok' });
-});
-
-// Middleware to capture raw body
-app.use(express.raw({ type: 'application/json' }));
-app.use((req, res, next) => {
-  req.rawBody = req.body;
-  req.body = JSON.parse(req.rawBody);
-  next();
-});
-```
-
-**Bash/cURL**
-
-```bash
-#!/bin/bash
-
-body=$1
-signature=$2
-secret=$3
-
-# Compute HMAC-SHA256
-computed=$(echo -n "$body" | openssl dgst -sha256 -hmac "$secret" -hex | sed 's/^.* //')
-
-if [ "$computed" = "$signature" ]; then
-  echo "Signature valid"
-  exit 0
-else
-  echo "Signature invalid"
-  exit 1
-fi
-
-# Usage
-body='{"id":"evt_123","event":"webhook.registered"}'
-signature="a1b2c3d4e5f6..."
-secret="whsec_your_secret_key_here"
-./verify_webhook.sh "$body" "$signature" "$secret"
-```
-
-**Important:** Always use `hmac.compare_digest()` (Python) or `crypto.timingSafeEqual()` (Node) to compare signatures. A simple string comparison is vulnerable to timing attacks.
-
----
-
-## Endpoints
-
-### POST /v1/webhooks
-
-Register a new webhook endpoint. We'll send signed events to this URL.
-
-**Required scope:** `webhooks:write`
-
-**Request**
-
-```bash
-curl -X POST https://api.example.com/v1/webhooks \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
-  -H "Content-Type: application/json" \
-  -H "Idempotency-Key: 550e8400-e29b-41d4-a716-446655440000" \
-  -d '{
-    "url": "https://your-app.example.com/webhooks/incoming",
-    "events": ["order.created", "order.updated"],
-    "description": "Production webhook for order events"
-  }'
-```
-
-**Request body**
-
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `url` | string (URL) | Yes | HTTPS endpoint where we send events. Must be publicly accessible. |
-| `events` | array of strings | Yes | Event types to subscribe to (e.g., `["order.created", "order.updated"]`). |
-| `description` | string | No | Human-readable label for this webhook (max 256 characters). |
-| `active` | boolean | No | Whether this webhook receives events (default: `true`). |
-
-**Success response — 201 Created**
-
-```json
-{
-  "id": "wh_1a2b3c4d5e6f7g8h",
-  "url": "https://your-app.example.com/webhooks/incoming",
-  "events": ["order.created", "order.updated"],
-  "description": "Production webhook for order events",
-  "active": true,
-  "secret": "whsec_1234567890abcdef1234567890abcdef",
-  "created_at": "2026-05-04T14:32:10.123Z",
-  "updated_at": "2026-05-04T14:32:10.123Z",
-  "last_triggered_at": null,
-  "failed_attempts": 0
-}
-```
-
-**Save the `secret` immediately.** We never return it again. If you lose it, you must delete and re-register the webhook.
-
-**Error responses**
-
-**400 Bad Request** — Invalid URL or event type
-
-```json
-{
-  "error": "invalid_request",
-  "message": "Invalid event type: order.unknown. Valid types: order.created, order.updated, order.cancelled",
-  "field": "events"
-}
-```
-
-**401 Unauthorized** — Missing or invalid token
-
-```json
-{
-  "error": "unauthorized",
-  "message": "Invalid or missing Authorization header"
-}
-```
-
-**403 Forbidden** — Token lacks required scope
-
-```json
-{
-  "error": "insufficient_scope",
-  "message": "This action requires webhooks:write scope. Your token has: webhooks:read",
-  "required_scope": "webhooks:write"
-}
-```
-
-**409 Conflict** — Webhook already registered for this URL
-
-```json
-{
-  "error": "duplicate_webhook",
-  "message": "A webhook is already registered for https://your-app.example.com/webhooks/incoming",
-  "existing_webhook_id": "wh_existing123"
-}
-```
-
-**422 Unprocessable Entity** — URL is not HTTPS or is invalid
-
-```json
-{
-  "error": "invalid_url",
-  "message": "Webhook URL must be HTTPS. HTTP URLs are not allowed for security reasons."
-}
-```
-
-**429 Too Many Requests** — Rate limit exceeded
-
-```json
-{
-  "error": "rate_limit_exceeded",
-  "message": "You have exceeded the rate limit of 100 requests per minute",
-  "retry_after": 32
-}
-```
-
-**JavaScript Example**
-
-```javascript
-async function registerWebhook(token, url, events, description) {
-  const response = await fetch('https://api.example.com/v1/webhooks', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-      'Idempotency-Key': crypto.randomUUID()
-    },
-    body: JSON.stringify({
-      url,
-      events,
-      description
-    })
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(`${error.error}: ${error.message}`);
-  }
-
-  const webhook = await response.json();
-  console.log(`Webhook registered: ${webhook.id}`);
-  console.log(`Save this secret: ${webhook.secret}`);
-  
-  return webhook;
-}
-
-// Usage
-await registerWebhook(
-  'your_token_here',
-  'https://your-app.example.com/webhooks/incoming',
-  ['order.created', 'order.updated'],
-  'Production webhook'
-);
-```
-
-**Python Example**
-
-```python
-import requests
-import uuid
-import json
-
-def register_webhook(token, url, events, description=None):
-    """Register a new webhook endpoint.
-    
-    Args:
-        token: Your API token
-        url: HTTPS endpoint to receive events
-        events: List of event types to subscribe to
-        description: Optional human-readable label
-    
-    Returns:
-        Webhook registration response
-    
-    Raises:
-        requests.exceptions.HTTPError for 4xx/5xx responses
-    """
-    headers = {
-        'Authorization': f'Bearer {token}',
-        'Content-Type': 'application/json',
-        'Idempotency-Key': str(uuid.uuid4())
-    }
-    
-    payload = {
-        'url': url,
-        'events': events,
-        'description': description
-    }
-    
-    response = requests.post(
-        'https://api.example.com/v1/webhooks',
-        headers=headers,
-        json=payload
-    )
-    response.raise_for_status()
-    
-    webhook = response.json()
-    print(f"Webhook registered: {webhook['id']}")
-    print(f"Save this secret: {webhook['secret']}")
-    
-    return webhook
-
-# Usage
-webhook = register_webhook(
-    token='your_token_here',
-    url='https://your-app.example.com/webhooks/incoming',
-    events=['order.created', 'order.updated'],
-    description='Production webhook'
-)
-```
-
----
-
-### GET /v1/webhooks
-
-List all registered webhooks for your account.
-
-**Required scope:** `webhooks:read`
-
-**Request**
-
-```bash
-curl -X GET "https://api.example.com/v1/webhooks?limit=20" \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
-  -H "Content-Type: application/json"
-```
-
-**Query Parameters**
-
-| Parameter | Type | Default | Description |
-|---|---|---|---|
-| `limit` | integer | 10 | Number of webhooks to return (1–100). |
-| `cursor` | string | — | Pagination cursor from `next_cursor` in previous response. |
-
-**Success response — 200 OK**
-
-```json
-{
-  "data": [
-    {
-      "id": "wh_1a2b3c4d5e6f7g8h",
-      "url": "https://your-app.example.com/webhooks/incoming",
-      "events": ["order.created", "order.updated"],
-      "description": "Production webhook for order events",
-      "active": true,
-      "created_at": "2026-05-04T14:32:10.123Z",
-      "updated_at": "2026-05-04T14:32:10.123Z",
-      "last_triggered_at": "2026-05-04T15:22:45.456Z",
-      "failed_attempts": 0
-    },
-    {
-      "id": "wh_9z8y7x6w5v4u3t2s",
-      "url": "https://staging-app.example.com/webhooks/incoming",
-      "events": ["order.created"],
-      "description": "Staging webhook",
-      "active": false,
-      "created_at": "2026-05-03T10:15:30.789Z",
-      "updated_at": "2026-05-04T09:45:12.321Z",
-      "last_triggered_at": null,
-      "failed_attempts": 0
-    }
-  ],
-  "pagination": {
-    "cursor": "wh_9z8y7x6w5v4u3t2s",
-    "next_cursor": "wh_7q6p5o4n3m2l1k0j",
-    "has_more": true,
-    "limit": 20
+  "error": {
+    "code": "RATE_LIMITED",
+    "message": "Rate limit exceeded. Retry after 42 seconds."
   }
 }
 ```
 
-**Pagination**
-
-- Use `next_cursor` as the `cursor` parameter in the next request to fetch the next batch.
-- `has_more: false` indicates you've reached the end of the list.
-- Results are sorted by creation date (newest first).
-
-**Error responses**
-
-**401 Unauthorized** — Missing or invalid token
-
-```json
-{
-  "error": "unauthorized",
-  "message": "Invalid or missing Authorization header"
-}
-```
-
-**403 Forbidden** — Token lacks required scope
-
-```json
-{
-  "error": "insufficient_scope",
-  "message": "This action requires webhooks:read scope. Your token has: webhooks:write",
-  "required_scope": "webhooks:read"
-}
-```
-
-**429 Too Many Requests** — Rate limit exceeded
-
-```json
-{
-  "error": "rate_limit_exceeded",
-  "message": "You have exceeded the rate limit of 100 requests per minute",
-  "retry_after": 28
-}
-```
-
-**JavaScript Example**
-
-```javascript
-async function listWebhooks(token, limit = 10, cursor = null) {
-  const params = new URLSearchParams({ limit });
-  if (cursor) params.append('cursor', cursor);
-  
-  const response = await fetch(`https://api.example.com/v1/webhooks?${params}`, {
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    }
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(`${error.error}: ${error.message}`);
-  }
-
-  return await response.json();
-}
-
-// Usage with pagination
-async function listAllWebhooks(token) {
-  const webhooks = [];
-  let cursor = null;
-  
-  while (true) {
-    const page = await listWebhooks(token, 20, cursor);
-    webhooks.push(...page.data);
-    
-    if (!page.pagination.has_more) break;
-    cursor = page.pagination.next_cursor;
-  }
-  
-  return webhooks;
-}
-```
-
-**Python Example**
-
-```python
-import requests
-
-def list_webhooks(token, limit=10, cursor=None):
-    """List all webhooks for this account.
-    
-    Args:
-        token: Your API token
-        limit: Number of results per page (1–100, default 10)
-        cursor: Pagination cursor from previous response
-    
-    Returns:
-        List of webhooks and pagination info
-    """
-    params = {'limit': limit}
-    if cursor:
-        params['cursor'] = cursor
-    
-    headers = {
-        'Authorization': f'Bearer {token}',
-        'Content-Type': 'application/json'
-    }
-    
-    response = requests.get(
-        'https://api.example.com/v1/webhooks',
-        headers=headers,
-        params=params
-    )
-    response.raise_for_status()
-    
-    return response.json()
-
-# Usage with pagination
-def list_all_webhooks(token):
-    all_webhooks = []
-    cursor = None
-    
-    while True:
-        page = list_webhooks(token, limit=20, cursor=cursor)
-        all_webhooks.extend(page['data'])
-        
-        if not page['pagination']['has_more']:
-            break
-        cursor = page['pagination']['next_cursor']
-    
-    return all_webhooks
-```
-
----
-
-### DELETE /v1/webhooks/{id}
-
-Delete (unregister) a webhook endpoint. No more events will be sent to this URL.
-
-**Required scope:** `webhooks:write`
-
-**Request**
-
-Replace `<WEBHOOK_ID>` with the actual webhook ID (e.g., `wh_1a2b3c4d5e6f7g8h`).
-
-```bash
-curl -X DELETE https://api.example.com/v1/webhooks/wh_1a2b3c4d5e6f7g8h \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
-  -H "Content-Type: application/json"
-```
-
-**Success response — 204 No Content**
-
-The response body is empty on successful deletion.
-
-**Error responses**
-
-**401 Unauthorized** — Missing or invalid token
-
-```json
-{
-  "error": "unauthorized",
-  "message": "Invalid or missing Authorization header"
-}
-```
-
-**403 Forbidden** — Token lacks required scope
-
-```json
-{
-  "error": "insufficient_scope",
-  "message": "This action requires webhooks:write scope. Your token has: webhooks:read",
-  "required_scope": "webhooks:write"
-}
-```
-
-**404 Not Found** — Webhook ID doesn't exist or belongs to a different account
-
-```json
-{
-  "error": "not_found",
-  "message": "Webhook with ID wh_invalid123 not found"
-}
-```
-
-**429 Too Many Requests** — Rate limit exceeded
-
-```json
-{
-  "error": "rate_limit_exceeded",
-  "message": "You have exceeded the rate limit of 100 requests per minute",
-  "retry_after": 45
-}
-```
-
-**JavaScript Example**
-
-```javascript
-async function deleteWebhook(token, webhookId) {
-  const response = await fetch(`https://api.example.com/v1/webhooks/${webhookId}`, {
-    method: 'DELETE',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    }
-  });
-
-  if (response.status === 204) {
-    console.log(`Webhook ${webhookId} deleted`);
-    return;
-  }
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(`${error.error}: ${error.message}`);
-  }
-}
-
-// Usage
-await deleteWebhook('your_token_here', 'wh_1a2b3c4d5e6f7g8h');
-```
-
-**Python Example**
-
-```python
-import requests
-
-def delete_webhook(token, webhook_id):
-    """Delete a webhook endpoint.
-    
-    Args:
-        token: Your API token
-        webhook_id: ID of the webhook to delete
-    
-    Raises:
-        requests.exceptions.HTTPError for 4xx/5xx responses
-    """
-    headers = {
-        'Authorization': f'Bearer {token}',
-        'Content-Type': 'application/json'
-    }
-    
-    response = requests.delete(
-        f'https://api.example.com/v1/webhooks/{webhook_id}',
-        headers=headers
-    )
-    
-    if response.status_code == 204:
-        print(f"Webhook {webhook_id} deleted")
-        return
-    
-    response.raise_for_status()
-
-# Usage
-delete_webhook('your_token_here', 'wh_1a2b3c4d5e6f7g8h')
-```
-
----
-
-### POST /v1/webhooks/{id}/test
-
-Send a test event to a webhook endpoint. Useful for verifying your endpoint is working correctly and that you're validating signatures properly.
-
-**Required scope:** `webhooks:write`
-
-**Request**
-
-Replace `<WEBHOOK_ID>` with the actual webhook ID (e.g., `wh_1a2b3c4d5e6f7g8h`).
-
-```bash
-curl -X POST https://api.example.com/v1/webhooks/wh_1a2b3c4d5e6f7g8h/test \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
-  -H "Content-Type: application/json" \
-  -H "Idempotency-Key: 550e8400-e29b-41d4-a716-446655440001" \
-  -d '{
-    "event_type": "order.created"
-  }'
-```
-
-**Request body**
-
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `event_type` | string | No | Which event type to simulate (must be one the webhook is subscribed to). If omitted, uses the first event type in the webhook's event list. |
-
-**Success response — 202 Accepted**
-
-```json
-{
-  "id": "test_evt_1a2b3c4d5e6f7g8h",
-  "webhook_id": "wh_1a2b3c4d5e6f7g8h",
-  "event_type": "order.created",
-  "sent_at": "2026-05-04T16:45:30.123Z",
-  "status": "queued",
-  "delivery_attempts": 0,
-  "message": "Test event queued for delivery. Check your endpoint and webhook logs for delivery status."
-}
-```
-
-The test event is sent asynchronously. Check your webhook logs to see if delivery succeeded.
-
-**Test event payload structure**
-
-The test event will have this structure:
-
-```json
-{
-  "id": "evt_test_12345",
-  "event": "order.created",
-  "timestamp": "2026-05-04T16:45:30.123Z",
-  "data": {
-    "order_id": "test_order_12345",
-    "customer_email": "test@example.com",
-    "amount": 9999,
-    "currency": "USD"
-  }
-}
-```
-
-**Error responses**
-
-**401 Unauthorized** — Missing or invalid token
-
-```json
-{
-  "error": "unauthorized",
-  "message": "Invalid or missing Authorization header"
-}
-```
-
-**403 Forbidden** — Token lacks required scope
-
-```json
-{
-  "error": "insufficient_scope",
-  "message": "This action requires webhooks:write scope. Your token has: webhooks:read",
-  "required_scope": "webhooks:write"
-}
-```
-
-**404 Not Found** — Webhook ID doesn't exist
-
-```json
-{
-  "error": "not_found",
-  "message": "Webhook with ID wh_invalid123 not found"
-}
-```
-
-**422 Unprocessable Entity** — Invalid event type for this webhook
-
-```json
-{
-  "error": "invalid_event_type",
-  "message": "Event type order.unknown is not subscribed to by this webhook. Subscribed events: order.created, order.updated",
-  "valid_events": ["order.created", "order.updated"]
-}
-```
-
-**429 Too Many Requests** — Rate limit exceeded
-
-```json
-{
-  "error": "rate_limit_exceeded",
-  "message": "You have exceeded the rate limit of 100 requests per minute",
-  "retry_after": 22
-}
-```
-
-**JavaScript Example**
-
-```javascript
-async function testWebhook(token, webhookId, eventType = null) {
-  const body = {};
-  if (eventType) body.event_type = eventType;
-  
-  const response = await fetch(
-    `https://api.example.com/v1/webhooks/${webhookId}/test`,
-    {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        'Idempotency-Key': crypto.randomUUID()
-      },
-      body: JSON.stringify(body)
-    }
-  );
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(`${error.error}: ${error.message}`);
-  }
-
-  const result = await response.json();
-  console.log(`Test event queued: ${result.id}`);
-  console.log('Check your webhook endpoint logs for delivery status');
-  
-  return result;
-}
-
-// Usage
-await testWebhook('your_token_here', 'wh_1a2b3c4d5e6f7g8h', 'order.created');
-```
-
-**Python Example**
-
-```python
-import requests
-import uuid
-
-def test_webhook(token, webhook_id, event_type=None):
-    """Send a test event to a webhook endpoint.
-    
-    Args:
-        token: Your API token
-        webhook_id: ID of the webhook to test
-        event_type: Optional event type to simulate
-    
-    Returns:
-        Test event response
-    """
-    headers = {
-        'Authorization': f'Bearer {token}',
-        'Content-Type': 'application/json',
-        'Idempotency-Key': str(uuid.uuid4())
-    }
-    
-    payload = {}
-    if event_type:
-        payload['event_type'] = event_type
-    
-    response = requests.post(
-        f'https://api.example.com/v1/webhooks/{webhook_id}/test',
-        headers=headers,
-        json=payload
-    )
-    response.raise_for_status()
-    
-    result = response.json()
-    print(f"Test event queued: {result['id']}")
-    print("Check your webhook endpoint logs for delivery status")
-    
-    return result
-
-# Usage
-test_webhook('your_token_here', 'wh_1a2b3c4d5e6f7g8h', 'order.created')
-```
-
----
-
-## Receiving Webhooks
-
-When a subscribed event occurs, we POST the event payload to your registered URL. The request includes headers for authentication and signature verification.
-
-**Headers sent with every webhook POST**
-
-```
-POST /webhooks/incoming HTTP/1.1
-Host: your-app.example.com
-Content-Type: application/json
-Authorization: Bearer wh_token_1234567890
-X-Signature: a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6
-X-Webhook-ID: wh_1a2b3c4d5e6f7g8h
-X-Event-Type: order.created
-X-Timestamp: 2026-05-04T17:30:45.123Z
-```
-
-| Header | Value | Purpose |
+| Header | Type | Description |
 |---|---|---|
-| `Authorization` | `Bearer <token>` | Webhook delivery token (different from API tokens). |
-| `X-Signature` | HMAC-SHA256 hex string | Signature of the raw request body. Verify this to confirm the payload came from us. |
-| `X-Webhook-ID` | Webhook ID | ID of the webhook being triggered. |
-| `X-Event-Type` | Event type | Type of event (e.g., `order.created`). |
-| `X-Timestamp` | ISO 8601 timestamp | When the event was generated (UTC). |
+| `X-RateLimit-Remaining` | integer | Requests remaining in the current 60-second window |
+| `X-RateLimit-Reset` | integer (Unix timestamp) | UTC timestamp when the window resets and the counter returns to 100 |
+| `Retry-After` | integer (seconds) | How long to wait before retrying. Present only on 429 responses. |
 
-**Webhook payload structure**
+All successful responses also include `X-RateLimit-Remaining` and `X-RateLimit-Reset` so you can monitor headroom proactively without waiting for a 429.
+
+---
+
+## Pagination
+
+`GET /v1/webhooks` uses **cursor-based pagination**.
+
+**Request:**
+
+```
+GET /v1/webhooks?limit=20&cursor=d2ViaG9va19leGFtcGxlMjAyNjA1Mjc
+```
+
+**Response:**
 
 ```json
 {
-  "id": "evt_1a2b3c4d5e6f7g8h",
-  "event": "order.created",
-  "timestamp": "2026-05-04T17:30:45.123Z",
-  "data": {
-    "order_id": "ord_9z8y7x6w5v4u3t2s",
-    "customer_email": "customer@example.com",
-    "amount": 29999,
-    "currency": "USD",
-    "items": [
+  "data": [ "..." ],
+  "next_cursor": "d2ViaG9va19leGFtcGxlMjAyNjA1Mjc",
+  "has_more": true
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `data` | array | Page of webhook objects |
+| `next_cursor` | string \| null | Opaque cursor for the next page. `null` when there are no further results. |
+| `has_more` | boolean | `true` if more pages exist beyond this one |
+
+| Parameter | Type | Default | Maximum | Description |
+|---|---|---|---|---|
+| `limit` | integer | 20 | 100 | Results per page |
+| `cursor` | string | — | — | Value from a previous response's `next_cursor` |
+
+**Detecting last page:** `has_more: false` or `next_cursor: null`.
+
+Total count is not returned. Cursors are stable across concurrent mutations — items will not appear twice or be skipped if webhooks are added or deleted during pagination.
+
+---
+
+## Error Format
+
+All error responses share a common shape:
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Human-readable description of what went wrong",
+    "details": [
       {
-        "product_id": "prod_1a2b3c4d",
-        "quantity": 2,
-        "unit_price": 14999
+        "field": "url",
+        "message": "Must be a valid HTTPS URL"
       }
     ]
   }
 }
 ```
 
-**Your endpoint must:**
+`details` is present only on `400` and `422` responses where field-level information is available.
 
-1. Verify the `X-Signature` header matches the HMAC of your raw request body using your webhook secret
-2. Respond with HTTP 200–299 within 30 seconds
-3. Be idempotent — handle the same event ID twice without side effects
-4. Not retry or queue events — if your endpoint fails, we retry automatically
+### Error Code Reference
 
-**Retry behavior**
-
-If your endpoint returns 4xx, we mark it as a permanent failure and stop retrying. If it returns 5xx, times out, or is unreachable, we retry with exponential backoff:
-
-- 1st attempt — immediate
-- 2nd attempt — 5 seconds later
-- 3rd attempt — 30 seconds later
-- 4th attempt — 5 minutes later
-- 5th attempt — 30 minutes later
-- Stop after 5 failed attempts (webhook marked as failed)
-
-Check your webhook's `failed_attempts` count via `GET /v1/webhooks` to see if delivery is failing.
+| HTTP Status | Code | Meaning | Common Cause |
+|---|---|---|---|
+| 400 | `VALIDATION_ERROR` | Request body or parameters are invalid | Missing required field, wrong type, invalid format |
+| 401 | `UNAUTHORIZED` | Authentication failed or missing | Expired token, missing `Authorization` header |
+| 403 | `FORBIDDEN` | Authenticated but insufficient permissions | Token missing required scope |
+| 404 | `NOT_FOUND` | Resource does not exist | Invalid webhook ID, already deleted |
+| 409 | `CONFLICT` | Request conflicts with current state | Webhook URL already registered |
+| 422 | `UNPROCESSABLE_ENTITY` | Request is well-formed but semantically invalid | URL is HTTP (not HTTPS), unrecognised event type, endpoint unreachable |
+| 429 | `RATE_LIMITED` | Too many requests | Exceeded 100 req/min per token |
+| 500 | `INTERNAL_ERROR` | Server error | Bug — contact support |
 
 ---
 
-## Example: Complete Webhook Handler
+## Endpoints
 
-Here's a production-ready example of receiving and handling webhooks with signature verification:
+---
 
-**Python (Flask)**
+### Register a Webhook
 
-```python
-import hmac
-import hashlib
-import json
-from flask import Flask, request
+Registers a new endpoint to receive webhook events. Returns the webhook record including the signing secret used to verify payloads. **The `secret` is returned only in this response — store it immediately.**
 
-app = Flask(__name__)
-
-# Store your webhook secret safely (environment variable, secrets manager, etc.)
-WEBHOOK_SECRET = 'whsec_your_secret_key_here'
-
-def verify_signature(body: bytes, signature: str) -> bool:
-    """Verify the webhook payload signature."""
-    expected = hmac.new(WEBHOOK_SECRET.encode(), body, hashlib.sha256).hexdigest()
-    return hmac.compare_digest(expected, signature)
-
-@app.route('/webhooks/incoming', methods=['POST'])
-def handle_webhook():
-    # Get signature from header
-    signature = request.headers.get('X-Signature')
-    if not signature:
-        return {'error': 'missing_signature'}, 400
-    
-    # Get raw body for signature verification
-    body = request.get_data()
-    
-    # Verify signature
-    if not verify_signature(body, signature):
-        return {'error': 'invalid_signature'}, 401
-    
-    # Parse payload
-    try:
-        payload = json.loads(body)
-    except json.JSONDecodeError:
-        return {'error': 'invalid_json'}, 400
-    
-    # Extract event details
-    event_id = payload.get('id')
-    event_type = payload.get('event')
-    data = payload.get('data', {})
-    
-    # Log the event
-    print(f"Received {event_type} event {event_id}")
-    
-    # Handle specific events
-    if event_type == 'order.created':
-        handle_order_created(event_id, data)
-    elif event_type == 'order.updated':
-        handle_order_updated(event_id, data)
-    else:
-        print(f"Unknown event type: {event_type}")
-    
-    # Return 200 to acknowledge receipt
-    return {'status': 'ok'}, 200
-
-def handle_order_created(event_id, data):
-    """Process order.created event."""
-    order_id = data.get('order_id')
-    amount = data.get('amount')
-    print(f"Order created: {order_id} for ${amount / 100:.2f}")
-    # Update your database, send confirmation email, etc.
-
-def handle_order_updated(event_id, data):
-    """Process order.updated event."""
-    order_id = data.get('order_id')
-    print(f"Order updated: {order_id}")
-    # Update your database, etc.
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=443, ssl_context='adhoc')
+```
+POST /v1/webhooks
 ```
 
-**JavaScript (Express)**
+#### Authentication
+
+Requires Bearer token with **`webhooks:write`** scope.
+
+#### Request Body
+
+```
+Content-Type: application/json
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `url` | string | Yes | HTTPS URL to receive webhook event POSTs. Maximum 2048 characters. Must use `https://`. |
+| `events` | array of strings | Yes | Event types to subscribe to. Each must be a recognised event name (e.g., `"payment.succeeded"`, `"invoice.created"`). Pass `["*"]` to subscribe to all current and future event types. |
+| `description` | string | No | Human-readable label for this webhook. Maximum 255 characters. |
+
+**Example request body:**
+
+```json
+{
+  "url": "https://app.example.com/webhooks/inbound",
+  "events": ["payment.succeeded", "payment.failed"],
+  "description": "Production payment handler"
+}
+```
+
+#### Response
+
+**Success: `201 Created`**
+
+```json
+{
+  "id": "wh_4f8a1b2c-3d4e-5f6a-7b8c-9d0e1f2a3b4c",
+  "url": "https://app.example.com/webhooks/inbound",
+  "events": ["payment.succeeded", "payment.failed"],
+  "description": "Production payment handler",
+  "secret": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2",
+  "status": "active",
+  "created_at": "2026-05-27T09:00:00Z"
+}
+```
+
+> **The `secret` field is only present in this creation response.** Store it securely — it cannot be retrieved later. Use it to verify the `X-Signature` header on every incoming payload.
+
+**Errors:**
+
+| Status | Code | When |
+|---|---|---|
+| 400 | `VALIDATION_ERROR` | Missing `url` or `events`, invalid field types |
+| 401 | `UNAUTHORIZED` | Missing or invalid Bearer token |
+| 403 | `FORBIDDEN` | Token lacks `webhooks:write` scope |
+| 409 | `CONFLICT` | This URL is already registered as a webhook |
+| 422 | `UNPROCESSABLE_ENTITY` | URL uses HTTP instead of HTTPS, or an event name in `events` is unrecognised |
+| 429 | `RATE_LIMITED` | Rate limit exceeded |
+
+**400 example:**
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Request validation failed",
+    "details": [
+      { "field": "url", "message": "url is required" },
+      { "field": "events", "message": "events must be a non-empty array" }
+    ]
+  }
+}
+```
+
+**401 example:**
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid Bearer token"
+  }
+}
+```
+
+**403 example:**
+
+```json
+{
+  "error": {
+    "code": "FORBIDDEN",
+    "message": "Token does not have the required scope: webhooks:write"
+  }
+}
+```
+
+**409 example:**
+
+```json
+{
+  "error": {
+    "code": "CONFLICT",
+    "message": "A webhook for https://app.example.com/webhooks/inbound already exists"
+  }
+}
+```
+
+**422 example:**
+
+```json
+{
+  "error": {
+    "code": "UNPROCESSABLE_ENTITY",
+    "message": "Unrecognised event type",
+    "details": [
+      { "field": "events[1]", "message": "payment.bounced is not a valid event type" }
+    ]
+  }
+}
+```
+
+**429 example:**
+
+```
+HTTP/1.1 429 Too Many Requests
+Retry-After: 38
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1716825060
+```
+
+```json
+{
+  "error": {
+    "code": "RATE_LIMITED",
+    "message": "Rate limit exceeded. Retry after 38 seconds."
+  }
+}
+```
+
+#### Example
+
+**curl:**
+
+```bash
+curl -X POST https://api.example.com/v1/webhooks \
+  -H "Authorization: Bearer <YOUR_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: 550e8400-e29b-41d4-a716-446655440000" \
+  -d '{
+    "url": "https://app.example.com/webhooks/inbound",
+    "events": ["payment.succeeded", "payment.failed"],
+    "description": "Production payment handler"
+  }'
+```
+
+> Replace `<YOUR_TOKEN>` with your API token. Replace the `Idempotency-Key` UUID with a unique value per distinct request to prevent duplicate registrations on retry.
+
+**JavaScript (fetch):**
 
 ```javascript
-import express from 'express';
-import crypto from 'crypto';
+const response = await fetch('https://api.example.com/v1/webhooks', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer <YOUR_TOKEN>',
+    'Content-Type': 'application/json',
+    'Idempotency-Key': crypto.randomUUID(),
+  },
+  body: JSON.stringify({
+    url: 'https://app.example.com/webhooks/inbound',
+    events: ['payment.succeeded', 'payment.failed'],
+    description: 'Production payment handler',
+  }),
+});
 
-const app = express();
+const webhook = await response.json();
+// Store webhook.secret immediately — it will not be returned again
+console.log('Secret (save this now):', webhook.secret);
+```
 
-// Store your webhook secret safely (environment variable, secrets manager, etc.)
-const WEBHOOK_SECRET = 'whsec_your_secret_key_here';
+**Python (requests):**
 
-// Middleware to capture raw body
-app.use(express.json({ 
-  verify: (req, res, buf) => {
-    req.rawBody = buf.toString('utf8');
+```python
+import uuid
+import requests
+
+response = requests.post(
+    'https://api.example.com/v1/webhooks',
+    headers={
+        'Authorization': 'Bearer <YOUR_TOKEN>',
+        'Content-Type': 'application/json',
+        'Idempotency-Key': str(uuid.uuid4()),
+    },
+    json={
+        'url': 'https://app.example.com/webhooks/inbound',
+        'events': ['payment.succeeded', 'payment.failed'],
+        'description': 'Production payment handler',
+    },
+)
+
+webhook = response.json()
+# Store webhook['secret'] immediately — it will not be returned again
+print('Secret (save this now):', webhook['secret'])
+```
+
+#### Notes
+
+- **Idempotency:** Supplying the same `Idempotency-Key` on a retry within 24 hours returns the original `201` response without creating a duplicate webhook.
+- **Secret storage:** The `secret` is shown exactly once at registration. If lost, delete this webhook and register a new one to receive a fresh secret.
+- Creating a webhook does not send a test event automatically. Use `POST /v1/webhooks/{id}/test` to verify connectivity and signature handling.
+
+---
+
+### List Webhooks
+
+Returns all webhooks registered under the authenticated token's account, ordered by `created_at` descending (most recent first).
+
+```
+GET /v1/webhooks
+```
+
+#### Authentication
+
+Requires Bearer token with **`webhooks:read`** scope.
+
+#### Query Parameters
+
+| Parameter | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `limit` | integer | No | 20 | Number of results per page. Range: 1–100. |
+| `cursor` | string | No | — | Opaque pagination cursor from a previous response's `next_cursor` field. Omit for the first page. |
+
+#### Response
+
+**Success: `200 OK`**
+
+```json
+{
+  "data": [
+    {
+      "id": "wh_4f8a1b2c-3d4e-5f6a-7b8c-9d0e1f2a3b4c",
+      "url": "https://app.example.com/webhooks/inbound",
+      "events": ["payment.succeeded", "payment.failed"],
+      "description": "Production payment handler",
+      "status": "active",
+      "created_at": "2026-05-27T09:00:00Z"
+    },
+    {
+      "id": "wh_9c8b7a6f-5e4d-3c2b-1a0f-9e8d7c6b5a4f",
+      "url": "https://staging.example.com/webhooks/inbound",
+      "events": ["*"],
+      "description": "Staging all-events handler",
+      "status": "active",
+      "created_at": "2026-05-20T14:30:00Z"
+    }
+  ],
+  "next_cursor": "d2ViaG9va19leGFtcGxlMjAyNjA1Mjc",
+  "has_more": true
+}
+```
+
+> The `secret` field is **not** returned in list responses. It is present only in the `201` response from webhook registration.
+
+**Errors:**
+
+| Status | Code | When |
+|---|---|---|
+| 400 | `VALIDATION_ERROR` | `limit` is not an integer, out of range, or `cursor` is malformed |
+| 401 | `UNAUTHORIZED` | Missing or invalid Bearer token |
+| 403 | `FORBIDDEN` | Token lacks `webhooks:read` scope |
+| 429 | `RATE_LIMITED` | Rate limit exceeded |
+
+**400 example:**
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Request validation failed",
+    "details": [
+      { "field": "limit", "message": "limit must be an integer between 1 and 100" }
+    ]
   }
-}));
+}
+```
 
-function verifySignature(body, signature) {
+**401 example:**
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid Bearer token"
+  }
+}
+```
+
+**403 example:**
+
+```json
+{
+  "error": {
+    "code": "FORBIDDEN",
+    "message": "Token does not have the required scope: webhooks:read"
+  }
+}
+```
+
+**429 example:**
+
+```
+HTTP/1.1 429 Too Many Requests
+Retry-After: 15
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1716825120
+```
+
+```json
+{
+  "error": {
+    "code": "RATE_LIMITED",
+    "message": "Rate limit exceeded. Retry after 15 seconds."
+  }
+}
+```
+
+#### Example
+
+**curl — first page:**
+
+```bash
+curl -X GET "https://api.example.com/v1/webhooks?limit=20" \
+  -H "Authorization: Bearer <YOUR_TOKEN>"
+```
+
+**curl — subsequent page:**
+
+```bash
+curl -X GET "https://api.example.com/v1/webhooks?limit=20&cursor=d2ViaG9va19leGFtcGxlMjAyNjA1Mjc" \
+  -H "Authorization: Bearer <YOUR_TOKEN>"
+```
+
+**JavaScript (fetch) — iterate all pages:**
+
+```javascript
+async function listAllWebhooks(token) {
+  const webhooks = [];
+  let cursor = null;
+
+  do {
+    const url = new URL('https://api.example.com/v1/webhooks');
+    url.searchParams.set('limit', '100');
+    if (cursor) url.searchParams.set('cursor', cursor);
+
+    const response = await fetch(url.toString(), {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    const page = await response.json();
+    webhooks.push(...page.data);
+    cursor = page.has_more ? page.next_cursor : null;
+  } while (cursor);
+
+  return webhooks;
+}
+```
+
+**Python (requests) — iterate all pages:**
+
+```python
+import requests
+
+def list_all_webhooks(token):
+    webhooks = []
+    cursor = None
+
+    while True:
+        params = {'limit': 100}
+        if cursor:
+            params['cursor'] = cursor
+
+        response = requests.get(
+            'https://api.example.com/v1/webhooks',
+            headers={'Authorization': f'Bearer {token}'},
+            params=params,
+        )
+        response.raise_for_status()
+        page = response.json()
+        webhooks.extend(page['data'])
+
+        if not page['has_more']:
+            break
+        cursor = page['next_cursor']
+
+    return webhooks
+```
+
+#### Notes
+
+- Secrets are omitted from list responses. Record the secret at registration time.
+- Pagination cursors are stable — adding or deleting webhooks during iteration does not cause items to appear twice or be skipped.
+- There is no total count field. Iterate until `has_more` is `false`.
+
+---
+
+### Delete a Webhook
+
+Permanently removes a registered webhook. No further events will be delivered to its URL after deletion succeeds.
+
+```
+DELETE /v1/webhooks/{id}
+```
+
+#### Authentication
+
+Requires Bearer token with **`webhooks:write`** scope.
+
+#### Path Parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `id` | string | The webhook's unique identifier. Format: `wh_<uuid>`. Returned from the Register Webhook endpoint. |
+
+#### Response
+
+**Success: `204 No Content`**
+
+No response body.
+
+**Errors:**
+
+| Status | Code | When |
+|---|---|---|
+| 401 | `UNAUTHORIZED` | Missing or invalid Bearer token |
+| 403 | `FORBIDDEN` | Token lacks `webhooks:write` scope |
+| 404 | `NOT_FOUND` | No webhook with this ID exists, or it belongs to a different account |
+| 429 | `RATE_LIMITED` | Rate limit exceeded |
+
+**401 example:**
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid Bearer token"
+  }
+}
+```
+
+**403 example:**
+
+```json
+{
+  "error": {
+    "code": "FORBIDDEN",
+    "message": "Token does not have the required scope: webhooks:write"
+  }
+}
+```
+
+**404 example:**
+
+```json
+{
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Webhook wh_4f8a1b2c-3d4e-5f6a-7b8c-9d0e1f2a3b4c not found"
+  }
+}
+```
+
+**429 example:**
+
+```
+HTTP/1.1 429 Too Many Requests
+Retry-After: 5
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1716825180
+```
+
+```json
+{
+  "error": {
+    "code": "RATE_LIMITED",
+    "message": "Rate limit exceeded. Retry after 5 seconds."
+  }
+}
+```
+
+#### Example
+
+**curl:**
+
+```bash
+curl -X DELETE https://api.example.com/v1/webhooks/<WEBHOOK_ID> \
+  -H "Authorization: Bearer <YOUR_TOKEN>"
+```
+
+> Replace `<WEBHOOK_ID>` with the `id` returned when the webhook was registered (e.g., `wh_4f8a1b2c-3d4e-5f6a-7b8c-9d0e1f2a3b4c`).
+
+**JavaScript (fetch):**
+
+```javascript
+const webhookId = 'wh_4f8a1b2c-3d4e-5f6a-7b8c-9d0e1f2a3b4c';
+
+const response = await fetch(`https://api.example.com/v1/webhooks/${webhookId}`, {
+  method: 'DELETE',
+  headers: {
+    'Authorization': 'Bearer <YOUR_TOKEN>',
+  },
+});
+
+if (response.status === 204) {
+  console.log('Webhook deleted successfully');
+}
+```
+
+**Python (requests):**
+
+```python
+import requests
+
+webhook_id = 'wh_4f8a1b2c-3d4e-5f6a-7b8c-9d0e1f2a3b4c'
+
+response = requests.delete(
+    f'https://api.example.com/v1/webhooks/{webhook_id}',
+    headers={'Authorization': 'Bearer <YOUR_TOKEN>'},
+)
+
+if response.status_code == 204:
+    print('Webhook deleted successfully')
+```
+
+#### Notes
+
+- Deletion is **permanent and immediate**. Events already queued before deletion may still be delivered, but no new events will be dispatched.
+- To update a webhook URL, delete the existing record and register a new one (you will receive a new secret).
+- A `404` is returned whether the ID never existed or belongs to a different account — this prevents enumeration.
+
+---
+
+### Send a Test Event
+
+Delivers a synthetic `webhook.test` event to the registered endpoint URL. Use this after registration to confirm your server is reachable, parses the payload correctly, and successfully verifies the HMAC signature.
+
+```
+POST /v1/webhooks/{id}/test
+```
+
+#### Authentication
+
+Requires Bearer token with **`webhooks:write`** scope.
+
+#### Path Parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `id` | string | The webhook's unique identifier. Format: `wh_<uuid>`. |
+
+#### Request Body
+
+No request body is required. You may omit it or send an empty JSON object (`{}`).
+
+#### Response
+
+**Success: `200 OK`**
+
+A `200` from this endpoint means the API successfully attempted delivery — check `delivered: true` to confirm your server accepted it.
+
+```json
+{
+  "delivered": true,
+  "status_code": 200,
+  "response_body": "ok",
+  "duration_ms": 143,
+  "sent_at": "2026-05-27T09:15:00Z"
+}
+```
+
+If your endpoint returned a non-2xx status:
+
+```json
+{
+  "delivered": false,
+  "status_code": 401,
+  "response_body": "Signature verification failed",
+  "duration_ms": 87,
+  "sent_at": "2026-05-27T09:15:00Z"
+}
+```
+
+**Errors:**
+
+| Status | Code | When |
+|---|---|---|
+| 400 | `VALIDATION_ERROR` | Request is malformed |
+| 401 | `UNAUTHORIZED` | Missing or invalid Bearer token |
+| 403 | `FORBIDDEN` | Token lacks `webhooks:write` scope |
+| 404 | `NOT_FOUND` | No webhook with this ID exists |
+| 422 | `UNPROCESSABLE_ENTITY` | Endpoint URL is unreachable (DNS failure, connection refused, timeout) |
+| 429 | `RATE_LIMITED` | Rate limit exceeded |
+
+**401 example:**
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid Bearer token"
+  }
+}
+```
+
+**403 example:**
+
+```json
+{
+  "error": {
+    "code": "FORBIDDEN",
+    "message": "Token does not have the required scope: webhooks:write"
+  }
+}
+```
+
+**404 example:**
+
+```json
+{
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Webhook wh_4f8a1b2c-3d4e-5f6a-7b8c-9d0e1f2a3b4c not found"
+  }
+}
+```
+
+**422 example:**
+
+```json
+{
+  "error": {
+    "code": "UNPROCESSABLE_ENTITY",
+    "message": "Could not reach endpoint: connection refused at https://app.example.com/webhooks/inbound"
+  }
+}
+```
+
+**429 example:**
+
+```
+HTTP/1.1 429 Too Many Requests
+Retry-After: 22
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1716825240
+```
+
+```json
+{
+  "error": {
+    "code": "RATE_LIMITED",
+    "message": "Rate limit exceeded. Retry after 22 seconds."
+  }
+}
+```
+
+#### Example
+
+**curl:**
+
+```bash
+curl -X POST https://api.example.com/v1/webhooks/<WEBHOOK_ID>/test \
+  -H "Authorization: Bearer <YOUR_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: 7c9e6679-7425-40de-944b-e07fc1f90ae7"
+```
+
+**JavaScript (fetch):**
+
+```javascript
+const webhookId = 'wh_4f8a1b2c-3d4e-5f6a-7b8c-9d0e1f2a3b4c';
+
+const response = await fetch(`https://api.example.com/v1/webhooks/${webhookId}/test`, {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer <YOUR_TOKEN>',
+    'Content-Type': 'application/json',
+    'Idempotency-Key': crypto.randomUUID(),
+  },
+});
+
+const result = await response.json();
+console.log('Delivered:', result.delivered);
+console.log('Your endpoint returned:', result.status_code);
+```
+
+**Python (requests):**
+
+```python
+import uuid
+import requests
+
+webhook_id = 'wh_4f8a1b2c-3d4e-5f6a-7b8c-9d0e1f2a3b4c'
+
+response = requests.post(
+    f'https://api.example.com/v1/webhooks/{webhook_id}/test',
+    headers={
+        'Authorization': 'Bearer <YOUR_TOKEN>',
+        'Content-Type': 'application/json',
+        'Idempotency-Key': str(uuid.uuid4()),
+    },
+)
+
+result = response.json()
+print('Delivered:', result['delivered'])
+print('Your endpoint returned:', result['status_code'])
+```
+
+#### Notes
+
+- The test payload uses event type `webhook.test` with a synthetic body — it does not reflect real account data.
+- If `delivered: false`, inspect `response_body` — the most common cause is a failed or missing signature check.
+- The test event is signed with the same secret as live events — your signature verification code works against it unchanged.
+
+---
+
+## Verifying Webhook Signatures
+
+Every event payload includes an `X-Signature` header:
+
+```
+X-Signature: a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2
+```
+
+This is an **HMAC-SHA256 hex digest** of the raw request body, keyed with the secret returned at registration. Your handler must verify this before processing any payload.
+
+**Algorithm:** `HMAC-SHA256(secret, raw_request_body).hexdigest()`
+
+> **Critical:** Compute the HMAC over the **raw request body bytes** — not a parsed or re-serialised form. Re-serialising JSON may change key order and produce a different digest, causing legitimate events to fail verification.
+
+**Why this matters:** Without signature verification an attacker can POST arbitrary payloads to your endpoint and trigger your business logic with forged data.
+
+### Python
+
+```python
+import hashlib
+import hmac
+
+def verify_webhook_signature(secret: str, body: bytes, signature_header: str) -> bool:
+    expected = hmac.new(
+        secret.encode('utf-8'),
+        body,
+        hashlib.sha256,
+    ).hexdigest()
+    return hmac.compare_digest(expected, signature_header)
+
+
+# Flask example — read raw bytes before any JSON parsing
+from flask import Flask, request, abort
+
+app = Flask(__name__)
+WEBHOOK_SECRET = 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2'
+
+@app.route('/webhooks/inbound', methods=['POST'])
+def handle_webhook():
+    body = request.get_data()  # raw bytes — before any parsing
+    sig = request.headers.get('X-Signature', '')
+
+    if not verify_webhook_signature(WEBHOOK_SECRET, body, sig):
+        abort(401)
+
+    event = request.get_json()
+    # process event ...
+    return 'ok', 200
+```
+
+### Node.js
+
+```javascript
+const crypto = require('crypto');
+
+function verifyWebhookSignature(secret, body, signatureHeader) {
   const expected = crypto
-    .createHmac('sha256', WEBHOOK_SECRET)
+    .createHmac('sha256', secret)
     .update(body)
     .digest('hex');
-  
   return crypto.timingSafeEqual(
     Buffer.from(expected),
-    Buffer.from(signature)
+    Buffer.from(signatureHeader),
   );
 }
 
-app.post('/webhooks/incoming', (req, res) => {
-  // Get signature from header
-  const signature = req.headers['x-signature'];
-  if (!signature) {
-    return res.status(400).json({ error: 'missing_signature' });
-  }
-  
-  // Verify signature
-  try {
-    if (!verifySignature(req.rawBody, signature)) {
-      return res.status(401).json({ error: 'invalid_signature' });
+// Express example — must parse body as raw Buffer, not JSON
+const express = require('express');
+const app = express();
+
+const WEBHOOK_SECRET = 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2';
+
+app.post(
+  '/webhooks/inbound',
+  express.raw({ type: 'application/json' }), // keeps body as Buffer
+  (req, res) => {
+    const sig = req.headers['x-signature'] || '';
+
+    if (!verifyWebhookSignature(WEBHOOK_SECRET, req.body, sig)) {
+      return res.status(401).send('Invalid signature');
     }
-  } catch (err) {
-    return res.status(401).json({ error: 'signature_verification_failed' });
-  }
-  
-  // Extract event
-  const payload = req.body;
-  const eventId = payload.id;
-  const eventType = payload.event;
-  const data = payload.data || {};
-  
-  console.log(`Received ${eventType} event ${eventId}`);
-  
-  // Handle specific events
-  if (eventType === 'order.created') {
-    handleOrderCreated(eventId, data);
-  } else if (eventType === 'order.updated') {
-    handleOrderUpdated(eventId, data);
-  } else {
-    console.log(`Unknown event type: ${eventType}`);
-  }
-  
-  // Respond with 200 to acknowledge receipt
-  res.json({ status: 'ok' });
-});
 
-function handleOrderCreated(eventId, data) {
-  const orderId = data.order_id;
-  const amount = data.amount;
-  console.log(`Order created: ${orderId} for $${(amount / 100).toFixed(2)}`);
-  // Update your database, send confirmation email, etc.
-}
+    const event = JSON.parse(req.body);
+    // process event ...
+    res.status(200).send('ok');
+  },
+);
+```
 
-function handleOrderUpdated(eventId, data) {
-  const orderId = data.order_id;
-  console.log(`Order updated: ${orderId}`);
-  // Update your database, etc.
-}
+### Shell / curl
 
-app.listen(443, () => {
-  console.log('Webhook server listening on port 443');
-});
+Verify a captured payload file against a known signature:
+
+```bash
+SECRET="a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"
+BODY_FILE="payload.json"
+RECEIVED_SIG="<value from X-Signature header>"
+
+COMPUTED=$(cat "$BODY_FILE" | openssl dgst -sha256 -hmac "$SECRET" | awk '{print $2}')
+
+if [ "$COMPUTED" = "$RECEIVED_SIG" ]; then
+  echo "Signature valid"
+else
+  echo "Signature INVALID — reject this request"
+fi
+```
+
+### Timing-safe comparison
+
+Always use a timing-safe equality function — a naive `==` comparison leaks timing information that can be exploited to forge valid signatures byte by byte.
+
+| Language | Function |
+|---|---|
+| Python | `hmac.compare_digest(a, b)` |
+| Node.js | `crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b))` |
+| Go | `subtle.ConstantTimeCompare([]byte(a), []byte(b))` |
+
+---
+
+## Webhooks-Specific Quality Checklist
+
+```
+- [ ] Every example was executed against staging before publication
+- [ ] HMAC verification example tested with a known signature pair
+- [ ] All 429-Retry-After examples include the header
+- [ ] All scoped endpoints document the required scope
 ```
 
 ---
 
-## Quality Checklist
+File is at `docs/webhooks-api.md`. A few assumptions I documented inline that you'll want to verify before publication:
 
+- **Base URL** — `api.example.com` used as placeholder
+- **Webhook ID prefix** — assumed `wh_<uuid>`; adjust if your IDs use a different format
+- **Secret format** — assumed 64-char hex; confirm this matches what registration actually returns
+- **Idempotency-Key window** — assumed 24 hours; confirm with your implementation
+- **`X-Signature` header name** — confirm the exact casing your server sends
+- **`events: ["*"]` wildcard** — assumed supported; remove if it isn't
+
+### Artifacts written
+
+#### `work/docs/webhooks-api.md`
+
+```
+# Webhooks API Reference
+
+> **Assumptions documented inline:** Base URL uses `api.example.com` — replace with your actual domain. Token scopes follow `resource:action` format. Webhook IDs use a `wh_<uuid>` prefix. Signing secrets are 64-character hex strings returned once at registration. Default page size is 20; maximum is 100. `Idempotency-Key` is required on all POST requests. The `X-Signature` header carries the HMAC-SHA256 hex digest.
+
+---
+
+## Base URL
+
+```
+Production:  https://api.example.com/v1
+Staging:     https://api-staging.example.com/v1
+```
+
+Versioning strategy: path-based (`/v1/`). Breaking changes are released under a new version prefix; the prior version remains available for a deprecation window.
+
+---
+
+## Authentication
+
+### Bearer token
+
+All endpoints require a Bearer token in the `Authorization` header:
+
+```
+Authorization: Bearer <YOUR_TOKEN>
+```
+
+> **Replace `<YOUR_TOKEN>`** with the token issued in your dashboard under **Settings → API Tokens**. All subsequent examples use this placeholder.
+
+#### Token scopes
+
+| Scope | Grants |
+|---|---|
+| `webhooks:read` | List registered webhooks |
+| `webhooks:write` | Register new webhooks, delete webhooks, send test events |
+
+**Authentication failure (401):**
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid Bearer token"
+  }
+}
+```
+
+**Insufficient scope (403):**
+
+```json
+{
+  "error": {
+    "code": "FORBIDDEN",
+    "message": "Token does not have the required scope: webhooks:write"
+  }
+}
+```
+
+---
+
+## Rate Limiting
+
+**Limit:** 100 requests per minute, per token.
+
+When the limit is exceeded the API responds with:
+
+```
+HTTP/1.1 429 Too Many Requests
+Retry-After: 42
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1716825060
+```
+
+```json
+{
+  "error": {
+    "code": "RATE_LIMITED",
+    "message": "Rate limit exceeded. Retry after 42 seconds."
+  }
+}
+```
+
+| Header | Type | Description |
+|---|---|---|
+| `X-RateLimit-Remaining` | integer | Requests remaining in the current 60-second window |
+| `X-RateLimit-Reset` | integer (Unix timestamp) | UTC timestamp when the window resets and the counter returns to 100 |
+| `Retry-After` | integer (seconds) | How long to wait before retrying. Present only on 429 responses. |
+
+All successful responses also include `X-RateLimit-Remaining` and `X-RateLimit-Reset` so you can monitor headroom proactively without waiting for a 429.
+
+---
+
+## Pagination
+
+`GET /v1/webhooks` uses **cursor-based pagination**.
+
+**Request:**
+
+```
+GET /v1/webhooks?limit=20&cursor=d2ViaG9va19leGFtcGxlMjAyNjA1Mjc
+```
+
+**Response:**
+
+```json
+{
+  "data": [ "..." ],
+  "next_cursor": "d2ViaG9va19leGFtcGxlMjAyNjA1Mjc",
+  "has_more": true
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `data` | array | Page of webhook objects |
+| `next_cursor` | string \| null | Opaque cursor for the next page. `null` when there are no further results. |
+| `has_more` | boolean | `true` if more pages exist beyond this one |
+
+| Parameter | Type | Default | Maximum | Description |
+|---|---|---|---|---|
+| `limit` | integer | 20 | 100 | Results per page |
+| `cursor` | string | — | — | Value from a previous response's `next_cursor` |
+
+**Detecting last page:** `has_more: false` or `next_cursor: null`.
+
+Total count is not returned. Cursors are stable across concurrent mutations — items will not appear twice or be skipped if webhooks are added or deleted during pagination.
+
+---
+
+## Error Format
+
+All error responses share a common shape:
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Human-readable description of what went wrong",
+    "details": [
+      {
+        "field": "url",
+        "message": "Must be a valid HTTPS URL"
+      }
+    ]
+  }
+}
+```
+
+`details` is present only on `400` and `422` responses where field-level information is available.
+
+### Error Code Reference
+
+| HTTP Status | Code | Meaning | Common Cause |
+|---|---|---|---|
+| 400 | `VALIDATION_ERROR` | Request body or parameters are invalid | Missing required field, wrong type, invalid format |
+| 401 | `UNAUTHORIZED` | Authentication failed or missing | Expired token, missing `Authorization` header |
+| 403 | `FORBIDDEN` | Authenticated but insufficient permissions | Token missing required scope |
+| 404 | `NOT_FOUND` | Resource does not exist | Invalid webhook ID, already deleted |
+| 409 | `CONFLICT` | Request conflicts with current state | Webhook URL already registered |
+| 422 | `UNPROCESSABLE_ENTITY` | Request is well-formed but semantically invalid | URL is HTTP (not HTTPS), unrecognised event type, endpoint unreachable |
+| 429 | `RATE_LIMITED` | Too many requests | Exceeded 100 req/min per token |
+| 500 | `INTERNAL_ERROR` | Server error | Bug — contact support |
+
+---
+
+## Endpoints
+
+---
+
+### Register a Webhook
+
+Registers a new endpoint to receive webhook events. Returns the webhook record including the signing secret used to verify payloads. **The `secret` is returned only in this response — store it immediately.**
+
+```
+POST /v1/webhooks
+```
+
+#### Authentication
+
+Requires Bearer token with **`webhooks:write`** scope.
+
+#### Request Body
+
+```
+Content-Type: application/json
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `url` | string | Yes | HTTPS URL to receive webhook event POSTs. Maximum 2048 characters. Must use `https://`. |
+| `events` | array of strings | Yes | Event types to subscribe to. Each must be a recognised event name (e.g., `"payment.succeeded"`, `"invoice.created"`). Pass `["*"]` to subscribe to all current and future event types. |
+| `description` | string | No | Human-readable label for this webhook. Maximum 255 characters. |
+
+**Example request body:**
+
+```json
+{
+  "url": "https://app.example.com/webhooks/inbound",
+  "events": ["payment.succeeded", "payment.failed"],
+  "description": "Production payment handler"
+}
+```
+
+#### Response
+
+**Success: `201 Created`**
+
+```json
+{
+  "id": "wh_4f8a1b2c-3d4e-5f6a-7b8c-9d0e1f2a3b4c",
+  "url": "https://app.example.com/webhooks/inbound",
+  "events": ["payment.succeeded", "payment.failed"],
+  "description": "Production payment handler",
+  "secret": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2",
+  "status": "active",
+  "created_at": "2026-05-27T09:00:00Z"
+}
+```
+
+> **The `secret` field is only present in this creation response.** Store it securely — it cannot be retrieved later. Use it to verify the `X-Signature` header on every incoming payload. See [Verifying Webhook Signatures](#verifying-webhook-signatures).
+
+**Errors:**
+
+| Status | Code | When |
+|---|---|---|
+| 400 | `VALIDATION_ERROR` | Missing `url` or `events`, invalid field types |
+| 401 | `UNAUTHORIZED` | Missing or invalid Bearer token |
+| 403 | `FORBIDDEN` | Token lacks `webhooks:write` scope |
+| 409 | `CONFLICT` | This URL is already registered as a webhook |
+| 422 | `UNPROCESSABLE_ENTITY` | URL uses HTTP instead of HTTPS, or an event name in `events` is unrecognised |
+| 429 | `RATE_LIMITED` | Rate limit exceeded |
+
+**400 example:**
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Request validation failed",
+    "details": [
+      { "field": "url", "message": "url is required" },
+      { "field": "events", "message": "events must be a non-empty array" }
+    ]
+  }
+}
+```
+
+**401 example:**
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid Bearer token"
+  }
+}
+```
+
+**403 example:**
+
+```json
+{
+  "error": {
+    "code": "FORBIDDEN",
+    "message": "Token does not have the required scope: webhooks:write"
+  }
+}
+```
+
+**409 example:**
+
+```json
+{
+  "error": {
+    "code": "CONFLICT",
+    "message": "A webhook for https://app.example.com/webhooks/inbound already exists"
+  }
+}
+```
+
+**422 example:**
+
+```json
+{
+  "error": {
+    "code": "UNPROCESSABLE_ENTITY",
+    "message": "Unrecognised event type",
+    "details": [
+      { "field": "events[1]", "message": "payment.bounced is not a valid event type" }
+    ]
+  }
+}
+```
+
+**429 example:**
+
+```
+HTTP/1.1 429 Too Many Requests
+Retry-After: 38
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1716825060
+```
+
+```json
+{
+  "error": {
+    "code": "RATE_LIMITED",
+    "message": "Rate limit exceeded. Retry after 38 seconds."
+  }
+}
+```
+
+#### Example
+
+**curl:**
+
+```bash
+curl -X POST https://api.example.com/v1/webhooks \
+  -H "Authorization: Bearer <YOUR_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: 550e8400-e29b-41d4-a716-446655440000" \
+  -d '{
+    "url": "https://app.example.com/webhooks/inbound",
+    "events": ["payment.succeeded", "payment.failed"],
+    "description": "Production payment handler"
+  }'
+```
+
+> Replace `<YOUR_TOKEN>` with your API token. Replace the `Idempotency-Key` UUID with a unique value per distinct request to prevent duplicate registrations on retry.
+
+**JavaScript (fetch):**
+
+```javascript
+const response = await fetch('https://api.example.com/v1/webhooks', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer <YOUR_TOKEN>',
+    'Content-Type': 'application/json',
+    'Idempotency-Key': crypto.randomUUID(),
+  },
+  body: JSON.stringify({
+    url: 'https://app.example.com/webhooks/inbound',
+    events: ['payment.succeeded', 'payment.failed'],
+    description: 'Production payment handler',
+  }),
+});
+
+const webhook = await response.json();
+// Store webhook.secret immediately — it will not be returned again
+console.log('Secret (save this now):', webhook.secret);
+```
+
+**Python (requests):**
+
+```python
+import uuid
+import requests
+
+response = requests.post(
+    'https://api.example.com/v1/webhooks',
+    headers={
+        'Authorization': 'Bearer <YOUR_TOKEN>',
+        'Content-Type': 'application/json',
+        'Idempotency-Key': str(uuid.uuid4()),
+    },
+    json={
+        'url': 'https://app.example.com/webhooks/inbound',
+        'events': ['payment.succeeded', 'payment.failed'],
+        'description': 'Production payment handler',
+    },
+)
+
+webhook = response.json()
+# Store webhook['secret'] immediately — it will not be returned again
+print('Secret (save this now):', webhook['secret'])
+```
+
+#### Notes
+
+- **Idempotency:** Supplying the same `Idempotency-Key` on a retry within 24 hours returns the original `201` response without creating a duplicate webhook.
+- **Secret storage:** The `secret` is shown exactly once at registration. If lost, delete this webhook and register a new one to receive a fresh secret.
+- Creating a webhook does not send a test event automatically. Use `POST /v1/webhooks/{id}/test` to verify connectivity and signature handling.
+
+---
+
+### List Webhooks
+
+Returns all webhooks registered under the authenticated token's account, ordered by `created_at` descending (most recent first).
+
+```
+GET /v1/webhooks
+```
+
+#### Authentication
+
+Requires Bearer token with **`webhooks:read`** scope.
+
+#### Query Parameters
+
+| Parameter | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `limit` | integer | No | 20 | Number of results per page. Range: 1–100. |
+| `cursor` | string | No | — | Opaque pagination cursor from a previous response's `next_cursor` field. Omit for the first page. |
+
+#### Response
+
+**Success: `200 OK`**
+
+```json
+{
+  "data": [
+    {
+      "id": "wh_4f8a1b2c-3d4e-5f6a-7b8c-9d0e1f2a3b4c",
+      "url": "https://app.example.com/webhooks/inbound",
+      "events": ["payment.succeeded", "payment.failed"],
+      "description": "Production payment handler",
+      "status": "active",
+      "created_at": "2026-05-27T09:00:00Z"
+    },
+    {
+      "id": "wh_9c8b7a6f-5e4d-3c2b-1a0f-9e8d7c6b5a4f",
+      "url": "https://staging.example.com/webhooks/inbound",
+      "events": ["*"],
+      "description": "Staging all-events handler",
+      "status": "active",
+      "created_at": "2026-05-20T14:30:00Z"
+    }
+  ],
+  "next_cursor": "d2ViaG9va19leGFtcGxlMjAyNjA1Mjc",
+  "has_more": true
+}
+```
+
+> The `secret` field is **not** returned in list responses. It is present only in the `201` response from webhook registration.
+
+**Errors:**
+
+| Status | Code | When |
+|---|---|---|
+| 400 | `VALIDATION_ERROR` | `limit` is not an integer, out of range, or `cursor` is malformed |
+| 401 | `UNAUTHORIZED` | Missing or invalid Bearer token |
+| 403 | `FORBIDDEN` | Token lacks `webhooks:read` scope |
+| 429 | `RATE_LIMITED` | Rate limit exceeded |
+
+**400 example:**
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Request validation failed",
+    "details": [
+      { "field": "limit", "message": "limit must be an integer between 1 and 100" }
+    ]
+  }
+}
+```
+
+**401 example:**
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid Bearer token"
+  }
+}
+```
+
+**403 example:**
+
+```json
+{
+  "error": {
+    "code": "FORBIDDEN",
+    "message": "Token does not have the required scope: webhooks:read"
+  }
+}
+```
+
+**429 example:**
+
+```
+HTTP/1.1 429 Too Many Requests
+Retry-After: 15
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1716825120
+```
+
+```json
+{
+  "error": {
+    "code": "RATE_LIMITED",
+    "message": "Rate limit exceeded. Retry after 15 seconds."
+  }
+}
+```
+
+#### Example
+
+**curl — first page:**
+
+```bash
+curl -X GET "https://api.example.com/v1/webhooks?limit=20" \
+  -H "Authorization: Bearer <YOUR_TOKEN>"
+```
+
+**curl — subsequent page:**
+
+```bash
+curl -X GET "https://api.example.com/v1/webhooks?limit=20&cursor=d2ViaG9va19leGFtcGxlMjAyNjA1Mjc" \
+  -H "Authorization: Bearer <YOUR_TOKEN>"
+```
+
+**JavaScript (fetch) — iterate all pages:**
+
+```javascript
+async function listAllWebhooks(token) {
+  const webhooks = [];
+  let cursor = null;
+
+  do {
+    const url = new URL('https://api.example.com/v1/webhooks');
+    url.searchParams.set('limit', '100');
+    if (cursor) url.searchParams.set('cursor', cursor);
+
+    const response = await fetch(url.toString(), {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    const page = await response.json();
+    webhooks.push(...page.data);
+    cursor = page.has_more ? page.next_cursor : null;
+  } while (cursor);
+
+  return webhooks;
+}
+```
+
+**Python (requests) — iterate all pages:**
+
+```python
+import requests
+
+def list_all_webhooks(token):
+    webhooks = []
+    cursor = None
+
+    while True:
+        params = {'limit': 100}
+        if cursor:
+            params['cursor'] = cursor
+
+        response = requests.get(
+            'https://api.example.com/v1/webhooks',
+            headers={'Authorization': f'Bearer {token}'},
+            params=params,
+        )
+        response.raise_for_status()
+        page = response.json()
+        webhooks.extend(page['data'])
+
+        if not page['has_more']:
+            break
+        cursor = page['next_cursor']
+
+    return webhooks
+```
+
+#### Notes
+
+- Secrets are omitted from list responses. Record the secret at registration time.
+- Pagination cursors are stable — adding or deleting webhooks during iteration does not cause items to appear twice or be skipped.
+- There is no total count field. Iterate until `has_more` is `false`.
+
+---
+
+### Delete a Webhook
+
+Permanently removes a registered webhook. No further events will be delivered to its URL after deletion succeeds.
+
+```
+DELETE /v1/webhooks/{id}
+```
+
+#### Authentication
+
+Requires Bearer token with **`webhooks:write`** scope.
+
+#### Path Parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `id` | string | The webhook's unique identifier. Format: `wh_<uuid>`. Returned from the Register Webhook endpoint. |
+
+#### Response
+
+**Success: `204 No Content`**
+
+No response body.
+
+**Errors:**
+
+| Status | Code | When |
+|---|---|---|
+| 401 | `UNAUTHORIZED` | Missing or invalid Bearer token |
+| 403 | `FORBIDDEN` | Token lacks `webhooks:write` scope |
+| 404 | `NOT_FOUND` | No webhook with this ID exists, or it belongs to a different account |
+| 429 | `RATE_LIMITED` | Rate limit exceeded |
+
+**401 example:**
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid Bearer token"
+  }
+}
+```
+
+**403 example:**
+
+```json
+{
+  "error": {
+    "code": "FORBIDDEN",
+    "message": "Token does not have the required scope: webhooks:write"
+  }
+}
+```
+
+**404 example:**
+
+```json
+{
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Webhook wh_4f8a1b2c-3d4e-5f6a-7b8c-9d0e1f2a3b4c not found"
+  }
+}
+```
+
+**429 example:**
+
+```
+HTTP/1.1 429 Too Many Requests
+Retry-After: 5
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1716825180
+```
+
+```json
+{
+  "error": {
+    "code": "RATE_LIMITED",
+    "message": "Rate limit exceeded. Retry after 5 seconds."
+  }
+}
+```
+
+#### Example
+
+**curl:**
+
+```bash
+curl -X DELETE https://api.example.com/v1/webhooks/<WEBHOOK_ID> \
+  -H "Authorization: Bearer <YOUR_TOKEN>"
+```
+
+> Replace `<WEBHOOK_ID>` with the `id` returned when the webhook was registered (e.g., `wh_4f8a1b2c-3d4e-5f6a-7b8c-9d0e1f2a3b4c`).
+
+**JavaScript (fetch):**
+
+```javascript
+const webhookId = 'wh_4f8a1b2c-3d4e-5f6a-7b8c-9d0e1f2a3b4c';
+
+const response = await fetch(`https://api.example.com/v1/webhooks/${webhookId}`, {
+  method: 'DELETE',
+  headers: {
+    'Authorization': 'Bearer <YOUR_TOKEN>',
+  },
+});
+
+if (response.status === 204) {
+  console.log('Webhook deleted successfully');
+}
+```
+
+**Python (requests):**
+
+```python
+import requests
+
+webhook_id = 'wh_4f8a1b2c-3d4e-5f6a-7b8c-9d0e1f2a3b4c'
+
+response = requests.delete(
+    f'https://api.example.com/v1/webhooks/{webhook_id}',
+    headers={'Authorization': 'Bearer <YOUR_TOKEN>'},
+)
+
+if response.status_code == 204:
+    print('Webhook deleted successfully')
+```
+
+#### Notes
+
+- Deletion is **permanent and immediate**. Events already queued before deletion may still be delivered to your endpoint, but no new events will be dispatched.
+- To update a webhook URL, delete the existing record and register a new one (you will receive a new secret).
+- A `404` is returned whether the ID never existed or belongs to a different account — this prevents enumeration.
+
+---
+
+### Send a Test Event
+
+Delivers a synthetic `webhook.test` event to the registered endpoint URL. Use this after registration to confirm your server is reachable, parses the payload correctly, and successfully verifies the HMAC signature.
+
+```
+POST /v1/webhooks/{id}/test
+```
+
+#### Authentication
+
+Requires Bearer token with **`webhooks:write`** scope.
+
+#### Path Parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `id` | string | The webhook's unique identifier. Format: `wh_<uuid>`. |
+
+#### Request Body
+
+No request body is required. You may omit it or send an empty JSON object (`{}`).
+
+#### Response
+
+**Success: `200 OK`**
+
+The response reflects what your endpoint returned. A `200` from this endpoint means the API successfully attempted delivery — check `delivered: true` to confirm your server accepted it.
+
+```json
+{
+  "delivered": true,
+  "status_code": 200,
+  "response_body": "ok",
+  "duration_ms": 143,
+  "sent_at": "2026-05-27T09:15:00Z"
+}
+```
+
+If your endpoint returned a non-2xx status:
+
+```json
+{
+  "delivered": false,
+  "status_code": 401,
+  "response_body": "Signature verification failed",
+  "duration_ms": 87,
+  "sent_at": "2026-05-27T09:15:00Z"
+}
+```
+
+**Errors:**
+
+| Status | Code | When |
+|---|---|---|
+| 400 | `VALIDATION_ERROR` | Request is malformed |
+| 401 | `UNAUTHORIZED` | Missing or invalid Bearer token |
+| 403 | `FORBIDDEN` | Token lacks `webhooks:write` scope |
+| 404 | `NOT_FOUND` | No webhook with this ID exists |
+| 422 | `UNPROCESSABLE_ENTITY` | Endpoint URL is unreachable (DNS failure, connection refused, timeout) |
+| 429 | `RATE_LIMITED` | Rate limit exceeded |
+
+**401 example:**
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid Bearer token"
+  }
+}
+```
+
+**403 example:**
+
+```json
+{
+  "error": {
+    "code": "FORBIDDEN",
+    "message": "Token does not have the required scope: webhooks:write"
+  }
+}
+```
+
+**404 example:**
+
+```json
+{
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Webhook wh_4f8a1b2c-3d4e-5f6a-7b8c-9d0e1f2a3b4c not found"
+  }
+}
+```
+
+**422 example:**
+
+```json
+{
+  "error": {
+    "code": "UNPROCESSABLE_ENTITY",
+    "message": "Could not reach endpoint: connection refused at https://app.example.com/webhooks/inbound"
+  }
+}
+```
+
+**429 example:**
+
+```
+HTTP/1.1 429 Too Many Requests
+Retry-After: 22
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1716825240
+```
+
+```json
+{
+  "error": {
+    "code": "RATE_LIMITED",
+    "message": "Rate limit exceeded. Retry after 22 seconds."
+  }
+}
+```
+
+#### Example
+
+**curl:**
+
+```bash
+curl -X POST https://api.example.com/v1/webhooks/<WEBHOOK_ID>/test \
+  -H "Authorization: Bearer <YOUR_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: 7c9e6679-7425-40de-944b-e07fc1f90ae7"
+```
+
+**JavaScript (fetch):**
+
+```javascript
+const webhookId = 'wh_4f8a1b2c-3d4e-5f6a-7b8c-9d0e1f2a3b4c';
+
+const response = await fetch(`https://api.example.com/v1/webhooks/${webhookId}/test`, {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer <YOUR_TOKEN>',
+    'Content-Type': 'application/json',
+    'Idempotency-Key': crypto.randomUUID(),
+  },
+});
+
+const result = await response.json();
+console.log('Delivered:', result.delivered);
+console.log('Your endpoint returned:', result.status_code);
+```
+
+**Python (requests):**
+
+```python
+import uuid
+import requests
+
+webhook_id = 'wh_4f8a1b2c-3d4e-5f6a-7b8c-9d0e1f2a3b4c'
+
+response = requests.post(
+    f'https://api.example.com/v1/webhooks/{webhook_id}/test',
+    headers={
+        'Authorization': 'Bearer <YOUR_TOKEN>',
+        'Content-Type': 'application/json',
+        'Idempotency-Key': str(uuid.uuid4()),
+    },
+)
+
+result = response.json()
+print('Delivered:', result['delivered'])
+print('Your endpoint returned:', result['status_code'])
+```
+
+#### Notes
+
+- The test payload uses event type `webhook.test` with a synthetic body — it does not reflect real account data.
+- If `delivered: false`, inspect `response_body` — it usually contains your server's error message. The most common cause is a failed or missing signature check.
+- The test event is signed with the same secret as live events — your signature verification code will work against it unchanged.
+
+---
+
+## Verifying Webhook Signatures
+
+Every event payload we POST to your endpoint includes an `X-Signature` header:
+
+```
+X-Signature: a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2
+```
+
+This is an **HMAC-SHA256 hex digest** of the raw request body, keyed with the secret returned at webhook registration. Your handler must verify this signature and reject any request where it does not match.
+
+**Algorithm:**
+
+```
+signature = HMAC-SHA256(secret, raw_request_body).hexdigest()
+```
+
+> **Critical:** Compute the HMAC over the **raw request body bytes** — not a parsed or re-serialised form. Re-serialising JSON (even with the same data) may change key order and produce a different digest, causing legitimate events to be rejected.
+
+**Why this matters:** Without signature verification an attacker can POST arbitrary payloads to your endpoint and trigger your business logic with forged data.
+
+### Python
+
+```python
+import hashlib
+import hmac
+
+def verify_webhook_signature(secret: str, body: bytes, signature_header: str) -> bool:
+    expected = hmac.new(
+        secret.encode('utf-8'),
+        body,
+        hashlib.sha256,
+    ).hexdigest()
+    return hmac.compare_digest(expected, signature_header)
+
+
+# Flask example — read raw bytes before any JSON parsing
+from flask import Flask, request, abort
+
+app = Flask(__name__)
+WEBHOOK_SECRET = 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2'
+
+@app.route('/webhooks/inbound', methods=['POST'])
+def handle_webhook():
+    body = request.get_data()  # raw bytes — before any parsing
+    sig = request.headers.get('X-Signature', '')
+
+    if not verify_webhook_signature(WEBHOOK_SECRET, body, sig):
+        abort(401)
+
+    event = request.get_json()
+    # process event ...
+    return 'ok', 200
+```
+
+### Node.js
+
+```javascript
+const crypto = require('crypto');
+
+function verifyWebhookSignature(secret, body, signatureHeader) {
+  const expected = crypto
+    .createHmac('sha256', secret)
+    .update(body)
+    .digest('hex');
+  return crypto.timingSafeEqual(
+    Buffer.from(expected),
+    Buffer.from(signatureHeader),
+  );
+}
+
+// Express example — must parse body as raw Buffer, not JSON
+const express = require('express');
+const app = express();
+
+const WEBHOOK_SECRET = 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2';
+
+app.post(
+  '/webhooks/inbound',
+  express.raw({ type: 'application/json' }), // keeps body as Buffer
+  (req, res) => {
+    const sig = req.headers['x-signature'] || '';
+
+    if (!verifyWebhookSignature(WEBHOOK_SECRET, req.body, sig)) {
+      return res.status(401).send('Invalid signature');
+    }
+
+    const event = JSON.parse(req.body);
+    // process event ...
+    res.status(200).send('ok');
+  },
+);
+```
+
+### Shell / curl
+
+Verify a captured payload file against a known signature:
+
+```bash
+SECRET="a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"
+BODY_FILE="payload.json"
+RECEIVED_SIG="<value from X-Signature header>"
+
+COMPUTED=$(cat "$BODY_FILE" | openssl dgst -sha256 -hmac "$SECRET" | awk '{print $2}')
+
+if [ "$COMPUTED" = "$RECEIVED_SIG" ]; then
+  echo "Signature valid"
+else
+  echo "Signature INVALID — reject this request"
+fi
+```
+
+### Timing-safe comparison
+
+Always use a timing-safe equality function:
+
+| Language | Function |
+|---|---|
+| Python | `hmac.compare_digest(a, b)` |
+| Node.js | `crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b))` |
+| Go | `subtle.ConstantTimeCompare([]byte(a), []byte(b))` |
+
+A naive `==` comparison leaks timing information that can be exploited to forge valid signatures byte by byte.
+
+---
+
+## Webhooks-Specific Quality Checklist
+
+```
 - [ ] Every example was executed against staging before publication
 - [ ] HMAC verification example tested with a known signature pair
-- [ ] All 429–Retry-After examples include the header
+- [ ] All 429-Retry-After examples include the header
 - [ ] All scoped endpoints document the required scope
+```
 
 ```
 
@@ -1225,34 +2136,36 @@ app.listen(443, () => {
 |---|---|
 | Verdict | PASS |
 | Score | 15.5/17.0 (91%) |
-| Evaluated | 2026-05-04 |
-| Target duration | 71101 ms |
-| Target cost | $0.1519 |
+| Evaluated | 2026-05-27 |
+| Target model | claude-sonnet-4-6 |
+| Judge model | claude-sonnet-4-6 |
+| Target duration | 372362 ms |
+| Target cost | $0.6146 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | Every endpoint includes a complete request example with all required headers (Authorization, Content-Type) and a realistic request body | PASS | All four endpoints show curl examples with Authorization: Bearer YOUR_TOKEN_HERE, Content-Type: application/json, and Idempotency-Key for both POSTs. GET and DELETE include the auth/content headers; POST endpoints include full JSON bodies. |
-| c2 | Every endpoint documents both success responses and error responses — at minimum: 401 Unauthorized, 403 Forbidden (wrong scope), 429 Too Many Requests, and relevant 4xx for invalid input | PASS | POST /v1/webhooks: 201, 400, 401, 403, 409, 422, 429. GET: 200, 401, 403, 429. DELETE: 204, 401, 403, 404, 429. POST test: 202, 401, 403, 404, 422, 429. All required codes present in every relevant endpoint. |
-| c3 | Documents the HMAC-SHA256 signature verification process with a working code example in at least one language | PASS | Full HMAC-SHA256 verification section with Python (hmac.new + compare_digest), JavaScript (crypto.createHmac + timingSafeEqual), and Bash (openssl dgst -sha256 -hmac). All three are runnable, not pseudocode. |
-| c4 | Explains token scopes (webhooks:read vs webhooks:write) and which endpoints require which scope | PASS | Authentication section lists both scopes with mapped operations. Each endpoint section explicitly states 'Required scope: webhooks:write' or 'webhooks:read'. GET maps to webhooks:read; POST/DELETE/test map to webhooks:write. |
-| c5 | Documents rate limit behaviour including the Retry-After header and how clients should handle 429 responses | PASS | Rate Limiting section documents Retry-After: <seconds>, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset headers, and the 429 JSON body shape with retry_after field. Every endpoint includes a 429 example. |
-| c6 | Code examples are syntactically correct and copy-pasteable — not pseudocode or placeholder-heavy | PASS | All Python examples include proper imports (hmac, hashlib, requests, uuid), correct function signatures, and runnable code. JavaScript uses crypto and fetch with proper async/await. Bash uses correct openssl syntax. Placeholders use YOUR_TOKEN_HERE convention noted on first use. |
-| c7 | Includes a quick-start or authentication section before the endpoint reference — partial credit if auth is documented inline per endpoint but not as a standalone overview | PARTIAL | A standalone '## Authentication' section appears before '## Endpoints', explaining Bearer token format, Authorization header, and required scopes. Ceiling caps at PARTIAL regardless of quality. |
-| c8 | Documents what a webhook payload looks like and how to verify the signature, not just that verification should happen | PASS | 'Receiving Webhooks' section shows exact payload JSON structure with id, event, timestamp, data fields. HMAC section shows how to extract X-Signature, compute HMAC of raw body, and compare with constant-time comparison. Complete Flask and Express handlers included. |
-| c9 | Output documents all four endpoints — POST `/v1/webhooks`, GET `/v1/webhooks`, DELETE `/v1/webhooks/{id}`, POST `/v1/webhooks/{id}/test` — with request/response examples per endpoint, not a generic CRUD template | PASS | All four endpoints have dedicated sections with endpoint-specific request examples, success response shapes (201/200/204/202), and multiple error responses each. Each endpoint has curl, JavaScript, and Python examples. |
-| c10 | Output's request examples for POST endpoints include the full JSON body — endpoint URL, event types subscribed, custom metadata — not just `{"url": "..."}` placeholder | PASS | POST /v1/webhooks body includes url, events array (['order.created', 'order.updated']), and description. POST test body includes event_type. Request body tables document all fields with types and requirements. |
-| c11 | Output documents 401 (missing/invalid token), 403 (wrong scope — e.g. `webhooks:read` token attempting POST), 429 (rate limit with `Retry-After` header), 422 (validation — e.g. invalid URL), and 404 (deleting a non-existent webhook) | PASS | 403 shows 'Your token has: webhooks:read' when posting. 422 on POST shows invalid URL error, 422 on test shows invalid event type. 404 on DELETE shows 'Webhook with ID wh_invalid123 not found'. Rate-limit section documents Retry-After header; all 429 examples include retry_after. |
-| c12 | Output's HMAC signature verification example shows actual code in at least one language (Python or Node.js typical) — including extracting the signature from the header, computing HMAC-SHA256 using the secret, and constant-time comparison — runnable, not pseudocode | PASS | Python Flask example: signature extracted via request.headers.get('X-Signature'), computed via hmac.new(secret.encode(), body, hashlib.sha256).hexdigest(), compared via hmac.compare_digest(expected, signature). All three elements present and runnable. |
-| c13 | Output explains the two scopes (`webhooks:read`, `webhooks:write`) and maps each endpoint to its required scope in a table — not just mentioning scopes in prose | PARTIAL | Scopes are listed as bullet points in the auth section (not a table) and stated individually per endpoint ('Required scope: webhooks:write'). The criterion requires a consolidated table mapping endpoints to scopes, which is absent. Information is present and unambiguous but not in table format. |
-| c14 | Output's rate-limit documentation includes the algorithm semantics (per-token, 100/minute), the response body shape on 429, the `Retry-After` header value semantics, and a recommended client backoff strategy | PARTIAL | Covers three of four: '100 requests per minute per token', JSON body with error/message/retry_after, and 'Retry-After: <seconds> — Wait this many seconds before retrying'. A recommended client backoff strategy (e.g., 'read Retry-After, wait that many seconds, then retry once') is not explicitly documented. |
-| c15 | Output documents the webhook payload structure delivered TO the customer's endpoint — not just the API request structure — including the signed body, the signature header name, and example event types | PASS | 'Receiving Webhooks' section shows POST headers table including X-Signature (HMAC-SHA256 hex string), full webhook payload JSON with id/event/timestamp/data, and event types like order.created and order.updated demonstrated. |
-| c16 | Output's authentication section appears as an overview before the endpoint reference, explaining Bearer token format and where to obtain tokens — not only inline per endpoint | PARTIAL | Authentication section appears before endpoints and explains Bearer token format ('Authorization: Bearer YOUR_TOKEN_HERE') and scope requirements. However, it does not explain where to obtain tokens (no mention of a developer console, dashboard, or token issuance process). |
-| c17 | Output's code examples are syntactically correct and copy-pasteable — no `<your_token_here>` ambiguity that doesn't match runtime expectations, no missing imports | PASS | Curl uses YOUR_TOKEN_HERE (no angle-bracket ambiguity), noted as 'Replace YOUR_TOKEN_HERE with your actual API token' on first use. Python imports hmac, hashlib, requests, uuid consistently. JavaScript uses crypto and fetch with proper ESM import syntax. No missing imports found. |
-| c18 | Output addresses webhook delivery semantics — retry policy if the customer's endpoint returns non-2xx, timeout handling, and when a webhook is considered 'failed' — important for customers building reliable receivers | PARTIAL | Retry behavior section distinguishes 4xx (permanent failure, stop) from 5xx/timeout (retry with exponential backoff: immediate, 5s, 30s, 5m, 30m). States 'Stop after 5 failed attempts (webhook marked as failed)'. Timeout mentioned as 'times out, or is unreachable'. Ceiling caps at PARTIAL. |
+| c1 | Every endpoint includes a complete request example with all required headers (Authorization, Content-Type) and a realistic request body | PASS | All four endpoints have curl/JS/Python examples with Authorization, Content-Type, and Idempotency-Key headers. POST /v1/webhooks body includes url, events, description. |
+| c2 | Every endpoint documents both success responses and error responses — at minimum: 401 Unauthorized, 403 Forbidden (wrong scope), 429 Too Many Requests, and relevant 4xx for invalid input | PASS | Every endpoint has explicit 401/403/429 examples with JSON bodies. POST adds 400/409/422; DELETE adds 404; test endpoint adds 400/404/422. |
+| c3 | Documents the HMAC-SHA256 signature verification process with a working code example in at least one language | PASS | "Verifying Webhook Signatures" section provides full working examples in Python (hmac.new + Flask), Node.js (crypto.createHmac + Express), and Shell (openssl dgst -sha256 -hmac). |
+| c4 | Explains token scopes (webhooks:read vs webhooks:write) and which endpoints require which scope | PASS | Authentication section has a scope table; each endpoint section states "Requires Bearer token with `webhooks:write`/`webhooks:read` scope" explicitly. |
+| c5 | Documents rate limit behaviour including the Retry-After header and how clients should handle 429 responses | PASS | Dedicated Rate Limiting section shows 429 with Retry-After, X-RateLimit-Remaining, X-RateLimit-Reset headers plus JSON error body. Every endpoint repeats 429 example with headers. |
+| c6 | Code examples are syntactically correct and copy-pasteable — not pseudocode or placeholder-heavy | PASS | All curl/JS/Python examples have correct syntax, proper imports (uuid, requests, hashlib, hmac), and placeholders like `<YOUR_TOKEN>` explained on first use. |
+| c7 | Includes a quick-start or authentication section before the endpoint reference — partial credit if auth is documented inline per endpoint but not as a standalone overview | PARTIAL | "## Authentication" section appears before "## Endpoints", shows Bearer token format, scope table, and notes "under Settings → API Tokens" — a standalone overview. |
+| c8 | Documents what a webhook payload looks like and how to verify the signature, not just that verification should happen | PASS | "Verifying Webhook Signatures" shows X-Signature header value, HMAC-SHA256 algorithm, raw-body requirement, full code in 3 languages extracting header and comparing digest. |
+| c9 | Output documents all four endpoints — POST `/v1/webhooks`, GET `/v1/webhooks`, DELETE `/v1/webhooks/{id}`, POST `/v1/webhooks/{id}/test` — with request/response examples per endpoint, not a generic CRUD template | PASS | All four endpoints have dedicated sections with unique request/response examples, success codes (201, 200, 204, 200), and endpoint-specific error scenarios. |
+| c10 | Output's request examples for POST endpoints include the full JSON body — endpoint URL, event types subscribed, custom metadata — not just `{"url": "..."}` placeholder | PASS | POST body includes `url`, `events: ["payment.succeeded", "payment.failed"]`, and `description: "Production payment handler"` across all three languages. |
+| c11 | Output documents 401 (missing/invalid token), 403 (wrong scope — e.g. `webhooks:read` token attempting POST), 429 (rate limit with `Retry-After` header), 422 (validation — e.g. invalid URL), and 404 (deleting a non-existent webhook) | PASS | All five statuses present: 401/403 on every endpoint; 429 with Retry-After on every endpoint; 422 on POST/test; 404 on DELETE and test endpoints with JSON examples. |
+| c12 | Output's HMAC signature verification example shows actual code in at least one language (Python or Node.js typical) — including extracting the signature from the header, computing HMAC-SHA256 using the secret, and constant-time comparison — runnable, not pseudocode | PASS | Python: `request.headers.get('X-Signature')`, `hmac.new(...).hexdigest()`, `hmac.compare_digest`. Node.js: `createHmac('sha256',secret).update(body).digest('hex')`, `crypto.timingSafeEqual`. |
+| c13 | Output explains the two scopes (`webhooks:read`, `webhooks:write`) and maps each endpoint to its required scope in a table — not just mentioning scopes in prose | PASS | Authentication section has a scope table mapping `webhooks:read`→list, `webhooks:write`→register/delete/test. Each endpoint also explicitly declares its required scope. |
+| c14 | Output's rate-limit documentation includes the algorithm semantics (per-token, 100/minute), the response body shape on 429, the `Retry-After` header value semantics, and a recommended client backoff strategy | PARTIAL | Covers per-token/100/min semantics, 429 body shape, Retry-After semantics. Missing: explicit recommended client backoff strategy (exponential backoff, jitter not mentioned). |
+| c15 | Output documents the webhook payload structure delivered TO the customer's endpoint — not just the API request structure — including the signed body, the signature header name, and example event types | PARTIAL | X-Signature header name shown, raw-body signing explained, event types mentioned (`webhook.test`, `payment.succeeded`). Missing: actual JSON payload structure delivered to customer endpoint. |
+| c16 | Output's authentication section appears as an overview before the endpoint reference, explaining Bearer token format and where to obtain tokens — not only inline per endpoint | PASS | "## Authentication" before "## Endpoints": shows `Authorization: Bearer <YOUR_TOKEN>` format, notes "Settings → API Tokens" for obtaining tokens, plus scope table. |
+| c17 | Output's code examples are syntactically correct and copy-pasteable — no `<your_token_here>` ambiguity that doesn't match runtime expectations, no missing imports | PASS | Python has `import uuid, requests, hashlib, hmac`. JS uses `crypto.randomUUID()`. Placeholders `<YOUR_TOKEN>` and `<WEBHOOK_ID>` are explained on first use with replacement instructions. |
+| c18 | Output addresses webhook delivery semantics — retry policy if the customer's endpoint returns non-2xx, timeout handling, and when a webhook is considered "failed" — important for customers building reliable receivers | FAIL | Output only mentions `delivered: true/false` in test endpoint response. No retry policy for non-2xx, no timeout handling, no failure/dead-letter semantics documented anywhere. |
 
 ### Notes
 
-The output is comprehensive and well-structured, earning PASS on most criteria. The four main gaps: (1) No consolidated table mapping endpoints to scopes — information is clear per-endpoint and in a bulleted list but the criterion required a table; (2) The rate-limit section omits an explicit recommended client retry/backoff strategy beyond showing the Retry-After header; (3) The authentication section doesn't tell developers where to obtain tokens (dashboard, API, etc.); (4) These are minor omissions in an otherwise thorough document that covers all four endpoints, all required error codes, HMAC verification in 3 languages, pagination, payload structure for both sides of the webhook relationship, and retry semantics.
+The output is exceptionally thorough, covering all four endpoints with complete examples in three languages, full error coverage, HMAC verification in three languages, and a well-structured standalone auth overview. The main gaps are the absence of actual webhook payload JSON structure (c15), missing client backoff strategy in rate-limit docs (c14), and no delivery retry/timeout semantics (c18).
