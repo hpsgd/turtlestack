@@ -1,3 +1,11 @@
+---
+# Match the model the agent declares (opus) in
+# plugins/leadership/coordinator/agents/coordinator.md. The runner otherwise
+# falls back to the harness default (Haiku), which is not what the
+# agent is designed to run on.
+target-model: claude-opus-4-7
+---
+
 # Test: cross-domain dispatch
 
 Scenario: A user brings a multi-domain feature launch request requiring product, design, engineering, and launch work. Does the coordinator decompose it correctly and produce a structured dispatch plan without making unilateral decisions?

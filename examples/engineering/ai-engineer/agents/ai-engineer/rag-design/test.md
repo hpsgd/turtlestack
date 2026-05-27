@@ -1,3 +1,11 @@
+---
+# Match the model the agent declares (sonnet) in
+# plugins/engineering/ai-engineer/agents/ai-engineer.md. The runner otherwise
+# falls back to the harness default (Haiku), which is not what the
+# agent is designed to run on.
+target-model: claude-sonnet-4-6
+---
+
 # Test: RAG pipeline for internal documentation search
 
 Scenario: User wants to build a RAG pipeline so employees can ask natural language questions against the company's internal documentation corpus (~2,000 Confluence pages and ~500 PDF runbooks).

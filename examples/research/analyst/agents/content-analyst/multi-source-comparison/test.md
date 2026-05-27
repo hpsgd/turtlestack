@@ -1,3 +1,11 @@
+---
+# Match the model the agent declares (sonnet) in
+# plugins/research/analyst/agents/content-analyst.md. The runner otherwise
+# falls back to the harness default (Haiku), which is not what the
+# agent is designed to run on.
+target-model: claude-sonnet-4-6
+---
+
 # Test: content-analyst — multi-source comparison
 
 Scenario: A user provides three articles on the same topic from different source types (financial press, progressive press, industry body) and asks the content analyst to compare framing and source quality before citing them in a policy brief.

@@ -1,3 +1,11 @@
+---
+# Match the model the agent declares (opus) in
+# plugins/leadership/grc-lead/agents/grc-lead.md. The runner otherwise
+# falls back to the harness default (Haiku), which is not what the
+# agent is designed to run on.
+target-model: claude-opus-4-7
+---
+
 # Test: compliance scope
 
 Scenario: A user asks the GRC lead about compliance obligations for a new feature that will collect and process customer PII. Does the GRC lead identify the applicable frameworks, quantify the risks, and present a compliant path rather than just listing requirements?

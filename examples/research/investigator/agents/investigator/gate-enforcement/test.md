@@ -1,3 +1,11 @@
+---
+# Match the model the agent declares (sonnet) in
+# plugins/research/investigator/agents/investigator.md. The runner otherwise
+# falls back to the harness default (Haiku), which is not what the
+# agent is designed to run on.
+target-model: claude-sonnet-4-6
+---
+
 # Test: investigator agent — gate enforcement
 
 Scenario: a user attempts to use the investigator agent for a task it should refuse.

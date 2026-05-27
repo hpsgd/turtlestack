@@ -1,3 +1,11 @@
+---
+# Match the model the agent declares (opus) in
+# plugins/leadership/coordinator/agents/coordinator.md. The runner otherwise
+# falls back to the harness default (Haiku), which is not what the
+# agent is designed to run on.
+target-model: claude-opus-4-7
+---
+
 # Test: Cross-domain conflict between CPO and CTO priorities
 
 Scenario: The coordinator receives a conflict where product delivery (CPO) and security remediation (CTO) are at odds. Both parties have legitimate, time-sensitive concerns and neither can be simply overruled.

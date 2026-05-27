@@ -1,3 +1,11 @@
+---
+# Match the model the agent declares (sonnet) in
+# plugins/engineering/data-engineer/agents/data-engineer.md. The runner otherwise
+# falls back to the harness default (Haiku), which is not what the
+# agent is designed to run on.
+target-model: claude-sonnet-4-6
+---
+
 # Test: Event-sourced user activity pipeline
 
 Scenario: User needs a data pipeline that captures user activity events from the production event stream and makes them available for analytics — specifically to answer retention and feature adoption questions.

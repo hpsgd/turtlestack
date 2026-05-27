@@ -1,3 +1,11 @@
+---
+# Match the model the agent declares (opus) in
+# plugins/leadership/cpo/agents/cpo.md. The runner otherwise
+# falls back to the harness default (Haiku), which is not what the
+# agent is designed to run on.
+target-model: claude-opus-4-7
+---
+
 # Test: product prioritisation
 
 Scenario: Competing stakeholder requests land on the CPO's desk simultaneously — a sales-driven feature request, a retention problem flagged by support, and a technical dependency from engineering. Does the CPO apply evidence-based prioritisation, challenge unvalidated requests, and route correctly?

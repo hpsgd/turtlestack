@@ -1,3 +1,11 @@
+---
+# Match the model the agent declares (opus) in
+# plugins/leadership/coordinator/agents/coordinator.md. The runner otherwise
+# falls back to the harness default (Haiku), which is not what the
+# agent is designed to run on.
+target-model: claude-opus-4-7
+---
+
 # Test: Large initiative decomposition across CPO and CTO domains
 
 Scenario: A major platform change (multi-tenancy) that spans product, engineering, security, and commercial concerns. Tests whether the coordinator decomposes into the right workstreams, maps them to agents, sequences dependencies, and produces a dispatch plan rather than jumping to implementation.

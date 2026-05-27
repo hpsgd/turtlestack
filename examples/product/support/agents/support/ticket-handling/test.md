@@ -1,3 +1,11 @@
+---
+# Match the model the agent declares (sonnet) in
+# plugins/product/support/agents/support.md. The runner otherwise
+# falls back to the harness default (Haiku), which is not what the
+# agent is designed to run on.
+target-model: claude-sonnet-4-6
+---
+
 # Test: Ticket handling
 
 Scenario: A support agent receives a ticket about a data export timing out, and needs to classify, investigate, and respond appropriately.

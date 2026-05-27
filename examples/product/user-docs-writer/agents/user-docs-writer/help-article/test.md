@@ -1,3 +1,11 @@
+---
+# Match the model the agent declares (sonnet) in
+# plugins/product/user-docs-writer/agents/user-docs-writer.md. The runner otherwise
+# falls back to the harness default (Haiku), which is not what the
+# agent is designed to run on.
+target-model: claude-sonnet-4-6
+---
+
 # Test: Help article
 
 Scenario: A user-facing help article is needed explaining how to set up two-factor authentication for end users of a SaaS product.

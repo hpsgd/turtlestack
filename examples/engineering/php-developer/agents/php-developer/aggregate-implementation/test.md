@@ -1,3 +1,11 @@
+---
+# Match the model the agent declares (sonnet) in
+# plugins/engineering/php-developer/agents/php-developer.md. The runner otherwise
+# falls back to the harness default (Haiku), which is not what the
+# agent is designed to run on.
+target-model: claude-sonnet-4-6
+---
+
 # Test: php-developer implements a new event-sourced aggregate
 
 Scenario: User asks the PHP developer agent to add a new event-sourced `Booking` aggregate with `request`, `confirm`, and `cancel` operations. The project is greenfield PHP 8.4 using EventSauce, symfony/messenger, PHPStan level 9, and Pest v4 — but the user does not state any of that explicitly. The agent must perform pre-flight, classify the work as a new domain feature, and propose a structured plan.

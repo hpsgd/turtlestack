@@ -1,3 +1,11 @@
+---
+# Match the model the agent declares (opus) in
+# plugins/practices/plugin-curator/agents/plugin-curator.md. The runner otherwise
+# falls back to the harness default (Haiku), which is not what the
+# agent is designed to run on.
+target-model: claude-opus-4-7
+---
+
 # Test: plugin-curator audit request
 
 Scenario: User asks the plugin-curator agent to audit an existing agent definition for structural consistency, expecting a structured report against the template criteria.
