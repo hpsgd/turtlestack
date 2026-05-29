@@ -16,9 +16,9 @@ Both tools share an underlying capability (Playwright/Chromium can render JS-hea
 
 ## Prerequisites
 
-Docker is the only host requirement. The wrapper at `${CLAUDE_PLUGIN_ROOT}/skills/web-snapshot/scripts/web-snapshot.sh` builds a Playwright-based image on first run (Microsoft's official base + [shot-scraper](https://shot-scraper.datasette.io)) and reuses it thereafter.
+Docker is the only host requirement. The wrapper at `${CLAUDE_PLUGIN_ROOT}/skills/web-snapshot/scripts/web-snapshot.sh` uses a Playwright-based image (Microsoft's official base + [shot-scraper](https://shot-scraper.datasette.io)).
 
-First run pulls the Playwright base (~1.5GB, a few minutes on a slow link). Subsequent invocations add ~2s of container startup. Confirm Docker is available before running:
+On first run the wrapper pulls a pre-built image from `ghcr.io/hpsgd/turtlestack-web-snapshot:<plugin-version>` (~3.9GB; a few minutes on a slow link). If the registry is unreachable it falls back to building locally from the Dockerfile, which also pulls the Playwright base. The image shares its Playwright base layer with the `content-retrieval` image — if either is cached locally the other is much faster. Subsequent invocations add ~2s of container startup. Confirm Docker is available before running:
 
 ```bash
 command -v docker || echo "MISSING — install Docker Desktop or the docker engine"

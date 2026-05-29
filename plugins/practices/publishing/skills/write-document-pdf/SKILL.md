@@ -41,7 +41,7 @@ The bundled `report` style is brand-styled (Mona Sans display, Inter body, hps.g
 
 ## Step 4: Invoke the renderer
 
-The renderer is at `${CLAUDE_PLUGIN_ROOT}/scripts/render-document-pdf.sh` — a wrapper that runs `render-document-pdf.py` inside a Docker image built from `${CLAUDE_PLUGIN_ROOT}/scripts/Dockerfile`. The only host requirement is Docker. The image is built locally on first run (~30-60s) and cached thereafter, keyed by the hash of the Dockerfile, the script, the constraints file, and the bundled assets so it rebuilds automatically when any of those change.
+The renderer is at `${CLAUDE_PLUGIN_ROOT}/scripts/render-document-pdf.sh` — a wrapper that runs `render-document-pdf.py` inside a Docker image. The only host requirement is Docker. On first run the wrapper pulls a pre-built image from `ghcr.io/hpsgd/turtlestack-publishing-document-pdf:<plugin-version>` (~338MB) and caches it. If the registry is unreachable (offline, GHCR outage, fork without registry access) the wrapper falls back to building locally from `${CLAUDE_PLUGIN_ROOT}/scripts/Dockerfile` (~30-60s). A hash-tagged local image, if present, takes precedence over the registry tag — that path supports dev iteration on the Dockerfile without round-tripping through a release.
 
 User-supplied paths under `$HOME` and `/tmp` resolve inside the container identically (both are bind-mounted at the same path). For markdown sources or CSS files outside both, set `TURTLESTACK_DOCKER_MOUNTS` to a colon-separated list of extra host paths to bind-mount.
 
@@ -77,7 +77,7 @@ pdffonts <path> 2>/dev/null || grep -ao '/BaseFont [^ ]*' <path> | sort -u
 After verification, surface the following in your chat reply:
 
 - The absolute path to the PDF.
-- The mechanism — name the wrapper script (`render-document-pdf.sh`) so the user knows what fired. If this was a first run, mention that the Docker image was built; otherwise note that the cached image was reused.
+- The mechanism — name the wrapper script (`render-document-pdf.sh`) so the user knows what fired. If this was a first run, mention whether the image was pulled from GHCR or built locally as a fallback; otherwise note that the cached image was reused.
 - The verification evidence — the `file` output (page count, PDF version) and the embedded font check.
 - A one-line note on typical next steps for a document PDF: sharing with stakeholders, archiving alongside source markdown, or sideloading to a tablet for review. Don't open the PDF.
 
@@ -108,7 +108,7 @@ If there's no frontmatter or no `title`, no cover is rendered — the document s
 - **Read-only on the markdown source.** Never modify the input.
 - **Don't open the PDF for the user.** Just report the path.
 - **Don't re-render if nothing has changed.** If the output file exists and is newer than both the markdown and the chosen stylesheet, ask before overwriting.
-- **Surface bootstrap delays.** First run on a fresh machine builds the Docker image (~30-60s). Subsequent runs add ~1-2s of container startup. If the wrapper hangs longer than that, something is wrong — investigate, don't silently retry. If Docker isn't installed, the wrapper fails fast with a clear message; tell the user to install Docker rather than try to work around it.
+- **Surface bootstrap delays.** First run on a fresh machine pulls the pre-built image from GHCR (seconds to tens of seconds depending on connection); local-build fallback takes ~30-60s. Subsequent runs add ~1-2s of container startup. If the wrapper hangs longer than that, something is wrong — investigate, don't silently retry. If Docker isn't installed, the wrapper fails fast with a clear message; tell the user to install Docker rather than try to work around it.
 - **Wide tables (7+ columns) may overflow.** xhtml2pdf has a known weak spot with wide tables. If the source markdown contains wide tables and the output overflows, options are (a) reduce columns, (b) write a custom CSS file with `table-layout: fixed; word-wrap: break-word; font-size: 8pt` for the affected tables, or (c) restructure the data.
 
 ## Output format

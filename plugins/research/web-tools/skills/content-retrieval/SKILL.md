@@ -71,7 +71,7 @@ Use the bundled wrapper, which runs Playwright inside a Docker image so Playwrig
   [--wait-after 0]
 ```
 
-The wrapper writes the rendered HTML to stdout and exits non-zero on failure. First run pulls the Microsoft Playwright Python base (~1.5GB, several minutes on a slow link) and builds the image — shares layers with the `web-snapshot` image if that's already been built. Subsequent runs add ~2s of container startup.
+The wrapper writes the rendered HTML to stdout and exits non-zero on failure. On first run it pulls a pre-built image from `ghcr.io/hpsgd/turtlestack-content-retrieval-playwright:<plugin-version>` (~3.9GB; several minutes on a slow link). The image shares its Playwright base layer with the `web-snapshot` image — if either is already cached locally the other is much faster. If the registry is unreachable, the wrapper falls back to building the image locally from the Dockerfile, which also pulls the Playwright base (~1.5GB). Subsequent runs add ~2s of container startup.
 
 **Prerequisites:** Docker on the host. The wrapper fails fast with exit 69 if Docker is missing — tell the user to install Docker Desktop or the docker engine.
 

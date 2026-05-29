@@ -3,16 +3,22 @@
 # image based on Microsoft's Playwright Python image. The only host
 # requirement is Docker.
 #
-# First run pulls the Playwright base (~1.5GB, several minutes on a slow
-# connection) and builds the wrapper image. Subsequent runs reuse the cached
-# image (~2s overhead per invocation).
+# Image resolution order:
+#   1. local hash tag    — preserves dev iteration on Dockerfile changes
+#   2. local registry tag — already pulled from ghcr.io
+#   3. docker pull        — first run on a fresh host (~3.9GB; minutes)
+#   4. docker build       — offline, fork, or image-missing fallback
+#                           (local build also pulls the Playwright base)
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SKILL_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PLUGIN_ROOT="$(cd "$SKILL_ROOT/../.." && pwd)"
 DOCKERFILE="$SCRIPT_DIR/Dockerfile"
 SCRIPT="$SCRIPT_DIR/web-snapshot.py"
 ENTRYPOINT="$SCRIPT_DIR/entrypoint.sh"
+PLUGIN_JSON="$PLUGIN_ROOT/.claude-plugin/plugin.json"
 
 if ! command -v docker >/dev/null 2>&1; then
   echo "error: docker not found on PATH. Install Docker Desktop or the docker engine." >&2
@@ -23,14 +29,29 @@ hash_inputs() {
   cat "$DOCKERFILE" "$SCRIPT" "$ENTRYPOINT" | shasum -a 256 | cut -c1-12
 }
 
-IMAGE_TAG="turtlestack/web-snapshot:$(hash_inputs)"
+plugin_version() {
+  [ -f "$PLUGIN_JSON" ] || return 0
+  grep -E '"version"[[:space:]]*:' "$PLUGIN_JSON" | head -1 \
+    | sed -E 's/.*"version"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/'
+}
 
-if ! docker image inspect "$IMAGE_TAG" >/dev/null 2>&1; then
-  echo "Building $IMAGE_TAG (first run pulls Playwright base, ~1.5GB)..." >&2
+VERSION="$(plugin_version)"
+IMAGE_HASH_TAG="turtlestack/web-snapshot:$(hash_inputs)"
+IMAGE_REGISTRY_TAG="ghcr.io/hpsgd/turtlestack-web-snapshot:${VERSION}"
+
+if docker image inspect "$IMAGE_HASH_TAG" >/dev/null 2>&1; then
+  IMAGE_TAG="$IMAGE_HASH_TAG"
+elif [ -n "$VERSION" ] && docker image inspect "$IMAGE_REGISTRY_TAG" >/dev/null 2>&1; then
+  IMAGE_TAG="$IMAGE_REGISTRY_TAG"
+elif [ -n "$VERSION" ] && docker pull --quiet "$IMAGE_REGISTRY_TAG" >/dev/null 2>&1; then
+  IMAGE_TAG="$IMAGE_REGISTRY_TAG"
+else
+  echo "Building $IMAGE_HASH_TAG locally (registry image unavailable; pulls Playwright base, ~1.5GB)..." >&2
   docker build --quiet \
     -f "$DOCKERFILE" \
-    -t "$IMAGE_TAG" \
+    -t "$IMAGE_HASH_TAG" \
     "$SCRIPT_DIR" >/dev/null
+  IMAGE_TAG="$IMAGE_HASH_TAG"
 fi
 
 # Chromium's sandbox wants root inside the container, so we don't pass --user.
