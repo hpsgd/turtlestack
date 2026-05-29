@@ -1,5 +1,20 @@
 # Changelog
 
+## [3.2.0](https://github.com/hpsgd/turtlestack/compare/v3.1.0...v3.2.0) (2026-05-29)
+
+
+### Features
+
+* **plugins:** dockerize runtime deps for publishing, coordinator, web-tools ([#26](https://github.com/hpsgd/turtlestack/issues/26)) ([ee26ce2](https://github.com/hpsgd/turtlestack/commit/ee26ce29035fd8e725035f69723f3634bc417fa2))
+* **plugins:** publish runtime images to GHCR with build fallback ([#33](https://github.com/hpsgd/turtlestack/issues/33)) ([1fd9635](https://github.com/hpsgd/turtlestack/commit/1fd9635f8d0574d4b9c4e028668c0a95f200f581))
+
+
+### Bug Fixes
+
+* **billing-engineer:** strengthen output-skeleton enforcement; preserve no-code constraint ([#31](https://github.com/hpsgd/turtlestack/issues/31)) ([3552ed4](https://github.com/hpsgd/turtlestack/commit/3552ed490eef20eec9903ac45781184abcec512d))
+* **dossier:** require dispatch plan in agent's final visible message ([#32](https://github.com/hpsgd/turtlestack/issues/32)) ([85ae7ab](https://github.com/hpsgd/turtlestack/commit/85ae7abadb5498675219d2d0d4d2cbf24c60d3da))
+* **investigator:** require positive scope in refusals; re-grade definition-text criteria ([#30](https://github.com/hpsgd/turtlestack/issues/30)) ([d407de3](https://github.com/hpsgd/turtlestack/commit/d407de3449d95abcd1397a311820248bbd6d225b))
+
 ## [3.1.0](https://github.com/hpsgd/turtlestack/compare/v3.0.1...v3.1.0) (2026-05-23)
 
 
