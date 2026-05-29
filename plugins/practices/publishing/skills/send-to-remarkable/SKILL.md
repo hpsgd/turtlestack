@@ -42,7 +42,7 @@ Optional second argument. Default is `/` (root of My Files on the device). If th
 "${CLAUDE_PLUGIN_ROOT}/scripts/send-to-remarkable.sh" <abs pdf path> [<remote folder>]
 ```
 
-The wrapper builds (on first run) and runs an `rmapi` Docker image, bind-mounting `~/.config/rmapi/` from the host so the auth state persists across invocations. Capture stdout and stderr — both are useful, since rmapi prints upload progress on stdout and errors on stderr.
+On first run the wrapper pulls a pre-built `rmapi` image from `ghcr.io/hpsgd/turtlestack-remarkable:<plugin-version>` (~36MB; multi-stage Alpine + statically-linked binary). If the registry is unreachable it falls back to building the image locally from the multi-stage Go Dockerfile (~60-120s). The container runs with `~/.config/rmapi/` bind-mounted from the host so the auth state persists across invocations. Capture stdout and stderr — both are useful, since rmapi prints upload progress on stdout and errors on stderr.
 
 ## Step 4: Handle failure modes
 

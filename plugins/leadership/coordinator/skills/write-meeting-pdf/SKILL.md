@@ -41,7 +41,7 @@ By default the PDF is written as `<meeting-folder>/meeting.pdf`. The user can ov
 
 ## Step 3: Invoke the renderer
 
-The renderer is a standalone script. Use the wrapper at `${CLAUDE_PLUGIN_ROOT}/scripts/render-meeting-pdf.sh` — it runs `render-meeting-pdf.py` inside a Docker image built from `${CLAUDE_PLUGIN_ROOT}/scripts/Dockerfile` on first run (~30-60s) and reuses it thereafter. The only host requirement is Docker. The image bundles `reportlab` plus the brand fonts and logos from the publishing plugin's `assets/` directory:
+The renderer is a standalone script. Use the wrapper at `${CLAUDE_PLUGIN_ROOT}/scripts/render-meeting-pdf.sh` — it runs `render-meeting-pdf.py` inside a Docker image. The only host requirement is Docker. On first run the wrapper pulls a pre-built image from `ghcr.io/hpsgd/turtlestack-coordinator-meeting-pdf:<plugin-version>` (~264MB) and caches it. If the registry is unreachable it falls back to building locally from `${CLAUDE_PLUGIN_ROOT}/scripts/Dockerfile` (~30-60s). The local-build fallback requires the publishing plugin to be installed alongside coordinator — the brand fonts and logos are read from `practices/publishing/assets`. The pre-built image bakes those assets in, so the registry path has no cross-plugin dependency.
 
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/render-meeting-pdf.sh" \
@@ -82,7 +82,7 @@ Next step: sideload to the Remarkable Paper Pro for the meeting.
 - **Don't open the PDF for the user.** Just report the path. Whether they sideload to a tablet, open in a viewer, or upload to a cloud service is their call.
 - **Don't re-render if nothing has changed.** If `meeting.pdf` exists and is newer than both `qanda.md` and `agenda.md`, ask the user before overwriting.
 - **Don't substitute fonts or colours.** The renderer chooses brand-consistent typography and a colour palette tuned for e-ink. If the user wants a variant, they can fork the script — don't adjust ad-hoc per invocation.
-- **Surface bootstrap delays.** First run on a fresh machine builds the Docker image (~30-60s). Subsequent runs add ~1-2s of container startup. If the wrapper hangs longer than that, something is wrong — investigate, don't silently retry. If Docker is missing, the wrapper fails fast with exit 69 — tell the user to install Docker.
+- **Surface bootstrap delays.** First run on a fresh machine pulls the pre-built image from GHCR (seconds to tens of seconds depending on connection); local-build fallback takes ~30-60s. Subsequent runs add ~1-2s of container startup. If the wrapper hangs longer than that, something is wrong — investigate, don't silently retry. If Docker is missing, the wrapper fails fast with exit 69 — tell the user to install Docker.
 
 ## Layout reference
 
