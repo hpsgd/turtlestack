@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.3.1](https://github.com/hpsgd/turtlestack/compare/v3.3.0...v3.3.1) (2026-05-31)
+
+
+### Performance Improvements
+
+* **writing-style:** trim tone-and-voice rule under 40k char threshold ([#36](https://github.com/hpsgd/turtlestack/issues/36)) ([6647592](https://github.com/hpsgd/turtlestack/commit/66475924f6dee61be0a4a2f91d7db801eec1cf1c))
+
 ## [3.3.0](https://github.com/hpsgd/turtlestack/compare/v3.2.0...v3.3.0) (2026-05-31)
 
 

@@ -1,7 +1,7 @@
 {
   "name": "nextjs-stack",
   "description": "Framework-specific conventions for Next.js, React, and Vercel",
-  "version": "3.3.0",
+  "version": "3.3.1",
   "author": {
     "name": "hps.gd"
   },
