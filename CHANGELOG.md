@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.3.0](https://github.com/hpsgd/turtlestack/compare/v3.2.0...v3.3.0) (2026-05-31)
+
+
+### Features
+
+* expand AI tell coverage + grant producer agents Write/Edit ([#34](https://github.com/hpsgd/turtlestack/issues/34)) ([88600b9](https://github.com/hpsgd/turtlestack/commit/88600b9233bea11e65854fb6b972a22c6e457836))
+
 ## [3.2.0](https://github.com/hpsgd/turtlestack/compare/v3.1.0...v3.2.0) (2026-05-29)
 
 

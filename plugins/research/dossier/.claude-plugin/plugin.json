@@ -1,7 +1,7 @@
 {
   "name": "dossier",
   "description": "Build engagement dossiers — consolidate research outputs from any plugin that conforms to the report frontmatter contract into a single brand-styled PDF, or drive an end-to-end campaign from a single target.",
-  "version": "3.2.0",
+  "version": "3.3.0",
   "author": {
     "name": "hps.gd"
   },

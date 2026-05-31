@@ -1,7 +1,7 @@
 {
   "name": "qa-lead",
   "description": "QA Lead — test strategy, acceptance criteria, 3 amigos participation. Works with product and architecture during planning to define what to test and how to verify.",
-  "version": "3.2.0",
+  "version": "3.3.0",
   "author": {
     "name": "hps.gd"
   },
