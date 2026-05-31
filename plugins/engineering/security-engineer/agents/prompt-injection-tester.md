@@ -1,7 +1,7 @@
 ---
 name: prompt-injection-tester
 description: "Prompt injection specialist — adversarial testing of LLM-powered applications for prompt injection, jailbreaks, data extraction, and indirect injection. Use when security-testing AI integrations, evaluating guardrail robustness, or assessing LLM attack surface in production systems."
-tools: Bash, WebFetch, WebSearch
+tools: Bash, WebFetch, WebSearch, Read, Glob, Grep
 model: sonnet
 ---
 

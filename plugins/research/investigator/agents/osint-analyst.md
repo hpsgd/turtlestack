@@ -1,7 +1,7 @@
 ---
 name: osint-analyst
 description: "OSINT analyst — technical investigation of domains, IP infrastructure, and organisational digital footprints using public registries and open sources. Use when mapping a domain's infrastructure, investigating an IP address, or building an entity's digital footprint. Does NOT investigate private individuals."
-tools: Skill, WebSearch, WebFetch, Read, Write, Bash
+tools: Skill, WebSearch, WebFetch, Read, Write, Edit, Bash
 model: sonnet
 ---
 
