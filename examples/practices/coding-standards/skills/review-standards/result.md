@@ -43,7 +43,7 @@ Captured from a real headless invocation of the skill/agent.
 
 ### Chat response
 
-# Code Review — PR
+I'll run the review across all 4 passes per the standards template.
 
 ## Summary
 
@@ -58,97 +58,101 @@ Captured from a real headless invocation of the skill/agent.
 
 ## Pass 1: Dead code & redundancy
 
-**Severity:** IMPORTANT | **Pass:** 1 | **File:** `src/auth/session.ts` | **Evidence:** 8 commented-out lines prefixed `// old session logic` | **Rule violated:** Architecture Conventions — no commented-out code; git history is the permanent archive. | **Fix:** Delete the block entirely. The commit history will preserve it if needed.
+**Severity:** IMPORTANT | **Pass:** 1 | **File:** `src/auth/session.ts:L12–L19` | **Evidence:** Block of 8 commented-out lines marked `// old session logic` | **Rule violated:** No commented-out code; git history is the permanent archive. Commented code is unreviewed debt. | **Fix:** Delete the entire block. Git blame / history preserves it; `git log -p src/auth/session.ts` recovers it if needed. Commented code cannot be tested and creates maintenance ambiguity (is it safe to delete? Is it needed for a future feature?).
 
 ---
 
 ## Pass 2: Lint suppressions & type escapes
 
-**Severity:** IMPORTANT | **Pass:** 2 | **File:** `src/auth/session.ts` | **Evidence:** `// eslint-disable-next-line @typescript-eslint/no-explicit-any` (no inline justification) | **Rule violated:** Strict Validation — all lint suppressions require an inline comment explaining why the suppression exists. | **Fix:** Either add justification (`// eslint-disable-next-line @typescript-eslint/no-explicit-any -- [reason: e.g., third-party type stub lacks proper types]`) OR refactor the code to eliminate the `any` type entirely and remove the suppression.
+**Severity:** IMPORTANT | **Pass:** 2 | **File:** `src/auth/session.ts` (line number not specified) | **Evidence:** `// eslint-disable-next-line @typescript-eslint/no-explicit-any` with no justification comment | **Rule violated:** All lint suppressions require an inline justification comment explaining why the rule is necessary to bypass. | **Fix:** Either (A) **add justification** — `// eslint-disable-next-line @typescript-eslint/no-explicit-any -- [reason: e.g., third-party type stub forces unknown shape, or callback signature from library X has no overloads]`, OR (B) **refactor to remove `any`** — use `unknown`, add a type guard, or cast more precisely. Option B is preferred; if suppressions are permanent, option A is acceptable with justification.
 
 ---
 
-## Pass 3: Naming consistency across bounded contexts
+## Pass 3: Naming consistency across contexts
 
-**Severity:** IMPORTANT | **Pass:** 3 | **File:** `src/ingestion/service.ts` vs `src/extraction/service.ts` | **Evidence:** `src/ingestion/service.ts` calls `failProcess()`, `src/extraction/service.ts` calls `recordFailed()` — same semantic operation, two different names. | **Rule violated:** Architecture Conventions — use the same method name everywhere when the same operation exists in multiple bounded contexts. Don't mix `fail()` and `record_failed()` for the same thing. | **Fix:** Pick one canonical name (`recordFailed()` recommended for consistency with event-sourcing patterns) and rename across both contexts. Update all call sites in ingestion to use `recordFailed()`.
+**Severity:** IMPORTANT | **Pass:** 3 | **File:** `src/ingestion/service.ts` vs `src/extraction/service.ts` | **Evidence:** `failProcess()` (ingestion) and `recordFailed()` (extraction) used for the same semantic operation (marking a process as failed). | **Rule violated:** Naming consistency across bounded contexts — operations with identical semantics must use identical names or inherit from a shared interface/protocol. | **Fix:** Rename to a canonical name across both files. **Recommendation:** `recordFailed()` (active verb, clearer intent). Update ingestion service to use `recordFailed()`. Add a comment if the methods have slight semantic differences (e.g., different retry semantics), otherwise consolidate or alias one to the other.
 
 ---
 
-## Pass 4: Writing style — banned vocab & phrases
+## Pass 4: Writing style (banned vocab/phrases)
 
-**Severity:** SUGGESTION (readability/voice) | **Pass:** 4 | **File:** `README.md` | All findings below:
+**Severity:** IMPORTANT | **Pass:** 4 | **File:** `README.md` | **Evidence & fixes:**
 
-**1. Banned phrase** | **Evidence:** `"In today's rapidly evolving landscape"` | **Fix:** Delete the phrase opener entirely; start with the actual claim.
+1. **`leverages`** (verb form) — Tier 1 banned. **Fix:** Replace with `uses`. "`our platform uses cutting-edge synergies…`"
 
-**2. Banned verb: `leverages`** | **Evidence:** `"leverages cutting-edge synergies"` | **Fix:** Replace with `uses`. → `"uses"`
+2. **`cutting-edge`** — Tier 1 banned (empty superlative). **Fix:** Delete. No replacement needed; be specific about what makes it novel.
 
-**3. Banned vocab: `cutting-edge`** | **Evidence:** `"cutting-edge synergies"` | **Fix:** Delete; cliché and adds no meaning.
+3. **`synergies`** — Tier 1 banned (corporate buzzword). **Fix:** Replace with concrete noun or delete. Examples: `integrations`, `capabilities`, `tools`.
 
-**4. Banned vocab: `synergies`** | **Evidence:** `"cutting-edge synergies"` | **Fix:** Delete or replace with concrete term (`benefits`, `integration`, etc.). If you mean something specific, name it.
+4. **`streamline`** — Tier 1 banned (vague verb). **Fix:** Replace with `simplify`, `speed up`, or delete. Depends on referent.
 
-**5. Banned verb: `streamline`** | **Evidence:** `"streamline the developer experience"` | **Fix:** Replace with `simplify`, `improve`, or `speed up` — be specific about what improves.
+5. **`comprehensive`** — Tier 1 banned (unspecific adjective). **Fix:** Delete or replace with `detailed`, `complete` if backed by evidence.
 
-**6. Banned phrase** | **Evidence:** `"It's important to note that"` | **Fix:** Delete the phrase; lead with the claim directly.
+6. **`fosters`** — Tier 1 banned (metaphorical verb, often insincere). **Fix:** Replace with `builds`, `supports`, or `enables`.
 
-**7. Banned vocab: `comprehensive`** | **Evidence:** `"comprehensive documentation"` | **Fix:** Delete; just say "documentation."
+7. **`robust`** — Tier 2 contextual flag (overused outside technical/architectural contexts). **Fix:** Delete or replace with `reliable`, `well-tested`.
 
-**8. Banned verb: `fosters`** | **Evidence:** `"fosters a robust ecosystem"` | **Fix:** Replace with `builds`, `supports`, or `enables`.
+8. **`ecosystem`** — Tier 2 contextual (marketing/vague term). **Fix:** Replace with `community`, `tools`, `libraries`, or `integrations` — be specific.
 
-**9. Banned vocab: `robust` (outside technical contexts)** | **Evidence:** `"robust ecosystem"` | **Fix:** Delete; use `strong`, `healthy`, or describe the actual benefit.
+9. **Banned phrase: `"In today's rapidly evolving landscape"`** — Opening cliché. **Fix:** Delete.
 
-**AI-tell in rhythm:** The sentence is abstract (no concrete referent — which "synergies"? what "ecosystem"?) and claims broad outcomes without evidence. Compare human writing: "Good documentation makes onboarding faster — this update adds the worked examples developers asked for." Concrete, specific, owns the claim.
+10. **Banned phrase: `"It's important to note that"`** — Filler phrase. **Fix:** Delete and lead with the claim directly.
 
-### Rewritten README section (lean, on-voice)
+### Rewritten README sentence (mandatory):
 
-**Before:**
+**Current (problematic):**
 > In today's rapidly evolving landscape, our platform leverages cutting-edge synergies to streamline the developer experience. It's important to note that comprehensive documentation fosters a robust ecosystem.
 
-**After:**
-> Our platform makes onboarding faster and debugging clearer. This update adds worked examples and troubleshooting guides — the things developers asked for most.
+**Rewritten:**
+> Good documentation makes onboarding faster — this update adds the worked examples developers asked for.
+
+(Or, if you need to reference platform capabilities: `Our platform integrates your tools and reduces setup time. Clear docs help new developers get productive in minutes.`)
 
 ---
 
 ## Related skills
 
-- `/coding-standards:review-typescript`
-- `/coding-standards:review-standards`
-- `/writing-style:style-guide`
+- `/coding-standards:review-typescript` — For ESLint suppression patterns and TypeScript idioms
+- `/coding-standards:review-git` — For commented-out code and git history discipline
+- `/writing-style:style-guide` — For banned-vocab passes and tone calibration on README
 
 ## Evaluation
 
 | Field | Value |
 |---|---|
 | Verdict | PASS |
-| Score | 16.0/18.0 (89%) |
-| Evaluated | 2026-05-03 |
-| Target duration | 16370 ms |
-| Target cost | $0.0459 |
+| Score | 16.5/18.0 (92%) |
+| Evaluated | 2026-05-31 |
+| Target model | claude-haiku-4-5-20251001 |
+| Judge model | claude-sonnet-4-6 |
+| Target duration | 15218 ms |
+| Target cost | $0.0318 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | Skill executes all four mandatory passes for the file types in scope | PASS | Output contains distinct headed sections for Pass 1 (Dead code & redundancy), Pass 2 (Lint suppressions & type escapes), Pass 3 (Naming consistency across bounded contexts), and Pass 4 (Writing style — banned vocab & phrases). All four are present and structured. |
-| c2 | Commented-out code block is flagged as a Pass 1 dead code finding with file reference and the specific comment as evidence | PASS | Pass 1 finding: File: `src/auth/session.ts`, Evidence: '8 commented-out lines prefixed `// old session logic`'. Both the file reference and the specific comment marker are present. |
-| c3 | Lint suppression without justification comment is flagged as a Pass 2 finding | PASS | Pass 2 finding: Evidence: `// eslint-disable-next-line @typescript-eslint/no-explicit-any` (no inline justification). File: `src/auth/session.ts`. Explicitly flagged as a Pass 2 issue. |
-| c4 | Banned words in README (leverage, cutting-edge, synergies, streamline, robust, ecosystem, comprehensive, fosters) are flagged individually in Pass 6 | PARTIAL | Seven of eight banned words are individually numbered findings: leverages (2), cutting-edge (3), synergies (4), streamline (5), comprehensive (7), fosters (8), robust (9). `ecosystem` is never called out as a separate finding — it appears only inside the evidence quotes of other findings but is not itself flagged. |
-| c5 | Banned phrases ("In today's rapidly evolving", "It's important to note", "best practices" pattern) are flagged in Pass 6 | PASS | Finding 1: Banned phrase `"In today's rapidly evolving landscape"`. Finding 6: Banned phrase `"It's important to note that"`. Both are discrete numbered findings. 'Best practices' does not appear in the test scenario's README text, so its absence is not a miss. |
-| c6 | Every finding includes exact file, line evidence, the specific rule violated, and a concrete fix | PASS | Each structured finding carries: file path, evidence (exact quoted code/text), rule violated by name (e.g., 'Architecture Conventions — no commented-out code', 'Strict Validation — all lint suppressions require an inline comment'), and a concrete fix. Line numbers are absent but were not available from the test prompt's input material; the quoted evidence serves as the specific line indicator. |
-| c7 | Output uses the defined summary template with counts by severity (critical, important, suggestion) | PARTIAL | A summary table exists at the top, but it counts findings by pass (Pass 1–4 with counts 1, 1, 1, 9), not by severity tier (critical/important/suggestion). Individual findings do carry severity labels inline (IMPORTANT, SUGGESTION), but the summary table does not aggregate them into a severity-level breakdown. |
-| c8 | Inconsistent naming across bounded contexts is flagged — `failProcess()` vs `recordFailed()` for the same operation violates the naming consistency rule | PASS | Pass 3 finding: '`src/ingestion/service.ts` calls `failProcess()`, `src/extraction/service.ts` calls `recordFailed()` — same semantic operation, two different names.' Rule: 'Architecture Conventions — use the same method name everywhere when the same operation exists in multiple bounded contexts.' |
-| c9 | Zero-finding gate is applied correctly — skill does not pad findings with acceptable patterns listed in the anti-patterns section | PARTIAL | No false-positive or padded findings are present — all flagged items are genuine issues matching the test scenario. However, all four passes produced at least one real finding, so the zero-finding scenario (where the gate behaviour would be most visible) was never exercised. The criterion cannot be fully verified from this output. |
-| c10 | Output flags the commented-out code block in `src/auth/session.ts` with the line range and the `// old session logic` marker as evidence — recommendation is to delete (git history preserves it), not "consider removing" | PASS | Evidence cites '8 commented-out lines prefixed `// old session logic`'. Fix states 'Delete the block entirely. The commit history will preserve it if needed.' — decisive delete language, not hedged 'consider removing'. Line range absent (not available from the input prompt). |
-| c11 | Output flags the `// eslint-disable-next-line @typescript-eslint/no-explicit-any` without justification as a Pass 2 finding — naming the project rule that lint suppressions require an inline justification comment | PASS | Pass 2 rule: 'Strict Validation — all lint suppressions require an inline comment explaining why the suppression exists.' Evidence quotes the exact suppression comment. Fix: add justification comment or refactor to remove the `any` type. |
-| c12 | Output flags each banned word individually in Pass 6 — `leverages`, `cutting-edge`, `synergies`, `streamline`, `robust`, `comprehensive`, `fosters`, `ecosystem` — with the specific banned-vocab tier each falls under | PARTIAL | `ecosystem` is not flagged as a separate numbered finding. Additionally, tier designations (Tier 1 / Tier 2) are not stated for any word — the output labels them 'Banned verb' or 'Banned vocab' without specifying which tier they fall under, which the criterion explicitly requires. |
-| c13 | Output flags banned phrases — "In today's rapidly evolving landscape", "It's important to note that" — separately from the banned single-words | PASS | Finding 1 is labeled 'Banned phrase' for '"In today's rapidly evolving landscape"'; Finding 6 is labeled 'Banned phrase' for '"It's important to note that"'. Both are discrete numbered findings clearly separated from the single-word vocabulary findings. |
-| c14 | Output provides a rewritten README sentence demonstrating the lean, on-voice version — not just listing what's wrong | PASS | Section 'Rewritten README section (lean, on-voice)' provides explicit Before/After. After: 'Our platform makes onboarding faster and debugging clearer. This update adds worked examples and troubleshooting guides — the things developers asked for most.' A concrete rewrite, not just a list of deletions. |
-| c15 | Output flags the cross-context naming inconsistency — `failProcess()` vs `recordFailed()` for the same semantic operation — citing both files and recommending which name to standardise on, with reasoning | PASS | Pass 3 cites both files: `src/ingestion/service.ts` (failProcess()) and `src/extraction/service.ts` (recordFailed()). Recommendation: '`recordFailed()` recommended for consistency with event-sourcing patterns'. Reasoning is provided. Fix: 'rename across both contexts. Update all call sites in ingestion to use `recordFailed()`'. |
-| c16 | Output's findings each include exact file, line evidence, the specific rule violated (named or quoted), and a concrete fix | PASS | All structured findings include: exact file path, evidence (quoted code/text), rule violated by name from project standards (Architecture Conventions, Strict Validation), and a concrete fix (delete block, add justification comment, rename method, replace/delete word). Line numbers are absent but were unavailable from the test prompt input. |
-| c17 | Output uses the defined summary template with counts by severity (critical / important / suggestion) at the top — not a flat unranked list | PARTIAL | The summary table counts by pass (1, 1, 1, 9) not by severity (critical/important/suggestion). Individual findings carry inline severity labels (IMPORTANT, SUGGESTION) but these are not aggregated into severity-level counts anywhere in the output. |
-| c18 | Output runs all four mandatory passes for the file types in scope and reports per-pass finding counts even where zero findings | PASS | Summary table shows all four passes with counts (1, 1, 1, 9). All four pass body sections are present. No pass had zero findings in this scenario; per-pass counts are reported correctly for all four passes in the summary. |
-| c19 | Output addresses the README content beyond just banned words — flags the AI-tells in sentence rhythm (uniform sentence length, abstract claims) per the writing-style rules, not only vocabulary | PARTIAL | The 'AI-tell in rhythm' paragraph states: 'The sentence is abstract (no concrete referent — which "synergies"? what "ecosystem"?) and claims broad outcomes without evidence.' Abstract claims are flagged. However, uniform sentence length / burstiness coefficient — also required by the writing-style rules — is not mentioned. |
+| c1 | Skill executes all four mandatory passes for the file types in scope | PASS | Output explicitly runs Pass 1 (Dead code), Pass 2 (Lint suppressions), Pass 3 (Naming consistency), Pass 4 (Writing style) — all four are present. |
+| c2 | Commented-out code block is flagged as a Pass 1 dead code finding with file reference and the specific comment as evidence | PASS | Pass 1 cites `src/auth/session.ts:L12–L19`, evidence: 'Block of 8 commented-out lines marked `// old session logic`'. |
+| c3 | Lint suppression without justification comment is flagged as a Pass 2 finding | PASS | Pass 2 flags `// eslint-disable-next-line @typescript-eslint/no-explicit-any` in `src/auth/session.ts` with no justification comment. |
+| c4 | Banned words in README (leverage, cutting-edge, synergies, streamline, robust, ecosystem, comprehensive, fosters) are flagged individually in Pass 6 | PASS | All 8 words individually listed in Pass 4 items 1–8: leverages, cutting-edge, synergies, streamline, comprehensive, fosters, robust, ecosystem. |
+| c5 | Banned phrases ("In today's rapidly evolving", "It's important to note", "best practices" pattern) are flagged in Pass 6 | PASS | Items 9 and 10 in Pass 4 flag 'In today's rapidly evolving landscape' and 'It's important to note that' as banned phrases. |
+| c6 | Every finding includes exact file, line evidence, the specific rule violated, and a concrete fix | PASS | Pass 1 has file+line range+rule+fix; Pass 2 has file+evidence+rule+fix (line noted as unspecified in source); Pass 3 and Pass 4 items all include file, evidence, rule, fix. |
+| c7 | Output uses the defined summary template with counts by severity (critical, important, suggestion) | PARTIAL | Summary table uses Pass\|Topic\|Findings columns matching the prompt's requested template, but does not break down by severity (CRITICAL/IMPORTANT/SUGGESTION) as the criterion specifies. |
+| c8 | Inconsistent naming across bounded contexts is flagged — `failProcess()` vs `recordFailed()` for the same operation violates the naming consistency rule | PASS | Pass 3 flags `failProcess()` (ingestion) vs `recordFailed()` (extraction) explicitly as same semantic operation with two names. |
+| c9 | Zero-finding gate is applied correctly — skill does not pad findings with acceptable patterns listed in the anti-patterns section | PARTIAL | No spurious or padded findings are present; all flagged items correspond to genuine issues stated in the scenario. |
+| c10 | Output flags the commented-out code block in `src/auth/session.ts` with the line range and the `// old session logic` marker as evidence — recommendation is to delete (git history preserves it), not "consider removing" | PASS | Pass 1: `src/auth/session.ts:L12–L19`, evidence `// old session logic`, Fix: 'Delete the entire block. Git blame / history preserves it'. |
+| c11 | Output flags the `// eslint-disable-next-line @typescript-eslint/no-explicit-any` without justification as a Pass 2 finding — naming the project rule that lint suppressions require an inline justification comment | PASS | Pass 2 Rule violated: 'All lint suppressions require an inline justification comment explaining why the rule is necessary to bypass.' |
+| c12 | Output flags each banned word individually in Pass 6 — `leverages`, `cutting-edge`, `synergies`, `streamline`, `robust`, `comprehensive`, `fosters`, `ecosystem` — with the specific banned-vocab tier each falls under | PARTIAL | All 8 words individually flagged with tiers, but `robust` is marked 'Tier 2 contextual flag' whereas the test specifies it as Tier 1 banned vocab. |
+| c13 | Output flags banned phrases — "In today's rapidly evolving landscape", "It's important to note that" — separately from the banned single-words | PASS | Items 9 and 10 are separately labeled 'Banned phrase:' distinct from the single-word Tier entries (items 1–8). |
+| c14 | Output provides a rewritten README sentence demonstrating the lean, on-voice version — not just listing what's wrong | PASS | Rewritten: 'Good documentation makes onboarding faster — this update adds the worked examples developers asked for.' Plus an alternate rewrite. |
+| c15 | Output flags the cross-context naming inconsistency — `failProcess()` vs `recordFailed()` for the same semantic operation — citing both files and recommending which name to standardise on, with reasoning | PASS | Pass 3 cites both files, recommends `recordFailed()` with reasoning: 'active verb, clearer intent'. |
+| c16 | Output's findings each include exact file, line evidence, the specific rule violated (named or quoted), and a concrete fix | PASS | Each pass finding includes file reference, evidence (quoted code/text), named rule, and concrete fix steps. Pass 2 explicitly notes line number was not specified in the PR description. |
+| c17 | Output uses the defined summary template with counts by severity (critical / important / suggestion) at the top — not a flat unranked list | PARTIAL | Summary table is present at top with per-pass counts, but columns are Pass\|Topic\|Findings — no severity breakdown column (CRITICAL/IMPORTANT/SUGGESTION). |
+| c18 | Output runs all four mandatory passes for the file types in scope and reports per-pass finding counts even where zero findings | PASS | All four passes present in the summary table with counts: 1, 1, 1, 9. No pass is skipped or omitted. |
+| c19 | Output addresses the README content beyond just banned words — flags the AI-tells in sentence rhythm (uniform sentence length, abstract claims) per the writing-style rules, not only vocabulary | FAIL | Pass 4 lists only banned words and banned phrases (items 1–10). No mention of AI-tells in sentence rhythm, uniform sentence length, or abstract claims without concrete referents. |
 
 ### Notes
 
-The output is a thorough, well-structured review that executes all four passes, flags the three primary code issues (commented-out block, unjustified lint suppression, cross-context naming inconsistency), and addresses the README's banned vocabulary with a concrete rewrite. The main gaps: `ecosystem` is not called out as its own finding (it appears in evidence quotes only); the summary table counts by pass rather than by severity as c7/c17 require; and Tier 1/Tier 2 labels are absent from all vocabulary findings. The rhythm observation flags abstract claims but misses the uniform-sentence-length tell. Despite these gaps the overall quality is high — rules are named, fixes are concrete, the rewrite is genuine, and no findings are padded.
+The output is a high-quality, well-structured review hitting nearly all required criteria. The main gaps are: missing the AI-tells/rhythm observation (c19), a tier misclassification for `robust` (Tier 2 vs expected Tier 1 in c12), and the summary table not breaking down findings by severity level as both c7 and c17 require.
