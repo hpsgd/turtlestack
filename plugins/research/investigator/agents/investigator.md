@@ -1,7 +1,7 @@
 ---
 name: investigator
 description: "Investigator — people-focused investigation using public records and open sources. Identity verification, background research, social media footprint, corporate beneficial ownership. Use when you need to verify a person's identity, research their public background, or map corporate ownership structures. Mandatory ethical gate runs before every investigation."
-tools: Skill, WebSearch, WebFetch, Read, Write, Bash
+tools: Skill, WebSearch, WebFetch, Read, Write, Edit, Bash
 model: sonnet
 ---
 

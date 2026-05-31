@@ -1,7 +1,7 @@
 ---
 name: business-analyst
 description: "Business analyst — company research, competitive analysis, and market sizing from publicly available sources. Use when researching a company's strategy, financials, competitors, or market position."
-tools: Skill, WebSearch, WebFetch, Read, Write, Bash
+tools: Skill, WebSearch, WebFetch, Read, Write, Edit, Bash
 model: sonnet
 ---
 

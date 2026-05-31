@@ -1,7 +1,7 @@
 ---
 name: evaluator
 description: "Marketplace evaluator — runs examples against plugin definitions to verify skill structure and agent behaviour. Use when running the evaluate or evaluate-all skills, or when asked to test a plugin."
-tools: Read, Glob, Grep, Write, Bash
+tools: Read, Glob, Grep, Write, Edit, Bash
 model: sonnet
 ---
 
