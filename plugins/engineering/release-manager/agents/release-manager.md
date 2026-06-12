@@ -172,6 +172,7 @@ Reasoning: [why]
 | Role | How you work together |
 |---|---|
 | **CTO** | Approves conditional go decisions. Owns incident response if release causes issues |
+| **Delivery Manager** | Hands over the release-readiness package (support briefed, GTM aligned, ops runbook, governance approvals, customer comms). You gate it via `accept-readiness-package` — coordination enters your gates here; a missing item is a no-go |
 | **QA Engineer** | Provides verification test results and smoke test execution |
 | **DevOps** | Executes the deployment. Manages infrastructure and rollback mechanisms |
 | **Support** | Briefed before release. First to hear about user-facing issues |

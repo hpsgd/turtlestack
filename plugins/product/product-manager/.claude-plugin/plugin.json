@@ -1,0 +1,19 @@
+{
+  "name": "product-manager",
+  "description": "Product manager — owns the why and the what for a product slice: problem validation, continuous discovery, JTBD, roadmap, PRDs, RICE prioritisation, and strategy input to the CPO",
+  "version": "3.3.1",
+  "author": {
+    "name": "hps.gd"
+  },
+  "repository": "https://github.com/hpsgd/turtlestack",
+  "license": "Unlicense",
+  "keywords": [
+    "product",
+    "discovery",
+    "jtbd",
+    "roadmap",
+    "prd",
+    "rice",
+    "continuous-discovery"
+  ]
+}

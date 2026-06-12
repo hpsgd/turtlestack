@@ -13,6 +13,7 @@ A plugin marketplace for Claude Code. Agents, skills, rules, and conventions tha
 - [Thinking and learning](#thinking-and-learning)
 - [Plugins](#plugins)
   - [Practices](#practices)
+    - [Agile Coach](#agile-coach)
     - [Coding Standards](#coding-standards)
     - [Plugin Curator](#plugin-curator)
     - [Publishing](#publishing)
@@ -30,12 +31,15 @@ A plugin marketplace for Claude Code. Agents, skills, rules, and conventions tha
     - [Coordinator](#coordinator)
     - [CPO](#cpo)
     - [CTO](#cto)
+    - [Delivery Manager](#delivery-manager)
     - [GRC Lead](#grc-lead)
   - [Product](#product)
     - [Customer Success](#customer-success)
     - [Developer Docs Writer](#developer-docs-writer)
     - [GTM](#gtm)
     - [Internal Docs Writer](#internal-docs-writer)
+    - [Product Analyst](#product-analyst)
+    - [Product Manager](#product-manager)
     - [Product Owner](#product-owner)
     - [Support](#support)
     - [UI Designer](#ui-designer)
@@ -90,6 +94,10 @@ Start with the core plugins (rules, thinking skills, and code review), then add 
 /plugin install tooling@turtlestack
 /plugin install code-reviewer@turtlestack
 /plugin install ai-engineer@turtlestack
+/plugin install agile-coach@turtlestack
+/plugin install delivery-manager@turtlestack
+/plugin install product-manager@turtlestack
+/plugin install product-analyst@turtlestack
 ```
 
 Add a technology stack if relevant:
@@ -143,10 +151,14 @@ Browse the full [plugin list](#plugins) below to see what else is available.
     "nextjs-stack@turtlestack": true,
     "php-stack@turtlestack": true,
     "python-stack@turtlestack": true,
+    "agile-coach@turtlestack": true,
     "plugin-curator@turtlestack": true,
     "publishing@turtlestack": true,
     "coordinator@turtlestack": true,
     "cpo@turtlestack": true,
+    "delivery-manager@turtlestack": true,
+    "product-analyst@turtlestack": true,
+    "product-manager@turtlestack": true,
     "product-owner@turtlestack": true,
     "ui-designer@turtlestack": true,
     "ux-researcher@turtlestack": true,
@@ -206,6 +218,29 @@ See the [thinking plugin](#thinking) section below for the full skill list, or t
 ## Plugins
 
 ### Practices
+
+#### [Agile Coach](plugins/practices/agile-coach/agents/agile-coach.md)
+
+Scrum and Kanban coaching, ceremony facilitation, retrospective design, team health, and flow management. An ongoing per-team presence serving engineering, product, discovery, and design teams.
+
+```
+/plugin install agile-coach@turtlestack
+```
+
+| Skill | Description | Example |
+|---|---|---|
+| [facilitate-retrospective](plugins/practices/agile-coach/skills/facilitate-retrospective/SKILL.md) | Retrospective design and facilitation (Derby & Larsen) | — |
+| [facilitate-sprint-planning](plugins/practices/agile-coach/skills/facilitate-sprint-planning/SKILL.md) | Sprint planning facilitation | — |
+| [facilitate-sprint-review](plugins/practices/agile-coach/skills/facilitate-sprint-review/SKILL.md) | Sprint review working-session facilitation | — |
+| [audit-ceremonies](plugins/practices/agile-coach/skills/audit-ceremonies/SKILL.md) | Ceremony anti-pattern audit with coaching actions | — |
+| [audit-anti-patterns](plugins/practices/agile-coach/skills/audit-anti-patterns/SKILL.md) | Deep agile dysfunction diagnostic (Zombie/Dark Scrum) | — |
+| [audit-scaling-framework](plugins/practices/agile-coach/skills/audit-scaling-framework/SKILL.md) | Scaling framework selection (LeSS, Nexus, SAFe) | — |
+| [assess-team-topology](plugins/practices/agile-coach/skills/assess-team-topology/SKILL.md) | Team Topologies type and interaction assessment | — |
+| [coach-definition-of-done](plugins/practices/agile-coach/skills/coach-definition-of-done/SKILL.md) | Team-authored Definition of Done facilitation | — |
+| [coach-flow-metrics](plugins/practices/agile-coach/skills/coach-flow-metrics/SKILL.md) | Flow metrics coaching (cycle time, WIP, CFD) | — |
+| [coach-kanban-method](plugins/practices/agile-coach/skills/coach-kanban-method/SKILL.md) | Kanban Method coaching and Scrumban hybrid | — |
+| [design-working-agreements](plugins/practices/agile-coach/skills/design-working-agreements/SKILL.md) | Team working agreements facilitation | — |
+| [team-health-scan](plugins/practices/agile-coach/skills/team-health-scan/SKILL.md) | Team health and psychological-safety scan | — |
 
 #### Coding Standards
 
@@ -427,6 +462,14 @@ Web research, company analysis, content analysis. Three agents in one plugin.
 | [company-lookup](plugins/research/analyst/skills/company-lookup/SKILL.md) | Company profile from public sources | [Company lookup](examples/research/analyst/skills/company-lookup/result.md) |
 | [competitive-analysis](plugins/research/analyst/skills/competitive-analysis/SKILL.md) | Competitive landscape mapping | [Competitive mapping](examples/research/analyst/skills/competitive-analysis/result.md) |
 | [market-sizing](plugins/research/analyst/skills/market-sizing/SKILL.md) | TAM/SAM/SOM market sizing | [Market sizing](examples/research/analyst/skills/market-sizing/result.md) |
+| [win-loss-analysis](plugins/research/analyst/skills/win-loss-analysis/SKILL.md) | Win/loss analysis from the buyer's perspective | — |
+| [competitor-teardown](plugins/research/analyst/skills/competitor-teardown/SKILL.md) | Deep single-competitor teardown | — |
+| [write-market-landscape-report](plugins/research/analyst/skills/write-market-landscape-report/SKILL.md) | Periodic market landscape report | — |
+| [review-mining](plugins/research/analyst/skills/review-mining/SKILL.md) | G2/Capterra/app-store review mining | — |
+| [strategy-canvas](plugins/research/analyst/skills/strategy-canvas/SKILL.md) | Blue Ocean strategy canvas with ERRC grid | — |
+| [wardley-map](plugins/research/analyst/skills/wardley-map/SKILL.md) | Wardley Map of a value chain | — |
+| [five-forces](plugins/research/analyst/skills/five-forces/SKILL.md) | Porter's Five Forces attractiveness judgment | — |
+| [pestle](plugins/research/analyst/skills/pestle/SKILL.md) | PESTLE macro-environmental scan | — |
 
 **[Content analyst](plugins/research/analyst/agents/content-analyst.md)** — content analysis and framing assessment (see [content evaluation example](examples/research/analyst/agents/content-analyst/content-evaluation/result.md)):
 
@@ -536,11 +579,18 @@ Human (CEO/Founder)
 
 #### [CPO](plugins/leadership/cpo/agents/cpo.md)
 
-Coordinates product, design, content, GTM, and support teams. Routes work to the right specialist. No skills — coordination only. See [product prioritisation example](examples/leadership/cpo/agents/cpo/product-prioritisation/result.md).
+Coordinates product, design, content, GTM, and support teams, and owns the upstream strategy artifacts — product vision, product strategy, and business-model viability. Routes execution work to the right specialist. See [product prioritisation example](examples/leadership/cpo/agents/cpo/product-prioritisation/result.md).
 
 ```
 /plugin install cpo@turtlestack
 ```
+
+| Skill | Description | Example |
+|---|---|---|
+| [write-product-vision](plugins/leadership/cpo/skills/write-product-vision/SKILL.md) | One-page product vision (Pichler Vision Board) | — |
+| [write-product-strategy](plugins/leadership/cpo/skills/write-product-strategy/SKILL.md) | Product strategy — the plan to reach the vision (SVPG) | — |
+| [diagnose-strategy](plugins/leadership/cpo/skills/diagnose-strategy/SKILL.md) | Good-strategy/bad-strategy critique (Rumelt) | — |
+| [write-business-model-canvas](plugins/leadership/cpo/skills/write-business-model-canvas/SKILL.md) | Business Model Canvas viability read (Osterwalder) | — |
 
 #### [CTO](plugins/leadership/cto/agents/cto.md)
 
@@ -549,6 +599,27 @@ Coordinates architecture, development, QA, DevOps, security, and data engineerin
 ```
 /plugin install cto@turtlestack
 ```
+
+#### [Delivery Manager](plugins/leadership/delivery-manager/agents/delivery-manager.md)
+
+RAID logs, dependency tracking, weekly status reporting, release-readiness coordination, organisational impediment removal, multi-team coordination, and GDS service-assessment readiness.
+
+```
+/plugin install delivery-manager@turtlestack
+```
+
+| Skill | Description | Example |
+|---|---|---|
+| [write-raid-log](plugins/leadership/delivery-manager/skills/write-raid-log/SKILL.md) | RAID log authoring (risks, assumptions, issues, dependencies) | — |
+| [review-raid-log](plugins/leadership/delivery-manager/skills/review-raid-log/SKILL.md) | Weekly RAID log review and diagnostics | — |
+| [write-status-report](plugins/leadership/delivery-manager/skills/write-status-report/SKILL.md) | Weekly delivery status report with honest RAG | — |
+| [audit-status-honesty](plugins/leadership/delivery-manager/skills/audit-status-honesty/SKILL.md) | Watermelon-reporting status honesty audit | — |
+| [write-dependency-map](plugins/leadership/delivery-manager/skills/write-dependency-map/SKILL.md) | Live cross-team dependency map | — |
+| [facilitate-scrum-of-scrums](plugins/leadership/delivery-manager/skills/facilitate-scrum-of-scrums/SKILL.md) | Scrum of scrums facilitation | — |
+| [coordinate-release-readiness](plugins/leadership/delivery-manager/skills/coordinate-release-readiness/SKILL.md) | Upstream release-readiness coordination package | — |
+| [prepare-steering-pack](plugins/leadership/delivery-manager/skills/prepare-steering-pack/SKILL.md) | Steering-committee pack with decision asks | — |
+| [prepare-service-assessment](plugins/leadership/delivery-manager/skills/prepare-service-assessment/SKILL.md) | GDS service assessment preparation | — |
+| [forecast-with-reference-class](plugins/leadership/delivery-manager/skills/forecast-with-reference-class/SKILL.md) | Reference-class delivery forecasting | — |
 
 #### [GRC Lead](plugins/leadership/grc-lead/agents/grc-lead.md)
 
@@ -582,6 +653,7 @@ Health monitoring, churn prevention, expansion, onboarding quality. See [account
 | [expansion-plan](plugins/product/customer-success/skills/expansion-plan/SKILL.md) | Account expansion plan | [Expansion plan](examples/product/customer-success/skills/expansion-plan/result.md) |
 | [write-qbr](plugins/product/customer-success/skills/write-qbr/SKILL.md) | Quarterly business review | [QBR authoring](examples/product/customer-success/skills/write-qbr/result.md) |
 | [write-onboarding-playbook](plugins/product/customer-success/skills/write-onboarding-playbook/SKILL.md) | Customer onboarding playbook | [Onboarding playbook](examples/product/customer-success/skills/write-onboarding-playbook/result.md) |
+| [retention-voc](plugins/product/customer-success/skills/retention-voc/SKILL.md) | Account-level retention voice-of-customer themes | — |
 
 #### [Developer Docs Writer](plugins/product/developer-docs-writer/agents/developer-docs-writer.md)
 
@@ -612,6 +684,12 @@ Positioning, launch strategy, competitive analysis, battle cards. See [launch st
 | [launch-plan](plugins/product/gtm/skills/launch-plan/SKILL.md) | Launch plan with timeline | [Launch planning](examples/product/gtm/skills/launch-plan/result.md) |
 | [competitive-analysis](plugins/product/gtm/skills/competitive-analysis/SKILL.md) | Competitive landscape analysis | [Competitive mapping](examples/product/gtm/skills/competitive-analysis/result.md) |
 | [write-battle-card](plugins/product/gtm/skills/write-battle-card/SKILL.md) | Sales battle card | [Battle card](examples/product/gtm/skills/write-battle-card/result.md) |
+| [market-voc](plugins/product/gtm/skills/market-voc/SKILL.md) | Go-to-market voice-of-customer lens | — |
+| [design-pricing-study](plugins/product/gtm/skills/design-pricing-study/SKILL.md) | Willingness-to-pay / pricing research design | — |
+| [competitor-price-benchmark](plugins/product/gtm/skills/competitor-price-benchmark/SKILL.md) | Competitive pricing and packaging intelligence | — |
+| [write-messaging-hierarchy](plugins/product/gtm/skills/write-messaging-hierarchy/SKILL.md) | Messaging hierarchy with per-persona variants | — |
+| [write-narrative](plugins/product/gtm/skills/write-narrative/SKILL.md) | Strategic narrative (Andy Raskin structure) | — |
+| [analyst-briefing-prep](plugins/product/gtm/skills/analyst-briefing-prep/SKILL.md) | Industry-analyst briefing prep (Gartner, Forrester) | — |
 
 #### [Internal Docs Writer](plugins/product/internal-docs-writer/agents/internal-docs-writer.md)
 
@@ -627,9 +705,48 @@ Architecture docs, runbooks, changelogs, post-mortems. See [runbook creation exa
 | [write-changelog](plugins/product/internal-docs-writer/skills/write-changelog/SKILL.md) | Release changelog | [Changelog](examples/product/internal-docs-writer/skills/write-changelog/result.md) |
 | [write-architecture-doc](plugins/product/internal-docs-writer/skills/write-architecture-doc/SKILL.md) | Architecture overview document | [Architecture doc](examples/product/internal-docs-writer/skills/write-architecture-doc/result.md) |
 
+#### [Product Analyst](plugins/product/product-analyst/agents/product-analyst.md)
+
+North Star metrics, metric hierarchies, instrumentation specs, cohort and retention analysis, and experiment design.
+
+```
+/plugin install product-analyst@turtlestack
+```
+
+| Skill | Description | Example |
+|---|---|---|
+| [define-north-star](plugins/product/product-analyst/skills/define-north-star/SKILL.md) | North Star Metric and supporting input metrics | — |
+| [design-metric-hierarchy](plugins/product/product-analyst/skills/design-metric-hierarchy/SKILL.md) | Product metric hierarchy (HEART or AARRR) | — |
+| [write-instrumentation-spec](plugins/product/product-analyst/skills/write-instrumentation-spec/SKILL.md) | Analytics instrumentation spec for the data engineer | — |
+| [cohort-analysis](plugins/product/product-analyst/skills/cohort-analysis/SKILL.md) | Retention curve and cohort analysis | — |
+| [design-experiment](plugins/product/product-analyst/skills/design-experiment/SKILL.md) | A/B test and holdout experiment design | — |
+
+#### [Product Manager](plugins/product/product-manager/agents/product-manager.md)
+
+Owns the why and the what for a product slice — problem validation, continuous discovery, JTBD, roadmap, PRDs, RICE prioritisation, and strategy input to the CPO.
+
+```
+/plugin install product-manager@turtlestack
+```
+
+| Skill | Description | Example |
+|---|---|---|
+| [write-discovery-plan](plugins/product/product-manager/skills/write-discovery-plan/SKILL.md) | Continuous discovery cadence (Teresa Torres) | — |
+| [write-interview-guide](plugins/product/product-manager/skills/write-interview-guide/SKILL.md) | Generative interview guide (The Mom Test) | — |
+| [switch-interview](plugins/product/product-manager/skills/switch-interview/SKILL.md) | JTBD switch interview with four-forces coding | — |
+| [synthesise-interviews](plugins/product/product-manager/skills/synthesise-interviews/SKILL.md) | Pattern-code discovery interviews into themes | — |
+| [strategic-voc-synthesis](plugins/product/product-manager/skills/strategic-voc-synthesis/SKILL.md) | Validate discovery hypotheses against VoC signal | — |
+| [write-jtbd](plugins/product/product-manager/skills/write-jtbd/SKILL.md) | Jobs-to-be-Done analysis | — |
+| [write-opportunity-solution-tree](plugins/product/product-manager/skills/write-opportunity-solution-tree/SKILL.md) | Opportunity Solution Tree (Teresa Torres) | — |
+| [assumption-map](plugins/product/product-manager/skills/assumption-map/SKILL.md) | Assumption map by knowledge and impact | — |
+| [design-pretotype](plugins/product/product-manager/skills/design-pretotype/SKILL.md) | Pretotype experiment design (Savoia) | — |
+| [define-icp](plugins/product/product-manager/skills/define-icp/SKILL.md) | Ideal Customer Profile definition | — |
+| [write-prd](plugins/product/product-manager/skills/write-prd/SKILL.md) | Product requirements document with RICE | — |
+| [write-roadmap](plugins/product/product-manager/skills/write-roadmap/SKILL.md) | Outcome-shaped roadmap (Now/Next/Later or GIST) | — |
+
 #### [Product Owner](plugins/product/product-owner/agents/product-owner.md)
 
-Requirements, user stories, acceptance criteria, backlog prioritisation. See [backlog prioritisation example](examples/product/product-owner/agents/product-owner/backlog-prioritisation/result.md).
+Backlog ownership, user stories, acceptance criteria, story maps, and sprint readiness. The product-manager owns the why and the what; the product owner drives execution. See [backlog prioritisation example](examples/product/product-owner/agents/product-owner/backlog-prioritisation/result.md).
 
 ```
 /plugin install product-owner@turtlestack
@@ -637,11 +754,10 @@ Requirements, user stories, acceptance criteria, backlog prioritisation. See [ba
 
 | Skill | Description | Example |
 |---|---|---|
-| [write-prd](plugins/product/product-owner/skills/write-prd/SKILL.md) | Product requirements document | [PRD authoring](examples/product/product-owner/skills/write-prd/result.md) |
 | [groom-backlog](plugins/product/product-owner/skills/groom-backlog/SKILL.md) | Backlog grooming and prioritisation | [Backlog grooming](examples/product/product-owner/skills/groom-backlog/result.md) |
 | [write-user-story](plugins/product/product-owner/skills/write-user-story/SKILL.md) | User stories with acceptance criteria | [User story](examples/product/product-owner/skills/write-user-story/result.md) |
-| [write-jtbd](plugins/product/product-owner/skills/write-jtbd/SKILL.md) | Jobs-to-be-done canvas | [JTBD canvas](examples/product/product-owner/skills/write-jtbd/result.md) |
 | [write-story-map](plugins/product/product-owner/skills/write-story-map/SKILL.md) | User story mapping | [Story map](examples/product/product-owner/skills/write-story-map/result.md) |
+| [coach-refinement](plugins/product/product-owner/skills/coach-refinement/SKILL.md) | Backlog refinement event with Definition of Ready gate | — |
 
 #### [Support](plugins/product/support/agents/support.md)
 
@@ -656,6 +772,7 @@ Ticket triage, feedback synthesis, knowledge base, bug escalation. See [ticket h
 | [write-kb-article](plugins/product/support/skills/write-kb-article/SKILL.md) | Knowledge base article from ticket patterns | [KB article](examples/product/support/skills/write-kb-article/result.md) |
 | [feedback-synthesis](plugins/product/support/skills/feedback-synthesis/SKILL.md) | Aggregate feedback into themes | [Feedback themes](examples/product/support/skills/feedback-synthesis/result.md) |
 | [triage-tickets](plugins/product/support/skills/triage-tickets/SKILL.md) | Ticket triage and routing | [Ticket triage](examples/product/support/skills/triage-tickets/result.md) |
+| [voc-from-tickets](plugins/product/support/skills/voc-from-tickets/SKILL.md) | Voice-of-customer product themes from support tickets | — |
 
 #### [UI Designer](plugins/product/ui-designer/agents/designer.md)
 
@@ -702,6 +819,7 @@ Customer journeys, personas, usability assessment, information architecture. See
 | [persona-definition](plugins/product/ux-researcher/skills/persona-definition/SKILL.md) | User persona with goals and frustrations | [Persona definition](examples/product/ux-researcher/skills/persona-definition/result.md) |
 | [usability-test-plan](plugins/product/ux-researcher/skills/usability-test-plan/SKILL.md) | Usability testing protocol | [Test plan](examples/product/ux-researcher/skills/usability-test-plan/result.md) |
 | [service-blueprint](plugins/product/ux-researcher/skills/service-blueprint/SKILL.md) | Service blueprint | [Service blueprint](examples/product/ux-researcher/skills/service-blueprint/result.md) |
+| [voc-programme-design](plugins/product/ux-researcher/skills/voc-programme-design/SKILL.md) | Ongoing voice-of-customer programme design (NPS/CSAT/CES) | — |
 
 ### Engineering
 
@@ -937,6 +1055,7 @@ Release coordination, go/no-go, rollback decisions, deployment scheduling. See [
 |---|---|---|
 | [release-plan](plugins/engineering/release-manager/skills/release-plan/SKILL.md) | Release plan with gates | [Release plan](examples/engineering/release-manager/skills/release-plan/result.md) |
 | [rollback-assessment](plugins/engineering/release-manager/skills/rollback-assessment/SKILL.md) | Rollback risk assessment | [Rollback assessment](examples/engineering/release-manager/skills/rollback-assessment/result.md) |
+| [accept-readiness-package](plugins/engineering/release-manager/skills/accept-readiness-package/SKILL.md) | Gate the delivery-manager's release-readiness package | — |
 
 #### Security Engineer
 
