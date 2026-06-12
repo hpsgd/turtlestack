@@ -162,6 +162,22 @@
       ]
     },
     {
+      "name": "agile-coach",
+      "source": "./plugins/practices/agile-coach",
+      "description": "Agile coach — Scrum and Kanban coaching, ceremony facilitation, retrospective design, team health, flow management, and working agreements. Ongoing per-team presence for engineering, product, discovery, and design teams",
+      "version": "3.3.1",
+      "category": "practices",
+      "tags": [
+        "agile",
+        "scrum",
+        "kanban",
+        "retrospective",
+        "facilitation",
+        "flow-metrics",
+        "team-health"
+      ]
+    },
+    {
       "name": "coordinator",
       "source": "./plugins/leadership/coordinator",
       "description": "CEO/founder proxy — cross-team coordination, OKRs, initiative decomposition, strategic decisions spanning CPO and CTO",
@@ -213,6 +229,22 @@
       ]
     },
     {
+      "name": "delivery-manager",
+      "source": "./plugins/leadership/delivery-manager",
+      "description": "Delivery manager — RAID logs, dependency tracking, weekly status reporting, release-readiness coordination, organisational impediment removal, multi-team coordination, and GDS service-assessment readiness",
+      "version": "3.3.1",
+      "category": "leadership",
+      "tags": [
+        "delivery",
+        "raid",
+        "dependencies",
+        "status-reporting",
+        "release-readiness",
+        "coordination",
+        "gds"
+      ]
+    },
+    {
       "name": "product-owner",
       "source": "./plugins/product/product-owner",
       "description": "Product owner — requirements, user stories, acceptance criteria, backlog prioritisation",
@@ -223,6 +255,36 @@
         "requirements",
         "prd",
         "backlog"
+      ]
+    },
+    {
+      "name": "product-manager",
+      "source": "./plugins/product/product-manager",
+      "description": "Product manager — owns the why and the what for a product slice: problem validation, continuous discovery, JTBD, roadmap, PRDs, RICE prioritisation, and strategy input to the CPO",
+      "version": "3.3.1",
+      "category": "product",
+      "tags": [
+        "product",
+        "discovery",
+        "jtbd",
+        "roadmap",
+        "prd",
+        "rice"
+      ]
+    },
+    {
+      "name": "product-analyst",
+      "source": "./plugins/product/product-analyst",
+      "description": "Product analyst — North Star metrics, metric hierarchies, instrumentation specs, cohort and retention analysis, experiment design",
+      "version": "3.3.1",
+      "category": "product",
+      "tags": [
+        "product",
+        "analytics",
+        "metrics",
+        "north-star",
+        "cohort-analysis",
+        "experiment-design"
       ]
     },
     {

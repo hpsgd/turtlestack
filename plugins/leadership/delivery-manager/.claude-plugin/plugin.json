@@ -1,0 +1,19 @@
+{
+  "name": "delivery-manager",
+  "description": "Delivery manager — RAID logs, dependency tracking, weekly status reporting, release-readiness coordination, organisational impediment removal, multi-team coordination, and GDS service-assessment readiness.",
+  "version": "3.3.1",
+  "author": {
+    "name": "hps.gd"
+  },
+  "repository": "https://github.com/hpsgd/turtlestack",
+  "license": "Unlicense",
+  "keywords": [
+    "delivery",
+    "raid",
+    "dependencies",
+    "status-reporting",
+    "release-readiness",
+    "coordination",
+    "gds"
+  ]
+}
