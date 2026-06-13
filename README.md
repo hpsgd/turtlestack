@@ -319,7 +319,7 @@ The brand fonts and logos under `plugins/practices/publishing/assets/` are the s
 
 #### Security Compliance
 
-Security baseline rules and deep audit capability.
+Security baseline rules, a realtime pattern hook, and deep audit capability.
 
 ```
 /plugin install security-compliance@turtlestack
@@ -334,6 +334,8 @@ Security baseline rules and deep audit capability.
 | Skill | Description | Example |
 |---|---|---|
 | [security-audit](plugins/practices/security-compliance/skills/security-audit/SKILL.md) | Security compliance audit | [Security audit](examples/practices/security-compliance/skills/security-audit/result.md) |
+
+**Pattern hook.** A `PreToolUse` hook scans every Edit/Write against [`patterns.json`](plugins/practices/security-compliance/patterns.json) — secrets, injection, unsafe deserialization, XSS, disabled TLS verification — and warns before the change lands. It's local regex only: no network, no LLM, silent when nothing matches. Findings are advisory (they never block the edit). Each pattern traces back to a line in `security-baseline`. Silence a reviewed false positive with a `# nosec` or `// nosec` comment on the line, or disable the whole hook with `SECURITY_BASELINE_HOOK_DISABLE=1`.
 
 #### Technology Stacks
 
@@ -1104,7 +1106,7 @@ Claude Code plugins support tools, agents, skills, and output styles. Team instr
 The thinking plugin hooks into every session:
 
 - **`UserPromptSubmit` (async)** — classifies every message via regex. Catches corrections, praise, and approach changes. Queues ambiguous messages for Claude to classify during `/thinking:retrospective`.
-- **`SessionStart`** — analyses the previous session's transcript, detects patterns, generates metrics, and injects recent learnings into context.
+- **`SessionStart`** — analyses the previous session's transcript, detects patterns, generates metrics, and injects recent learnings into context. Also checks for plugin version drift and shows any unread [change notices](plugins/practices/thinking/notices.json) once — a fresh install starts silent, existing users see what changed.
 
 Learnings flow through two paths:
 
