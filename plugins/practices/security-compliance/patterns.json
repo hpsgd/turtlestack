@@ -1,0 +1,148 @@
+{
+  "patterns": [
+    {
+      "id": "hardcoded-private-key",
+      "category": "secrets",
+      "severity": "high",
+      "regex": "-----BEGIN (?:RSA |EC |OPENSSH |DSA |PGP )?PRIVATE KEY-----",
+      "message": "Private key material in source. Move to a secret store / env var.",
+      "baseline_ref": "security-baseline.md:L26"
+    },
+    {
+      "id": "aws-access-key",
+      "category": "secrets",
+      "severity": "high",
+      "regex": "AKIA[0-9A-Z]{16}",
+      "message": "Hardcoded AWS access key id. Use an env var or a secrets manager.",
+      "baseline_ref": "security-baseline.md:L26"
+    },
+    {
+      "id": "generic-secret-assignment",
+      "category": "secrets",
+      "severity": "high",
+      "regex": "(?i)(password|passwd|secret|api_key|apikey|token)\\s*[:=]\\s*['\"](?!changeme|xxx+|\\.\\.\\.|your[-_]|placeholder|example|redacted|<|\\$\\{|os\\.environ|process\\.env|getenv)[^'\"]{6,}['\"]",
+      "message": "Hardcoded credential literal. Read it from an env var or a secrets manager.",
+      "baseline_ref": "security-baseline.md:L26"
+    },
+    {
+      "id": "provider-token",
+      "category": "secrets",
+      "severity": "high",
+      "regex": "(ghp_[A-Za-z0-9]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|sk-[A-Za-z0-9]{20,})",
+      "message": "Hardcoded provider API token (GitHub / Slack / OpenAI shape). Move to encrypted config.",
+      "baseline_ref": "security-baseline.md:L26"
+    },
+    {
+      "id": "eval-exec-call",
+      "category": "injection",
+      "severity": "high",
+      "regex": "\\b(eval|exec)\\s*\\(",
+      "message": "eval/exec on a value can execute arbitrary code. Use a safe parser or explicit dispatch.",
+      "baseline_ref": "security-baseline.md:L53"
+    },
+    {
+      "id": "os-system",
+      "category": "injection",
+      "severity": "high",
+      "regex": "\\bos\\.system\\s*\\(",
+      "message": "os.system invokes a shell — command-injection risk. Use subprocess with an arg list and shell=False.",
+      "baseline_ref": "security-baseline.md:L53"
+    },
+    {
+      "id": "subprocess-shell-true",
+      "category": "injection",
+      "severity": "high",
+      "regex": "subprocess\\.[A-Za-z_]+\\([^)]*shell\\s*=\\s*True",
+      "message": "subprocess with shell=True is a command-injection vector. Pass an argument list and shell=False.",
+      "baseline_ref": "security-baseline.md:L53"
+    },
+    {
+      "id": "node-child-process-exec",
+      "category": "injection",
+      "severity": "high",
+      "regex": "child_process\\.exec\\s*\\(",
+      "message": "child_process.exec runs a shell. Use execFile / spawn with an argument array instead.",
+      "baseline_ref": "security-baseline.md:L53"
+    },
+    {
+      "id": "sql-string-build",
+      "category": "injection",
+      "severity": "high",
+      "regex": "(execute|query)\\s*\\(\\s*f?['\"].*(SELECT|INSERT|UPDATE|DELETE).*['\"]\\s*[%+]",
+      "message": "SQL built by string concatenation/interpolation — injection risk. Use parameterised queries.",
+      "baseline_ref": "security-baseline.md:L50"
+    },
+    {
+      "id": "yaml-unsafe-load",
+      "category": "deserialization",
+      "severity": "high",
+      "regex": "yaml\\.load\\s*\\((?![^)]*Safe)",
+      "message": "yaml.load can instantiate arbitrary objects. Use yaml.safe_load.",
+      "baseline_ref": "security-baseline.md:L11/L50"
+    },
+    {
+      "id": "pickle-load",
+      "category": "deserialization",
+      "severity": "high",
+      "regex": "pickle\\.loads?\\s*\\(",
+      "message": "pickle deserialises arbitrary objects — unsafe on untrusted data. Use JSON or a vetted schema format.",
+      "baseline_ref": "security-baseline.md:L50"
+    },
+    {
+      "id": "torch-load-unsafe",
+      "category": "deserialization",
+      "severity": "medium",
+      "regex": "torch\\.load\\s*\\((?![^)]*weights_only\\s*=\\s*True)",
+      "message": "torch.load unpickles by default. Pass weights_only=True for untrusted checkpoints.",
+      "baseline_ref": "security-baseline.md:L50"
+    },
+    {
+      "id": "php-unserialize",
+      "category": "deserialization",
+      "severity": "high",
+      "regex": "\\bunserialize\\s*\\(",
+      "message": "PHP unserialize on untrusted input enables object-injection. Use json_decode or a safe format.",
+      "baseline_ref": "security-baseline.md:L50"
+    },
+    {
+      "id": "inner-html-assign",
+      "category": "xss",
+      "severity": "medium",
+      "regex": "\\.innerHTML\\s*=",
+      "message": "Assigning to innerHTML can inject markup (XSS). Use textContent or a sanitiser.",
+      "baseline_ref": "security-baseline.md:L51"
+    },
+    {
+      "id": "react-dangerous-html",
+      "category": "xss",
+      "severity": "medium",
+      "regex": "dangerouslySetInnerHTML",
+      "message": "dangerouslySetInnerHTML bypasses React escaping (XSS). Sanitise input or render as text.",
+      "baseline_ref": "security-baseline.md:L51"
+    },
+    {
+      "id": "document-write",
+      "category": "xss",
+      "severity": "medium",
+      "regex": "document\\.write\\s*\\(",
+      "message": "document.write can inject unescaped markup (XSS). Build nodes via the DOM API instead.",
+      "baseline_ref": "security-baseline.md:L51"
+    },
+    {
+      "id": "tls-verify-disabled",
+      "category": "transport",
+      "severity": "high",
+      "regex": "(verify\\s*=\\s*False|rejectUnauthorized\\s*:\\s*false|InsecureSkipVerify\\s*:\\s*true|NODE_TLS_REJECT_UNAUTHORIZED)",
+      "message": "TLS certificate verification disabled — exposes traffic to MITM. Keep verification on.",
+      "baseline_ref": "security-baseline.md:L33"
+    },
+    {
+      "id": "weak-hash-password",
+      "category": "crypto",
+      "severity": "medium",
+      "regex": "(?i)(md5|sha1)\\s*\\([^)]*(password|passwd|secret|pwd)",
+      "message": "MD5/SHA-1 is unfit for passwords. Use bcrypt, scrypt, or argon2.",
+      "baseline_ref": "security-baseline.md:L14"
+    }
+  ]
+}
