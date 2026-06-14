@@ -83,7 +83,7 @@ Human (CEO/Founder)
             └── investigator — people and entity investigation (full authorisation gate required)
 ```
 
-You talk to the CPO, CTO, and GRC Lead, plus the agile coach and delivery manager directly (they're cross-functional peers, not under a lead). The CPO, CTO, and GRC Lead talk to their teams. You don't bypass leads to talk directly to specialists unless the lead is unavailable and the work is urgent. The agile coach and delivery manager are multi-instance candidates — a project with several teams or delivery streams may run more than one (multi-instance role support is a separate marketplace concern, tracked outside this agent).
+You talk to the CPO, CTO, and GRC Lead, plus the agile coach and delivery manager directly (they're cross-functional peers, not under a lead). The CPO, CTO, and GRC Lead talk to their teams. You don't bypass leads to talk directly to specialists unless the lead is unavailable and the work is urgent. The agile coach and delivery manager are multi-instance candidates — a project with several teams or delivery streams may run more than one. Dispatch several instances of any role using the Multi-instance dispatch convention below.
 
 ## Agent invocation reference
 
@@ -260,6 +260,14 @@ A work item is **done** when ALL of these are true:
 - Each lead decides how to staff and sequence within their team
 - Verify Definition of Ready before allowing work to start
 - Verify Definition of Done before considering work complete
+
+## Multi-instance dispatch
+
+When an initiative's work splits into independent slices that can progress concurrently — two architects on
+different subsystems, two delivery managers on different streams, a PM per product slice — dispatch several
+instances of the *same* agent, each scoped to one slice. The full convention (how to name instances, declare
+slice contracts, choose isolation per dispatch, and sequence an aggregator over slice instances) lives in the
+`multi-instance-dispatch` rule you read at preflight. Apply it whenever you fan a role out across slices.
 
 ## Conflict Resolution
 

@@ -28,48 +28,57 @@ Captured from a real headless invocation of the skill/agent.
 
 ### Chat response
 
-# Prioritisation: address validation > PostgreSQL > mobile discovery
+# Prioritisation
 
-## 1. Address validation fix — ship first
+**Address validation fix → ship first. PG upgrade → CTO sets the date, runs in parallel. Mobile → discovery only, no build.**
 
-**Frequency × severity:** This bleeds on every cohort. Rough math, plug in your real numbers:
+## Frequency × severity
 
-- 30% dropout × 50 signups/week × 13 weeks = **~195 failed activations/quarter**
-- At, say, $5K ACV and assume 50% would've converted on a clean funnel = **~$485K/quarter forgone ARR**, recurring every quarter it stays broken
-- Plus: 47 support tickets in 6 weeks is ~8/week of direct support load
+**Activation drop (address validation):**
+- 30% × ~50 signups/week × $12k ACV ≈ **$9.4M/year of cohort ARR walking out the door** before they ever book a shipment. Even at a quarter of that ACV, it's $2.3M/year.
+- 47 tickets in 6 weeks = support cost + brand drag on top.
+- This is a *recurring, every-cohort* loss. It compounds weekly until fixed.
 
-**Success metric:** reduce address-step dropout from 30% to **under 15% within 4 weeks of ship**, measured on the next full signup cohort post-release. If we don't hit 15%, we haven't fixed the right thing — re-investigate root cause (geocoder coverage? UX? validation strictness?) before moving on.
+**Mobile (two enterprise prospects):**
+- Assume $250k ACV each = **$500k at risk**, and we don't even know mobile is the actual blocker vs a deal-qualification objection.
+- One-time, n=2. Per the **Pareto / Kano "loud minority" rule** (commonly cited as "94% of feature requests come from <10% of users"), two prospects is a *signal to investigate, not a signal to build*.
 
-## 2. Mobile app — discovery only, no build
+**Conclusion:** activation fix beats mobile by ~5–20× on expected value, with far higher confidence.
 
-Two prospects is not a roadmap signal. The named heuristic here is the **vocal minority / Pareto problem**: a small handful of loud requests routinely over-represent themselves relative to the silent majority. ProductPlan's oft-cited version is "less than 10% of users drive the majority of feature requests" — at N=2, we're firmly in low-confidence-signal territory. Build cost is months; discovery cost is days.
+## Address validation — success metric
 
-**Cheap discovery actions before any engineering commitment:**
+> Reduce address-step dropout from **30% → <15% within 4 weeks of ship.** Measured on new-signup cohort weekly. Secondary metric: address-step support tickets ↓ by 50% in the 6 weeks post-ship.
 
-- **Interview the two prospects** — what specifically do they need mobile for? Field ops? Tracking? Booking? "Mobile app" can mean five different products.
-- **Pull mobile-vs-desktop analytics** from existing customers — what % of sessions are mobile today, what do they do on mobile, where do they bounce?
-- **5-question survey** to the existing customer base on mobile use cases and pain.
-- **Check the responsive web experience** — is the real ask "native app" or "the web app doesn't work on my phone"? The latter is a fraction of the cost.
+If we don't hit <15%, we re-open it — don't ship-and-forget.
 
-**Sales-team mitigation while discovery runs:** ask Customer Success to open a roadmap conversation with the two prospects — acknowledge mobile is on our radar, frame it as "we're scoping it now, want to understand your use case," no date committed. That keeps the deals warm without locking us into a build we haven't validated. Brief sales on the same talking points so they stop treating "no mobile app" as a closed-lost reason without qualifying the actual ask.
+## PostgreSQL — CTO call
 
-## 3. PostgreSQL upgrade — CTO call, not mine
+This isn't a product call. **I'll coordinate with the CTO to fit it alongside the activation fix — the technical timeline is theirs to set, not mine.** My only ask: that we don't serialise PG behind activation if we can avoid it.
 
-EOL on infra is a technical risk decision and the timeline is the CTO's to set, not product's. **I'll coordinate with the CTO** to slot the 2 weeks of engineering somewhere before Q3, but the sequencing — and whether it's urgent enough to interrupt activation work — is their judgment.
+**Sequencing:**
+- **Parallel, different engineers.** Activation fix is frontend + validation-service work; PG upgrade is platform/infra work. Different people, no contention.
+- **If forced to choose sequentially:** activation fix first. PG end-of-life is a known date the CTO can plan against; activation is bleeding ARR every week. But that's a fallback — parallel is the default.
 
-## Sequencing if address-fix and PG upgrade collide
+## Mobile — cheap discovery before any build commitment
 
-**Default plan: run in parallel.** Address validation is frontend + geocoder work; PG upgrade is backend/infra. Different engineers, minimal contention. CTO assigns the infra engineer(s); I keep frontend on the activation fix.
+No engineering time committed. Run all three of these in the next 2 weeks:
+1. **CS-led interviews with the two prospects** — is mobile actually the blocker, or proxy for "we're not ready to buy"? What workflows specifically?
+2. **Pull mobile-vs-desktop usage analytics** from existing customers — what % of sessions are mobile today? Which workflows?
+3. **5-question survey to top 50 accounts** — do you need mobile, for which roles, which workflows, how often?
 
-**If forced to choose one first** (e.g. one team, one engineer): **address validation first, PG upgrade second**, provided the CTO confirms there's slack before Q3 EOL. Reason: address-fix is bleeding revenue *now* on every cohort, PG EOL is a known fixed deadline we can plan to. If the CTO says PG can't wait, it can't wait — that overrides.
+Decision gate after discovery: if signal is strong (>30% of accounts want it for a specific workflow), scope a responsive-web MVP first, not a native app.
+
+## Sales-team mitigation
+
+Have **customer success run a roadmap conversation with both prospects this week** — acknowledge mobile is on our radar, share that we're scoping it, don't commit a date. Gives sales something to say without locking us into a build we haven't validated. Loop sales lead in on the discovery findings in 2 weeks.
 
 ## Summary
 
-| Item | Action this week | Owner | Decision |
+| Item | Action | Owner | Timeline |
 |---|---|---|---|
-| Address validation | Start build; define <15% dropout target | Product + frontend | **Approved** |
-| PostgreSQL upgrade | Confirm timeline & resourcing | CTO | **Escalated to CTO** |
-| Mobile app | Run discovery (interviews + analytics + survey); CS roadmap convo with prospects | Product + CS | **Not approved — discovery only** |
+| Address validation | Build, target <15% dropout | Product + FE eng | Ship in 4 weeks |
+| PG upgrade | Run in parallel | CTO sets timeline | Q3 deadline |
+| Mobile | Discovery only | CS + Analytics + me | 2 weeks, then decide |
 
 ## Evaluation
 
@@ -77,36 +86,36 @@ EOL on infra is a technical risk decision and the timeline is the CTO's to set, 
 |---|---|
 | Verdict | PASS |
 | Score | 17.0/17.0 (100%) |
-| Evaluated | 2026-05-27 |
+| Evaluated | 2026-06-13 |
 | Target model | claude-opus-4-7 |
 | Judge model | claude-sonnet-4-6 |
-| Target duration | 37352 ms |
-| Target cost | $0.3295 |
+| Target duration | 23542 ms |
+| Target cost | $0.5269 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | Challenges the mobile app request as a solution rather than a validated problem — asks for evidence beyond two anecdotal prospects | PASS | "Two prospects is not a roadmap signal" and "Interview the two prospects — what specifically do they need mobile for?" |
-| c2 | Identifies the address validation dropout as the highest-priority item due to quantified frequency (47 tickets, 30% dropoff) and direct impact on activation | PASS | Placed #1, cites "47 support tickets in 6 weeks is ~8/week" and "30% dropout × 50 signups/week × 13 weeks = ~195 failed activations/quarter" |
-| c3 | Applies problem frequency and severity weighting — does not treat all three requests as equal | PASS | Three distinct outcomes: address fix Approved, PG Escalated to CTO, mobile Not approved — discovery only. ARR math shown only for activation fix. |
-| c4 | Escalates the PostgreSQL upgrade to the CTO rather than making a technical timeline decision | PASS | "EOL on infra is a technical risk decision and the timeline is the CTO's to set, not product's. I'll coordinate with the CTO to slot the 2 weeks..." |
-| c5 | Does not approve the mobile app without evidence of user need at scale — cites the 94% low-engagement principle or equivalent | PASS | Cites "vocal minority / Pareto problem" and "less than 10% of users drive the majority of feature requests — at N=2, we're firmly in low-confidence-signal territory" |
-| c6 | Produces a clear prioritisation with reasoning, not just a ranked list | PASS | Three full sections with ARR math, named heuristics, discovery steps, sequencing plan, and a summary table with owner and decision columns. |
-| c7 | References the need for a success metric on the address validation fix (e.g. target dropout rate) | PARTIAL | "Success metric: reduce address-step dropout from 30% to under 15% within 4 weeks of ship, measured on the next full signup cohort post-release." |
-| c8 | Does not make the business priority call unilaterally on scope conflicts — presents trade-offs clearly | PASS | PG timeline deferred to CTO; forced-choice sequencing explicitly conditioned on "provided the CTO confirms there's slack before Q3 EOL." |
-| c9 | Output explicitly challenges the mobile app request as a solution-not-problem — asks for evidence that mobile (vs responsive web) is the actual blocker, not assumes the two anecdotal prospects represent the wider market | PASS | "Check the responsive web experience — is the real ask 'native app' or 'the web app doesn't work on my phone'? The latter is a fraction of the cost." |
-| c10 | Output prioritises the address-validation drop-off as #1 due to quantified impact — 30% of new users dropping off plus 47 tickets in 6 weeks = direct, measurable activation problem with revenue and churn impact | PASS | "~$485K/quarter forgone ARR, recurring every quarter it stays broken" plus "47 support tickets in 6 weeks is ~8/week of direct support load" |
-| c11 | Output applies frequency × severity reasoning — does NOT treat the three requests as equal weight, and shows the math (rough) that retention/activation problems compound into ARR loss faster than missing a feature for two prospects | PASS | Full ARR calculation shown for activation fix; mobile dismissed as N=2 low-confidence signal with no comparable math — explicit contrast in weighting. |
-| c12 | Output escalates the PostgreSQL upgrade to the CTO — recognising it's a technical timeline call, not a product priority call — and proposes coordinating to fit it into the schedule alongside the activation fix | PASS | "I'll coordinate with the CTO to slot the 2 weeks of engineering somewhere before Q3, but the sequencing... is their judgment." |
-| c13 | Output does NOT approve the mobile app build without further evidence — references something like "94% of feature requests are low-engagement" or "we need quantified user research before building a major platform" before committing | PASS | "Build cost is months; discovery cost is days." Summary table shows "Not approved — discovery only" for mobile. |
-| c14 | Output's prioritisation is presented with reasoning per item — not a bare ranked list — covering the user-pain rationale and the evidence weight per request | PASS | Three dedicated sections with ARR math, heuristic citation, discovery steps, escalation rationale, and a sequencing plan — not a bullet list. |
-| c15 | Output recommends a specific success metric on the address-validation fix — e.g. "reduce address-step dropoff from 30% to under 15%" — so the team knows when the fix is good enough to declare done | PASS | "reduce address-step dropout from 30% to under 15% within 4 weeks of ship, measured on the next full signup cohort post-release" |
-| c16 | Output proposes a cheap discovery action on the mobile request — e.g. interview the two prospects, look at usage analytics from existing customers (mobile vs desktop), survey customers — before committing engineering time | PASS | Four specific actions: interview two prospects, pull mobile-vs-desktop analytics, 5-question survey, check responsive web experience. |
-| c17 | Output presents the trade-off honestly to stakeholders — naming who is unhappy with the recommended sequence (sales team) and how to mitigate (customer-relations action while the dropoff fix ships) | PASS | "Sales-team mitigation while discovery runs" section: CS roadmap conversation with prospects, brief sales on talking points to stop treating it as closed-lost. |
-| c18 | Output addresses what happens if the PostgreSQL upgrade and the address-validation fix conflict for engineering time — proposing a sequencing or parallelisation plan rather than leaving the conflict unresolved | PARTIAL | Full "Sequencing if address-fix and PG upgrade collide" section: default parallel plan with different engineers, forced-choice fallback with address fix first if CTO confirms Q3 slack. |
+| c1 | Challenges the mobile app request as a solution rather than a validated problem — asks for evidence beyond two anecdotal prospects | PASS | "two prospects is a *signal to investigate, not a signal to build*" — output explicitly defers mobile to discovery-only mode. |
+| c2 | Identifies the address validation dropout as the highest-priority item due to quantified frequency (47 tickets, 30% dropoff) and direct impact on activation | PASS | "Address validation fix → ship first" with explicit citation of 47 tickets in 6 weeks and 30% dropout as the basis. |
+| c3 | Applies problem frequency and severity weighting — does not treat all three requests as equal | PASS | "activation fix beats mobile by ~5–20× on expected value" with explicit ARR math differentiating all three items. |
+| c4 | Escalates the PostgreSQL upgrade to the CTO rather than making a technical timeline decision | PASS | "I'll coordinate with the CTO to fit it alongside the activation fix — the technical timeline is theirs to set, not mine." |
+| c5 | Does not approve the mobile app without evidence of user need at scale — cites the 94% low-engagement principle or equivalent | PASS | "Per the **Pareto / Kano 'loud minority' rule** (commonly cited as '94% of feature requests come from <10% of users')" cited directly. |
+| c6 | Produces a clear prioritisation with reasoning, not just a ranked list | PASS | Each of three items has its own section with rationale, math, ownership, and timeline — not a bare list. |
+| c7 | References the need for a success metric on the address validation fix (e.g. target dropout rate) | PARTIAL | "Reduce address-step dropout from **30% → <15% within 4 weeks of ship.** Measured on new-signup cohort weekly." |
+| c8 | Does not make the business priority call unilaterally on scope conflicts — presents trade-offs clearly | PASS | PG upgrade timeline deferred to CTO; sequencing options presented as parallel default with explicit fallback framing. |
+| c9 | Output explicitly challenges the mobile app request as a solution-not-problem — asks for evidence that mobile (vs responsive web) is the actual blocker, not assumes the two anecdotal prospects represent the wider market | PASS | "is mobile actually the blocker, or proxy for 'we're not ready to buy'?" and gates native app with "responsive-web MVP first, not a native app." |
+| c10 | Output prioritises the address-validation drop-off as #1 due to quantified impact — 30% of new users dropping off plus 47 tickets in 6 weeks = direct, measurable activation problem with revenue and churn impact | PASS | "30% × ~50 signups/week × $12k ACV ≈ **$9.4M/year of cohort ARR walking out the door**" plus 47 tickets cited. |
+| c11 | Output applies frequency × severity reasoning — does NOT treat the three requests as equal weight, and shows the math (rough) that retention/activation problems compound into ARR loss faster than missing a feature for two prospects | PASS | ARR math for activation ($9.4M/yr) vs mobile ($500k one-time) explicitly compared; "This is a *recurring, every-cohort* loss." |
+| c12 | Output escalates the PostgreSQL upgrade to the CTO — recognising it's a technical timeline call, not a product priority call — and proposes coordinating to fit it into the schedule alongside the activation fix | PASS | "This isn't a product call. I'll coordinate with the CTO to fit it alongside the activation fix — the technical timeline is theirs to set, not mine." |
+| c13 | Output does NOT approve the mobile app build without further evidence — references something like "94% of feature requests are low-engagement" or "we need quantified user research before building a major platform" before committing | PASS | Cites 94% rule, runs discovery only, and gates build on a >30% signal threshold from discovery results. |
+| c14 | Output's prioritisation is presented with reasoning per item — not a bare ranked list — covering the user-pain rationale and the evidence weight per request | PASS | Each item has dedicated section with math, rationale, and evidence weight (47 tickets, n=2, end-of-life date). |
+| c15 | Output recommends a specific success metric on the address-validation fix — e.g. "reduce address-step dropoff from 30% to under 15%" — so the team knows when the fix is good enough to declare done | PASS | "Reduce address-step dropout from **30% → <15% within 4 weeks of ship.** Measured on new-signup cohort weekly." |
+| c16 | Output proposes a cheap discovery action on the mobile request — e.g. interview the two prospects, look at usage analytics from existing customers (mobile vs desktop), survey customers — before committing engineering time | PASS | Three named actions: CS-led prospect interviews, pull mobile-vs-desktop analytics, 5-question survey to top 50 accounts. |
+| c17 | Output presents the trade-off honestly to stakeholders — naming who is unhappy with the recommended sequence (sales team) and how to mitigate (customer-relations action while the dropoff fix ships) | PASS | "Sales-team mitigation" section: "Have customer success run a roadmap conversation with both prospects this week... don't commit a date." |
+| c18 | Output addresses what happens if the PostgreSQL upgrade and the address-validation fix conflict for engineering time — proposing a sequencing or parallelisation plan rather than leaving the conflict unresolved | PARTIAL | "Parallel, different engineers... If forced to choose sequentially: activation fix first" — explicit plan for both parallel and sequential scenarios. |
 
 ### Notes
 
-The output is a near-perfect match against all criteria: it shows the ARR arithmetic, cites the vocal-minority heuristic, names a specific 15% dropout target, defers PG timeline to the CTO, and lists four concrete mobile discovery steps. Both PARTIAL-ceiling criteria (c7, c18) are actually fully addressed in the output — they are capped at PARTIAL by the test author's ceiling, not by any deficiency in the response.
+The output meets every criterion fully, including the two PARTIAL-ceiling items which were answered with specific numbers and clear sequencing logic. The cited heuristic, ARR math, success metric, discovery actions, and CTO escalation all appear verbatim and precisely as the rubric required.

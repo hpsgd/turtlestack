@@ -24,26 +24,30 @@ This skill **does not simulate**. Earlier versions wrote `result.md` files conta
 
 ## Step 1: Resolve runner
 
-The runner script lives at:
+Two runners live alongside each other:
 
 ```bash
-RUNNER="${CLAUDE_PLUGIN_ROOT}/scripts/run-test.py"
+RUNNER="${CLAUDE_PLUGIN_ROOT}/scripts/run-test.py"            # rubric tests (test.md) — LLM judge
+HOOK_RUNNER="${CLAUDE_PLUGIN_ROOT}/scripts/run-hook-test.py"  # hook tests (hook-test.md) — deterministic asserts
 ```
 
-If the script doesn't exist, stop and tell the user to install or update the `plugin-curator` plugin.
+If a script doesn't exist, stop and tell the user to install or update the `plugin-curator` plugin.
+
+**Two kinds of test.** A `test.md` exercises a skill or agent and is scored by an LLM judge against a rubric. A `hook-test.md` exercises a hook script and is checked deterministically (exact stdin/env in, stdout/exit/file assertions out — no model call, no cost). Discover and route both.
 
 ## Step 2: Discover tests
 
-Find every `test.md` under the requested scope:
+Find every `test.md` and `hook-test.md` under the requested scope:
 
 ```bash
 SCOPE="${ARGUMENTS:-examples}"
-find "$SCOPE" -type f -name 'test.md' 2>/dev/null | sort
+find "$SCOPE" -type f -name 'test.md' 2>/dev/null | sort       # rubric tests
+find "$SCOPE" -type f -name 'hook-test.md' 2>/dev/null | sort  # hook tests
 ```
 
-If `$SCOPE` is itself a test directory (contains `test.md`), use that single test.
+If `$SCOPE` is itself a test directory (contains either file), use that single test.
 
-If no `test.md` files exist, report that plainly and stop.
+If neither file exists anywhere under the scope, report that plainly and stop.
 
 ## Step 3: Resolve plugin source per test
 
@@ -79,6 +83,18 @@ Exit code reflects the verdict:
 Treat exit codes ≥ 3 as failures of the harness, not the skill — record them as `infra-error` (3) or `api-error` (4) in the report and continue. For exit 4, capture the API error message and `request_id` so the operator can decide whether to retry, soften the prompt, switch model, or escalate to Anthropic.
 
 For long batches, run sequentially. Parallel runs are safe in principle (each gets its own tmp workspace) but cost-of-debugging outweighs the speed-up for now.
+
+### Hook tests (`hook-test.md`)
+
+Route these to `$HOOK_RUNNER`, not the rubric runner. No judge, no model cost — the runner feeds the hook its declared stdin and env, then checks exit code, stdout, and any written files against the test's assertions:
+
+```bash
+"$HOOK_RUNNER" --test-dir "<test_dir>" --plugin-dir "<plugin_dir>"
+```
+
+`--plugin-dir` is optional (it sets the `{plugin_dir}` token and a default `CLAUDE_PLUGIN_ROOT`); the runner otherwise infers the plugin root from the hook path. Exit codes match: `0` PASS (all assertions hold), `2` FAIL, `3` infra error. The JSON summary lists any failed assertions under `failures`. The `hook-test.md` format is documented in `scripts/README.md`.
+
+Plugin source for a hook test: path matches `examples/<category>/<plugin>/hooks/<hook>/<case>/hook-test.md` → plugin source is `plugins/<category>/<plugin>`.
 
 ### Plugin dependencies and isolation
 
@@ -154,12 +170,14 @@ Use this shape:
 | Total cost | $X.XX |
 | Total duration | XmYs |
 
-| Test | Type | Verdict | Score | Cost | Duration |
-|---|---|---|---|---|---|
-| <relative-path> | skill\|agent | PASS\|PARTIAL\|FAIL | X/Y (Z%) | $0.XX | XX s |
+| Test | Type | Verdict | Score | Denials | Cost | Duration |
+|---|---|---|---|---|---|---|
+| <relative-path> | skill\|agent | PASS\|PARTIAL\|FAIL | X/Y (Z%) | N | $0.XX | XX s |
 ```
 
 Sort the results table by score ascending so the lowest-scoring tests surface first. Verdicts under PASS deserve attention before the high scorers.
+
+The **Denials** column is `target_denials` from the runner — the count of permission-denied tool calls in the target run. It's normally 0. A non-zero count means the agent tried a tool it couldn't use (often `AskUserQuestion` in headless mode, where there's no human to answer) and may have fallen back to a worse behaviour. Surface any non-zero denial in Step 6 — it's a cheap signal of an access issue or a wrong-tool reach that a score alone can hide. No special flag is needed: `target_denials` is in every run's JSON.
 
 For single-test mode, skip the table and just print the runner's JSON output along with the `result.md` path.
 
@@ -170,6 +188,7 @@ Print a summary table and flag anything that needs attention:
 - Tests with `FAIL` verdict
 - Tests with `infra-error`
 - Tests with `PARTIAL` that previously passed (regression)
+- Tests with non-zero `target_denials` (an access issue, or the agent reaching for a tool it can't use and falling back)
 - Tests where target cost or duration is significantly above the median (suggests the skill is wandering)
 
 Don't suggest fixes here — that's a separate workflow. Just surface the data.

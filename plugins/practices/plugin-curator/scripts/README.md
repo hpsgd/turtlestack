@@ -6,7 +6,8 @@ Tooling for evaluating Claude Code skills and agents end-to-end against rubric-s
 
 | File | Purpose |
 |---|---|
-| `run-test.py` | Run a single test: invoke the skill/agent in headless mode, snapshot artifacts, judge against criteria, write `result.md` |
+| `run-test.py` | Run a single rubric test (`test.md`): invoke the skill/agent in headless mode, snapshot artifacts, judge against criteria, write `result.md` |
+| `run-hook-test.py` | Run a single hook test (`hook-test.md`): feed a hook stdin + env, assert on exit code / stdout / written files. Deterministic — no model, no cost |
 | `judge-prompt.md` | System prompt the judge model uses when scoring captured output |
 | `check-result-verdict.py` | PostToolUse hook that validates `result.md` verdicts match their scores |
 
@@ -192,6 +193,74 @@ Per test, with default models (Haiku target, Sonnet judge):
 - Total: ~$0.10 per test
 
 Running all 172 turtlestack tests: ~$17.
+
+## Hook tests (`run-hook-test.py`)
+
+Hooks are deterministic — stdin (an event JSON) and environment in, stdout (a JSON
+hook response, or silence) and an exit code out. That wants exact assertions, not
+an LLM judge, so hook tests use a separate runner and a `hook-test.md` format.
+
+```bash
+plugins/practices/plugin-curator/scripts/run-hook-test.py \
+  --test-dir examples/practices/security-compliance/hooks/security-baseline/flags-aws-key
+```
+
+### `hook-test.md` format
+
+```markdown
+---
+kind: hook
+hook: plugins/practices/security-compliance/scripts/security-baseline-hook.sh
+---
+
+# Hook test: <title>
+
+<scenario paragraph>
+
+## Setup            (optional — bash run in the workspace before the hook)
+mkdir -p cache/turtlestack/thinking/9.9.9
+
+## Env              (optional — KEY=VALUE per line; tokens substituted)
+CLAUDE_PLUGIN_ROOT={plugin_dir}
+CLAUDE_CONFIG_DIR={workspace}/config
+
+## Stdin            (optional — fenced block piped to the hook)
+```json
+{"tool_name": "Write", "tool_input": {"content": "AWS_KEY = \"AKIA...\""}}
+```
+
+## Assertions       (required — one check per line)
+- exit 0
+- stdout contains: aws-access-key
+- stdout not contains: should-not-appear
+- stdout regex: PreToolUse
+- stdout empty
+- file exists: config/turtlestack/notices-seen.json
+- file contains: config/turtlestack/notices-seen.json :: test-action
+```
+
+The `hook:` path is resolved from `--repo-root` (default cwd). The hook runs in a
+fresh temp workspace (its cwd), with `CLAUDE_PLUGIN_ROOT` cleared unless the test
+sets it — so a hook starts from a clean slate, not the operator's environment.
+
+**Tokens** (substituted in Env values, Setup, and file-path assertions):
+`{workspace}`, `{plugin_dir}`, `{test_dir}`, `{repo_root}`.
+
+**Assertions** — each line is one check; all must hold for PASS:
+
+| Assertion | Holds when |
+|---|---|
+| `exit <N>` | the hook exited with code N |
+| `stdout empty` / `stderr empty` | that stream is whitespace-only |
+| `stdout contains: <text>` | the substring is present in stdout |
+| `stdout not contains: <text>` | the substring is absent from stdout |
+| `stdout regex: <pattern>` | the pattern matches somewhere in stdout |
+| `stderr contains: <text>` | the substring is present in stderr |
+| `file exists: <path>` | the workspace-relative (or absolute) path exists |
+| `file contains: <path> :: <text>` | the file exists and contains the substring |
+
+Exit codes: `0` PASS, `2` FAIL, `3` infra error. A JSON summary prints to stdout;
+`result.md` is written to the test dir unless `--no-write-result` is passed.
 
 ## Vendoring into a downstream project
 
