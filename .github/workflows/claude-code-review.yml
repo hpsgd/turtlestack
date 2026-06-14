@@ -3,12 +3,10 @@ name: Claude Code Review
 on:
   pull_request:
     types: [opened, synchronize, ready_for_review, reopened]
-    # Optional: Only run on specific file changes
-    # paths:
-    #   - "src/**/*.ts"
-    #   - "src/**/*.tsx"
-    #   - "src/**/*.js"
-    #   - "src/**/*.jsx"
+    # Reviews run on every PR regardless of language. The /code-review command
+    # reviews the whole diff — markdown plugin definitions, Python/shell scripts,
+    # Terraform, JSON config — not just one language. Don't add a paths filter
+    # unless you genuinely want to scope reviews; this repo is mostly markdown.
 
 jobs:
   claude-review:
