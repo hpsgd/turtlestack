@@ -18,10 +18,22 @@ jobs:
       tag_name: ${{ steps.release.outputs.tag_name }}
       version: ${{ steps.release.outputs.version }}
     steps:
+      # release-please must open its PR with a GitHub App token, not the default
+      # GITHUB_TOKEN. PRs created by GITHUB_TOKEN do not trigger workflows (the
+      # anti-recursion safeguard), so the required "PR Title" check never runs
+      # and the release PR sits BLOCKED forever. An App token is a distinct
+      # actor, so its PR fires the normal checks. App ID + private key are org
+      # secrets shared across repos that use release-please.
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: app-token
+        with:
+          app-id: ${{ secrets.RELEASE_BOT_APP_ID }}
+          private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+
       - id: release
         uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.app-token.outputs.token }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
