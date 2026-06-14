@@ -25,128 +25,115 @@ Captured from a real headless invocation of the skill/agent.
 
 # Dispatch Plan: API Rate Limiting
 
-**Routing call**: Both. This is an architecture decision *and* an implementation task, sequenced — with an emergency mitigation in front of both so the bleeding stops while we design properly. Treating it as "just implementation" risks baking in a single-service hack that doesn't generalise; treating it as "just architecture" leaves customers degraded for the days/weeks the design pass takes.
+**Routing decision:** Both. This is an architecture decision AND an implementation task, in that order — but ship a tactical fix Day 0 so the architecture work isn't done under a fire alarm.
+
+**Reasoning:** Cross-service rate limiting touches request routing, multi-tenancy, distributed state, latency budget, and customer commercial tiers. That's architectural — a backend dev implementing in isolation will produce a per-process in-memory limiter that breaks the moment we scale horizontally, and a quota model that customer success has to clean up after. But the bleeding is happening *now*, so a narrow tactical limit on the one offending endpoint must ship in parallel, not be gated on the architecture pass.
 
 ---
 
-## Day 0 — Emergency mitigation (ships within hours, before architecture work begins)
+## Day 0 — Quick mitigation (ships within hours)
 
-**Owner**: backend on-call (direct task, no agent dispatch needed — this is operational firefighting).
+**Implement quick fix Day 0 to stop noisy customers degrading service while architecture pass runs in parallel.**
 
-**Action**: Per-customer rate limit on the bulk-import endpoint only. Two acceptable shapes, pick whichever matches current infra:
-- **Preferred**: API gateway / nginx `limit_req_zone` keyed on customer ID (or API key), applied only to the bulk-import route. Conservative cap — e.g. 10 req/s per customer with small burst — tuned to be well below what's causing the degradation but well above normal small-customer usage.
-- **Fallback if no gateway control**: in-memory token bucket middleware on the bulk-import endpoint in the API process itself. Single-node is fine for Day 0 — we accept that it under-limits in a multi-node deployment because anything is better than nothing. Document this as known-temporary.
+- **Scope:** the bulk-import endpoint only. Not a system-wide limiter.
+- **Mechanism:** API gateway / nginx `limit_req` rule keyed on customer/tenant ID, OR a single-endpoint in-memory token bucket in the backend if the gateway can't key on tenant. Pick whichever is faster to ship given current infra.
+- **Limit value:** set conservatively from current p95/p99 traffic of the top-3 offenders — enough headroom that legitimate imports complete, low enough that one customer can't saturate a worker pool.
+- **Return:** `429 Too Many Requests` with `Retry-After` header. Log every rejection with tenant ID for the architect's traffic analysis.
+- **Owner:** backend dev (no design doc needed — this is a known-throwaway).
+- **Explicitly flagged as interim.** Will be replaced by the cross-service design. Don't let it ossify.
 
-**Explicit framing**: *Implement quick fix Day 0 to stop noisy customers degrading service while the architecture pass runs in parallel.* This is a tourniquet, not the solution. It must be removed when the proper system ships.
+## Day 0 (parallel) — Customer comms
 
-**Comms gate**: before the limit is *enforced*, fire the customer-comms thread below in parallel — even the emergency limit gets a heads-up to the affected accounts, not a silent 429.
+Coordinate with `cpo:cpo` and customer success **before** the gateway rule lands in prod, even though it's tactical. Noisy bulk-import customers get:
+- a heads-up that a temporary throttle is going on,
+- the quota number,
+- a path to a higher tier if their volume is legitimate.
 
----
-
-## Then — Architecture pass (in parallel with Day 0 enforcement)
-
-**Dispatch**: `/architect:system-design` — cross-service rate limiting strategy.
-
-**Scope handed to the architect**:
-- Cross-service (applies to every API surface, not just bulk-import)
-- Multi-tenant (per-customer, per-API-key, possibly per-endpoint class)
-- Distributed counter store (multi-node API, can't rely on per-process memory)
-
-**Constraints**:
-- Postgres and Redis both available — architect picks, justifies the rejection of the other
-- **Latency budget: <5ms p99 per rate-limit check** (hard constraint — if the check itself adds meaningful latency we've made the problem worse)
-- Must degrade safely if the counter store is unavailable (fail-open vs fail-closed is itself a decision the ADR must call out)
-
-**Anchor case** (must be in the design doc, must be solved): *Any solution must allow legitimate bulk imports to complete while preventing them from starving smaller consumers.* If the proposed design can't articulate how it handles this, it's not done. This rules out naive flat-rate limits; pushes toward tiered quotas, burst allowances, or fair-queueing.
-
-**Required deliverables from architect**:
-1. **`ADR-NNN: Cross-service Rate Limiting Strategy`** — chosen algorithm (token bucket / leaky bucket / sliding window / fixed window), counter store choice, key scheme (customer × endpoint-class × time-window), enforcement layer (gateway / middleware / service mesh), and the **explicit rejected alternatives** with reasoning. Future-reconsideration trigger named (e.g. "revisit if tenant count exceeds X, or if endpoint count exceeds Y, or if Redis latency budget breached").
-2. **Variation audit** before signing off the ADR: walk historical incidents and known customer patterns to stress-test that the proposed mechanism handles realistic variation (new endpoint classes, burst-heavy legitimate workloads, customers on different plan tiers). Don't reason from a snapshot of today's traffic.
-3. **Implementation handoff spec** — interface, key schema, configuration shape, observability requirements (must emit metrics for limit-hits per customer per endpoint so we can see who's being throttled and tune from data).
-
-**Sequencing gate**: ADR approved → implementation dispatch fires. Not before.
+Do NOT impose unilaterally. The tactical fix is technically reversible; a surprised enterprise customer is not.
 
 ---
 
-## Then — Implementation
+## Step 1 — Dispatch architect
 
-**Dispatch**: `/python-developer:feature-implementation` (assumes Python backend — substitute language plugin to match the actual stack).
+**Invoke:** `/architect:system-design`
 
-**Scope**: build per the approved ADR. Specifically:
-- Counter store client + interface (deployment-model-agnostic — the rate-limit *library* shouldn't hard-dep on a specific Redis client beyond an injectable interface)
-- Middleware / gateway integration per ADR
-- Configuration surface (per-customer overrides, per-endpoint-class defaults — SSOT, addressable, not a config bag)
-- Observability hooks (metrics + structured logs for every limit decision)
-- Tests including the anchor case: load-test scenario where a bulk-import customer runs at quota while small customers continue to get baseline latency
-- Day 0 mitigation **removed** as part of the cutover, not left layered on top
+**Frame:**
+- **Scope:** cross-service, multi-tenant rate limiting strategy. Applies to every public API surface, not just bulk import.
+- **Constraints:**
+  - Postgres and Redis both available; pick one (or justify both) on latency and operational grounds.
+  - Latency budget: **<5ms per check** at p99.
+  - Must work across horizontally-scaled backend instances (distributed counter, not per-process state).
+  - Must support per-tenant quotas of varying size (commercial tiering).
+- **Anchor case:** *"any solution must allow legitimate bulk imports while preventing them from starving smaller consumers."* This is the design's load-bearing test. A naive global limit fails it.
+- **Required deliverables:**
+  - `ADR-NNN: Cross-service Rate Limiting Strategy` — chosen approach, rejected alternatives (token bucket vs leaky bucket vs fixed window vs sliding log), and the **future reconsideration trigger** (e.g. "revisit if p99 check latency exceeds 5ms, or if we add a third datacenter").
+  - System diagram showing where the limiter sits in the request path (edge gateway? sidecar? in-process middleware with shared store?).
+  - Quota model: how tiers map to limits, how bulk-import customers get a dedicated bucket vs sharing a pool.
+  - Failure mode: what happens when the counter store is unavailable. Fail open or fail closed? Justified.
+  - Migration plan: how the Day 0 tactical limit is retired without a service gap.
 
-**Sequencing gate**: implementation done → load test confirms success criteria → coordinated rollout via release manager.
-
----
-
-## Customer communication (parallel to architecture work, gates enforcement)
-
-**Dispatch**: `/cpo:cpo` (product prioritisation + tier strategy) coordinating with customer-success.
-
-**Why this isn't a unilateral engineering call**: imposing a hard quota on customers without warning is a churn event. The noisy bulk-import customers are *paying customers using the product as designed* — they just lack a pricing signal that says "this volume costs more to serve." That's a product/commercial question, not an engineering one.
-
-**Required outputs**:
-1. **Notification draft** to affected bulk-import customers — what's changing, when, what their new quota is, what the upgrade path looks like
-2. **Tier definition** — what does "higher-tier bulk import" look like commercially (higher quota, dedicated quota pool, async batch endpoint, etc.)
-3. **Grace period** — how long between notification and enforcement of permanent limits (Day 0 emergency limit can be tighter and shorter-notice since it's an incident response; the permanent limits per the ADR need real notice)
-4. Customer success owns the individual outreach to the named noisy accounts before the gateway flips
+**Approval gate:** ADR must be approved before Step 2 starts.
 
 ---
 
-## Success criteria (measurable, all three must hold)
+## Step 2 — Dispatch backend developer
 
-1. **Latency baseline restored**: p95 API latency under representative production load returns to baseline of **[X ms — backend on-call to pull current pre-incident baseline from monitoring; placeholder until that number is real]**. Measured over a 7-day window post-cutover.
-2. **No shared-tenant starvation**: zero incidents in the next 30 days where one customer's traffic causes >2× latency degradation for other customers on the same shared infrastructure. Tracked via the per-customer-per-endpoint metrics the implementation must emit.
-3. **Legitimate bulk imports still complete**: representative bulk-import workload from a paying customer on the appropriate tier completes within **[Y minutes — CPO/CS to define acceptable SLA per tier; placeholder]**. If we can't define Y, we don't have a tier strategy yet and the rollout isn't ready.
+**Invoke:** `/python-developer:feature-implementation` (or language-equivalent for the service stack).
+
+**Only after ADR approval.** Brief includes:
+- The approved ADR as the source of truth.
+- Test plan covering the anchor case: simulated bulk-import customer running at quota does not increase p95 latency for a concurrent small-consumer workload.
+- Removal of the Day 0 tactical limit as part of the same change.
+- Observability: per-tenant rejection counts, latency of the check itself, counter-store health.
 
 ---
 
-## Reasoning for the routing call
+## Success criteria (measurable)
 
-- **Why not "just backend implementation"**: rate limiting touches every service, defines a multi-tenant fairness contract with customers, and picks a counter-store + algorithm combination that will be load-bearing for years. That's an architecture decision with an ADR, not a ticket.
-- **Why not "just architecture"**: customers are degraded *now*. An architecture pass that takes a week while the system bleeds is the wrong tradeoff. Day 0 mitigation buys the time to design properly.
-- **Why CPO/CS in the loop**: enforced quotas on paying customers without commercial framing is a churn risk and a support-ticket avalanche. The technical capability and the commercial policy are two different decisions; engineering owns the first, product owns the second.
-- **Why the ADR is non-negotiable**: rate limiting is a classic case where the obvious choice (fixed window) is wrong in subtle ways (boundary bursts) and where the right choice depends on traffic shape we should articulate now, not rediscover after launch. Naming the rejected alternative and the reconsideration trigger is what makes it useful in 18 months when someone asks "why did we pick this?"
+- **p95 API latency** under representative load returns to baseline of **X ms** (architect to fill X from current SLO doc; if no SLO exists, capture pre-incident baseline as part of the design).
+- **No shared-tenant starvation event** in the next **30 days** — defined as: no period >5 min where small consumers see elevated 5xx/latency attributable to bulk-import traffic.
+- **Legitimate bulk imports complete within Y minutes** at the assigned quota (architect to define Y per tier, validated with the top-3 affected customers via customer success).
+
+---
+
+## Summary
+
+Day 0: gateway limit on bulk-import endpoint + CPO/CS comms. Day 1+: architect drafts ADR-NNN for cross-service strategy. Post-approval: backend implements, retires the tactical limit. Quick fix lets the architecture be designed deliberately rather than under fire.
 
 ## Evaluation
 
 | Field | Value |
 |---|---|
 | Verdict | PASS |
-| Score | 15.0/15.0 (100%) |
-| Evaluated | 2026-05-27 |
+| Score | 15.5/16.0 (97%) |
+| Evaluated | 2026-06-13 |
 | Target model | claude-opus-4-7 |
 | Judge model | claude-sonnet-4-6 |
-| Target duration | 59265 ms |
-| Target cost | $0.3627 |
+| Target duration | 34060 ms |
+| Target cost | $0.5386 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | CTO reads the request fully before classifying — doesn't jump to delegation | PASS | Opens with 'Routing call: Both' after noting 'Treating it as just implementation risks baking in a single-service hack... treating it as just architecture leaves customers degraded' |
-| c2 | CTO produces a trade-off summary before delegating (architecture-level design vs implementation-level fix) | PASS | Dedicated 'Reasoning for the routing call' section explains 'Why not just backend implementation', 'Why not just architecture', and 'Why the ADR is non-negotiable' |
-| c3 | CTO correctly identifies this as needing BOTH — architect for the rate limiting strategy across services, developer for implementation | PASS | 'Routing call: Both. This is an architecture decision *and* an implementation task, sequenced' |
-| c4 | Delegation to architect specifies the right skill (system-design for cross-service rate limiting strategy) | PASS | 'Dispatch: /architect:system-design — cross-service rate limiting strategy' |
-| c5 | Delegation sequence is correct — architect first (strategy), then developer (implementation) | PASS | Sections ordered Day 0 → Architecture pass → Implementation, with explicit gate: 'ADR approved → implementation dispatch fires. Not before.' |
-| c6 | CTO identifies that the immediate performance issue may need a quick fix before the architectural solution | PARTIAL | Full 'Day 0 — Emergency mitigation (ships within hours, before architecture work begins)' section with two specific options and explicit framing statement |
-| c7 | Delegation includes clear scope boundaries — what the architect decides vs what the developer decides | PASS | Architect decides algorithm, counter store, key scheme, enforcement layer; developer 'builds per the approved ADR' with specific implementation deliverables listed separately |
-| c8 | ADR is included as a required deliverable for the rate limiting strategy decision | PASS | 'Required deliverables from architect: 1. ADR-NNN: Cross-service Rate Limiting Strategy' listed first and sequencing gate: 'ADR approved → implementation dispatch fires' |
-| c9 | Output explicitly identifies that the request requires BOTH architecture and implementation work — not just one or the other — and explains why | PASS | 'Routing call: Both' plus full reasoning section with separate explanations for why neither alone suffices |
-| c10 | Output dispatches to the architect first using `/architect:system-design` (or equivalent) for the cross-service rate limiting strategy, then to the backend developer for implementation, in that sequence | PASS | '/architect:system-design' in 'Then — Architecture pass' section; '/python-developer:feature-implementation' in subsequent 'Then — Implementation' section |
-| c11 | Output identifies the immediate problem as a candidate for a quick mitigation (e.g. emergency per-customer limit on the bulk-import endpoint) while the architectural work proceeds, NOT just queueing the proper fix and leaving the noisy customers degrading service for everyone | PASS | Day 0 section proposes nginx limit_req_zone keyed on customer ID or in-memory token bucket as fallback, with 'Implement quick fix Day 0 to stop noisy customers degrading service while architecture pass runs in parallel' |
-| c12 | Output's delegation includes clear scope boundaries — architect decides where rate limiting lives, what dimensions it applies on, and what the response codes / headers are; developer decides how to implement within that contract | PASS | Architect scope: 'Cross-service... Multi-tenant... Distributed counter store... enforcement layer (gateway/middleware/service mesh)'; developer scope: build 'per the approved ADR' including 'Counter store client + interface... Middleware/gateway integration' |
-| c13 | Output requires an ADR as a deliverable from the architect — not optional — because rate limiting touches every API consumer and the choice will shape every subsequent service | PASS | 'Why the ADR is non-negotiable: rate limiting is a classic case where the obvious choice (fixed window) is wrong in subtle ways... Naming the rejected alternative and the reconsideration trigger is what makes it useful in 18 months' |
-| c14 | Output frames the bulk-import scenario explicitly as the anchor case — any solution must allow legitimate bulk imports while preventing them from starving smaller consumers | PASS | 'Anchor case (must be in the design doc, must be solved): Any solution must allow legitimate bulk imports to complete while preventing them from starving smaller consumers. If the proposed design can't articulate how it handles this, it's not done.' |
-| c15 | Output includes communication to the affected customers if a hard limit is enforced — coordinated with CPO / customer success, not unilaterally imposed | PASS | Full section 'Customer communication (parallel to architecture work, gates enforcement)' dispatching '/cpo:cpo' and 'Why this isn't a unilateral engineering call: imposing a hard quota on customers without warning is a churn event' |
-| c16 | Output identifies the success criteria for the rate-limiting work — measurable performance improvement (p95 latency under load returns to baseline X) so the team knows when the fix is verified | PARTIAL | 'Success criteria (measurable, all three must hold)' section: p95 latency to baseline X ms over 7-day window, zero starvation incidents in 30 days, bulk imports complete within Y minutes |
+| c1 | CTO reads the request fully before classifying — doesn't jump to delegation | PASS | Output opens with 'Routing decision: Both' and provides a full reasoning paragraph covering cross-service concerns, horizontal scaling, and customer tiers before any delegation. |
+| c2 | CTO produces a trade-off summary before delegating (architecture-level design vs implementation-level fix) | PASS | Reasoning section: 'a backend dev implementing in isolation will produce a per-process in-memory limiter that breaks the moment we scale horizontally' — explicit arch vs impl trade-off. |
+| c3 | CTO correctly identifies this as needing BOTH — architect for the rate limiting strategy across services, developer for implementation | PASS | 'Routing decision: Both. This is an architecture decision AND an implementation task, in that order' |
+| c4 | Delegation to architect specifies the right skill (system-design for cross-service rate limiting strategy) | PASS | Step 1 explicitly states 'Invoke: /architect:system-design' with scope framed as 'cross-service, multi-tenant rate limiting strategy' |
+| c5 | Delegation sequence is correct — architect first (strategy), then developer (implementation) | PASS | Step 2 opens with 'Only after ADR approval.' and Step 1 precedes Step 2 in the plan with an explicit approval gate. |
+| c6 | CTO identifies that the immediate performance issue may need a quick fix before the architectural solution | PARTIAL | Day 0 section: 'Implement quick fix Day 0 to stop noisy customers degrading service while architecture pass runs in parallel' — fully addressed. |
+| c7 | Delegation includes clear scope boundaries — what the architect decides vs what the developer decides | PASS | Architect deliverables include ADR, quota model, failure mode, migration plan. Developer brief: 'The approved ADR as the source of truth' with removal of Day 0 limit and observability. |
+| c8 | ADR is included as a required deliverable for the rate limiting strategy decision | PASS | 'ADR-NNN: Cross-service Rate Limiting Strategy — chosen approach, rejected alternatives... and the future reconsideration trigger' listed under Required deliverables. |
+| c9 | Output explicitly identifies that the request requires BOTH architecture and implementation work — not just one or the other — and explains why | PASS | 'This is an architecture decision AND an implementation task' with reasoning on horizontal scaling breakage and commercial tier quota model as justification. |
+| c10 | Output dispatches to the architect first using `/architect:system-design` (or equivalent) for the cross-service rate limiting strategy, then to the backend developer for implementation, in that sequence | PASS | Step 1 invokes `/architect:system-design`, Step 2 invokes `/python-developer:feature-implementation`, with explicit sequencing and approval gate between them. |
+| c11 | Output identifies the immediate problem as a candidate for a quick mitigation (e.g. emergency per-customer limit on the bulk-import endpoint) while the architectural work proceeds, NOT just queueing the proper fix and leaving the noisy customers degrading service for everyone | PASS | Day 0 section specifies nginx `limit_req` or in-memory token bucket on bulk-import endpoint, 429 with Retry-After, 'Explicitly flagged as interim. Will be replaced by the cross-service design.' |
+| c12 | Output's delegation includes clear scope boundaries — architect decides where rate limiting lives, what dimensions it applies on, and what the response codes / headers are; developer decides how to implement within that contract | PASS | Architect scope includes 'where the limiter sits in the request path', quota model, failure mode. Developer brief: implement per approved ADR, remove Day 0 limit, add observability. |
+| c13 | Output requires an ADR as a deliverable from the architect — not optional — because rate limiting touches every API consumer and the choice will shape every subsequent service | PASS | ADR listed under 'Required deliverables' (not suggested). 'Approval gate: ADR must be approved before Step 2 starts' makes it mandatory. |
+| c14 | Output frames the bulk-import scenario explicitly as the anchor case — any solution must allow legitimate bulk imports while preventing them from starving smaller consumers | PASS | 'Anchor case: any solution must allow legitimate bulk imports while preventing them from starving smaller consumers. This is the design's load-bearing test.' |
+| c15 | Output includes communication to the affected customers if a hard limit is enforced — coordinated with CPO / customer success, not unilaterally imposed | PASS | Day 0 parallel section: 'Coordinate with cpo:cpo and customer success before the gateway rule lands in prod... Do NOT impose unilaterally.' |
+| c16 | Output identifies the success criteria for the rate-limiting work — measurable performance improvement (p95 latency under load returns to baseline X) so the team knows when the fix is verified | PARTIAL | Success criteria section lists p95 latency, 30-day starvation-free window, and bulk import completion time Y — all three measurable, with X deferred to architect from SLO doc. |
 
 ### Notes
 
-The output is a near-perfect execution of the dispatch plan prompt: every required element (Day 0 mitigation, architect dispatch, implementation dispatch, ADR requirement, anchor case, CPO comms, measurable success criteria) is present and well-structured. The only minor gap is that response codes/headers aren't explicitly called out in the architect's scope boundary (c12), but all other scope dimensions are covered thoroughly.
+The output is comprehensive and well-structured, hitting every criterion including the anchor case, ADR as mandatory deliverable, CPO coordination, and Day 0 tactical fix. The only minor gap is that success criteria placeholder values (X ms, Y minutes) are deferred to the architect rather than providing even rough estimates, but this is reasonable given the stated absence of an SLO doc.

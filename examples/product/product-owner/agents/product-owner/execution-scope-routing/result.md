@@ -16,275 +16,280 @@ Captured from a real headless invocation of the skill/agent.
 
 ### Chat response
 
-Here's what happened with each task:
+Here's what happened:
 
 ---
 
-**Saved Filters — done.** `docs/stories-saved-filters.md` is written with 4 sprint-ready stories (SF-01 through SF-04), each with:
-- Given/When/Then acceptance criteria covering the happy path and edge cases (duplicate name, empty filter state, stale values, cross-user isolation, etc.)
-- Explicit out-of-scope notes on SF-04 (no bulk delete, no undo)
-- Definition of Ready checklists — all gates pass except 3 amigos review (which requires the team)
+**Saved filters — done.** Four sprint-ready user stories are written to `saved-filters-stories.md`. Quick summary:
 
-**Four open questions flagged for PM to close before planning:**
-- SF-01: per-user cap on saved filters?
-- SF-01: minimum valid filter set (at least 1 filter, or any non-empty combination)?
-- SF-02: sort order for the list?
-- SF-03: should applying a filter update the URL? (→ route to architect)
+- Story 1 (Save filter set): happy path + duplicate name + empty-filter guard
+- Story 2 (View list): happy path + empty state + long-list edge case
+- Story 3 (Apply in one click): happy path + replace-not-merge anti-req + stale-value edge case
+- Story 4 (Delete): happy path + confirmation step + "delete while active" edge case
 
-**Recommended sprint order:** SF-01 first → SF-02 + SF-03 in parallel → SF-04 in parallel with SF-02/SF-03.
+**None of the 4 stories are sprint-ready yet** — they all need a 3-amigos review. Stories 1, 2, and 3 have specific open clarifications (max name length, sort order, stale-filter notification pattern) that are flagged in the file.
 
 ---
 
-**Team Activity Feed PRD — blocked.** The product-owner agent correctly refused. Authoring a PRD — defining the problem statement, success metrics, and the "why/what" — is a product-manager responsibility. The product-owner's mandate is to decompose an *approved* PRD into stories, not to create upstream intent.
+**Team activity feed PRD — correctly blocked.** The product-owner agent declined to write it, and the reasoning is sound: authoring the problem statement, hypothesising the target user, and proposing success metrics are product manager work, not product owner work. Filling those in from imagination produces a guess dressed as a deliverable — which is worse than nothing, because it'll get treated as validated intent.
 
-To unblock this:
-1. You need a product-manager to write the PRD (or write it yourself)
-2. Before that, the minimum viable inputs are: a problem hypothesis, a target persona, and your Q3 themes (so positioning is possible)
-3. Once the PRD reaches Review or Approved state, the product-owner agent can take it from there
+The agent named exactly what needs to exist before it can help:
 
-If you want, I can either write the PRD directly (as your product-manager stand-in given this is early/exploratory), or help you articulate the problem hypothesis first. What's your preference?
+1. **Discovery first** — user interviews, analytics, or survey data that confirms a real problem.
+2. **PM authors the PRD** — problem statement grounded in evidence, persona, metrics, MVP scope.
+3. **PRD reaches Approved state.**
+4. **Q3 themes shared** — so roadmap placement can be evaluated against real themes.
+
+Once you've done that work, hand the approved PRD back and the stories will follow the same clean path as saved filters.
 
 ### Artifacts written
 
-#### `work/docs/stories-saved-filters.md`
+#### `work/saved-filters-stories.md`
 
 ```
-# Stories: Saved Filters
+# Saved Filters — Sprint-Ready User Stories
 
-Source: Saved Filters PRD — Approved
-Success metric: Cut repeat-search time by 30%
-Stories: 4 total
-
----
-
-## Sprint-readiness summary
-
-All four stories are ready to pull. The PRD scope is tight and the behaviours split cleanly.
-
-One open question to resolve before planning: what constitutes a "filter set"? If the current filter state is empty (no filters applied), saving it has no practical value. SF-01 addresses this as an edge case, but the team should confirm what the product manager considers the minimum valid set — one filter applied, or more than one. If there's a per-user cap on saved filters, that should be confirmed too; SF-01 includes a [NEEDS CLARIFICATION] for both.
-
-Stories that can be pulled immediately once those two questions close: SF-01, SF-02, SF-03, SF-04.
-
-Recommended sprint order: SF-01 first (creates the data); SF-02 and SF-03 are unblocked once SF-01 ships or is in progress (they read from the same store); SF-04 can run in parallel with SF-02/SF-03.
+**Source:** PRD `saved-filters` — Approved  
+**Success metric:** Cut repeat-search time by 30%  
+**Stories:** 4 total
 
 ---
 
-## SF-01 Save current filter set
+## Story 1 — Save the current filter set
 
-As a logged-in user who has applied one or more filters,
-I want to save the current filter set with a name I choose,
-so that I can return to the same search without rebuilding it.
+**As a** returning user who runs the same searches regularly,  
+**I want** to save my current filter set with a name I choose,  
+**So that** I can re-apply it later without re-entering each filter from scratch.
 
 ### Acceptance criteria
 
-**Happy path**
+```gherkin
+Scenario: Happy path — save a named filter set
+  Given I have one or more filters applied to the search view
+  When I click "Save filters" and enter the name "Q2 Open Invoices"
+  Then a saved filter named "Q2 Open Invoices" is created for my account
+  And the filter set reflects the exact filters that were active at the time I saved
 
-Given I have at least one filter applied
-When I click "Save filter" and enter a unique name
-Then the filter set is saved under that name and appears in my saved filters list
+Scenario: Name is required
+  Given I have one or more filters applied to the search view
+  When I click "Save filters" and submit without entering a name
+  Then the save is rejected
+  And I see an inline error: "A name is required"
+  And no filter set is saved
 
-**Duplicate name**
+Scenario: Duplicate name within my account
+  Given I already have a saved filter named "Active Clients"
+  When I try to save a new filter set with the name "Active Clients"
+  Then I am warned that a filter set with that name already exists
+  And I am prompted to rename or overwrite — I am not silently blocked or silently overwritten
 
-Given I already have a saved filter named "Active contractors"
-When I try to save a new filter set using the same name
-Then I see an error message telling me the name is already taken
-And the current filter set is not saved
-And the name field stays open so I can enter a different name
+Scenario: Edge case — saving with no filters active
+  Given I have no filters applied to the search view
+  When I attempt to save a filter set
+  Then the save action is unavailable (button disabled or hidden)
+  And no empty filter set can be created
+```
 
-**Empty filter state**
-
-Given I have no filters applied (the filter set is empty)
-When I attempt to save
-Then the save action is either disabled or I see a message explaining there is nothing to save
-
-**Name validation**
-
-Given I open the save dialog
-When I submit with a blank name or a name that is only whitespace
-Then the save is rejected and the name field shows a validation error
-
-**Save confirmation**
-
-Given I successfully save a filter set
-When the save completes
-Then I see a confirmation (inline message or toast) that the filter was saved
+**Anti-requirement:** Saving a filter set does NOT share it with other users, team members, or workspaces. Sharing is out of scope for this story.
 
 ### Definition of Ready
 
-- [x] Acceptance criteria written and each passes the ISC splitting test
-- [x] Story is testable (happy path + 4 edge cases defined)
-- [x] Traces to approved PRD scope item 1 with stated success metric
-- [x] No open [NEEDS CLARIFICATION] markers blocking the story shape
-- [x] Fits in one sprint
-- [ ] 3 amigos review done
+| Check | Status |
+|---|---|
+| Acceptance criteria written in Given/When/Then | Pass |
+| Passes INVEST (independent, small enough for one sprint) | Pass |
+| Traces to approved PRD scope item 1 | Pass |
+| No open [NEEDS CLARIFICATION] markers | **See below** |
+| 3 amigos review done | Pending |
 
-[NEEDS CLARIFICATION]: Is there a maximum number of saved filters per user? If yes, what is the limit, and what happens when the user hits it?
-Owner: @product-manager
+**[NEEDS CLARIFICATION]:** Is there a maximum length for the filter name?  
+Owner: @product-manager  
 Deadline: Before sprint planning
 
-[NEEDS CLARIFICATION]: What is the minimum valid filter set? One filter applied, or can a user save any non-empty combination?
-Owner: @product-manager
+**[NEEDS CLARIFICATION]:** Is there a maximum number of saved filters per user account?  
+Owner: @product-manager  
 Deadline: Before sprint planning
 
-Size: TBD (team call)
+**DoR verdict:** Not Ready — two clarifications must be resolved before sprint planning. All other criteria pass.
 
 ---
 
-## SF-02 View saved filters
+## Story 2 — View saved filters in a list
 
-As a logged-in user,
-I want to see a list of my saved filters,
-so that I know which filter sets I have available to apply.
+**As a** returning user who has saved filter sets,  
+**I want** to see all my saved filters in a list,  
+**So that** I can find and pick the one I need without having to remember its name.
 
 ### Acceptance criteria
 
-**Happy path**
+```gherkin
+Scenario: Happy path — list is populated
+  Given I have at least one saved filter
+  When I open the saved filters panel
+  Then I see a list of all my saved filters, each showing its name
+  And the list is sorted by the order they were saved (most recent first)
 
-Given I have one or more saved filters
-When I open the saved filters panel
-Then I see a list of my saved filters, each showing its name
+Scenario: Empty state — no saved filters yet
+  Given I have no saved filters
+  When I open the saved filters panel
+  Then I see an empty state message indicating no filters have been saved yet
+  And I see a prompt or call-to-action directing me to save a filter set
 
-**Empty state**
+Scenario: Edge case — list is long
+  Given I have more than 20 saved filters
+  When I open the saved filters panel
+  Then all saved filters remain accessible (via scrolling or pagination — not truncated without recourse)
+  And I can find any filter by scrolling through the list
+```
 
-Given I have no saved filters
-When I open the saved filters panel
-Then I see a message indicating no filters have been saved yet
-And I see a prompt or link to save my current filter set
-
-**Filters are mine only**
-
-Given multiple users share the application
-When I view the saved filters panel
-Then I only see filters I personally saved, not filters saved by other users
-
-**Ordering**
-
-Given I have multiple saved filters
-When I view the list
-Then filters appear in the order they were saved (most recently saved last), or the order defined in the spec once confirmed
+**Anti-requirement:** Searching or filtering the saved-filters list itself is out of scope for this story. That is an enhancement for a later slice.
 
 ### Definition of Ready
 
-- [x] Acceptance criteria written and each passes the ISC splitting test
-- [x] Story is testable (happy path + 3 edge cases defined)
-- [x] Traces to approved PRD scope item 2 with stated success metric
-- [x] No open [NEEDS CLARIFICATION] markers blocking delivery
-- [x] Fits in one sprint
-- [x] Depends on SF-01 (saved filter data must exist) — can develop in parallel against a stub
-- [ ] 3 amigos review done
+| Check | Status |
+|---|---|
+| Acceptance criteria written in Given/When/Then | Pass |
+| Passes INVEST (independent, small enough for one sprint) | Pass |
+| Traces to approved PRD scope item 2 | Pass |
+| No open [NEEDS CLARIFICATION] markers | **See below** |
+| 3 amigos review done | Pending |
 
-[NEEDS CLARIFICATION]: What order should saved filters appear in? Most recently saved first, alphabetical, or user-defined?
-Owner: @product-manager
+**[NEEDS CLARIFICATION]:** What is the default sort order? "Most recent first" is assumed here — confirm or correct.  
+Owner: @product-manager  
 Deadline: Before sprint planning
 
-Size: TBD (team call)
+**[NEEDS CLARIFICATION]:** For the long-list case, is scrolling the required pattern, or does the design call for pagination? The UX researcher or ui-designer should confirm.  
+Owner: @ux-researcher / @ui-designer  
+Deadline: Before sprint planning
+
+**DoR verdict:** Not Ready — two clarifications must be resolved before sprint planning. All other criteria pass.
 
 ---
 
-## SF-03 Apply a saved filter
+## Story 3 — Apply a saved filter in one click
 
-As a logged-in user viewing my saved filters,
-I want to apply a saved filter set with one click,
-so that I can reach a filtered view without manually re-selecting each filter.
+**As a** returning user who has saved filter sets,  
+**I want** to apply a saved filter to the current search view in one click,  
+**So that** I can return to a familiar search state instantly without re-entering each filter.
 
 ### Acceptance criteria
 
-**Happy path**
+```gherkin
+Scenario: Happy path — apply a saved filter
+  Given I can see the saved filters list
+  And at least one saved filter exists
+  When I click a saved filter name
+  Then the filter set stored under that name is applied to the search view immediately
+  And the search results update to reflect those filters
+  And the active filters displayed in the UI match the saved filter set exactly
 
-Given I am viewing my saved filters and have at least one saved
-When I click "Apply" on a saved filter
-Then the filter set is applied immediately
-And the search results update to reflect those filters
-And I can see which filter set is currently active
+Scenario: Applying a saved filter replaces current active filters
+  Given I have filters A and B currently active
+  And I have a saved filter that contains only filter C
+  When I apply that saved filter
+  Then filters A and B are removed
+  And filter C is the only active filter
+  And the search results update accordingly
 
-**Replaces current filters**
+Scenario: Edge case — saved filter references a filter value that no longer exists
+  Given a saved filter was created when a filter option "Region: East" existed
+  And "Region: East" has since been removed from the available filter options
+  When I apply that saved filter
+  Then the valid filters in the set are applied
+  And I see a notification that one or more filter values could not be applied because they no longer exist
+  And I am not silently given incorrect results
+```
 
-Given I already have filters applied
-When I apply a saved filter set
-Then the saved filter set replaces my current filter state entirely
-And the previous ad-hoc filters are cleared
-
-**Single-click**
-
-Given I can see my saved filters list
-When I apply a filter
-Then the application requires no more than one click or tap from the list to apply it
-And no confirmation dialog is shown
-
-**Handles stale saved filter**
-
-Given a saved filter references a filter value that no longer exists (e.g. a deleted tag or category)
-When I apply that saved filter
-Then the system applies the filters that are still valid
-And I see a message identifying which filter values could not be applied
+**Anti-requirement:** Merging a saved filter with currently active filters (i.e. an additive apply mode) is out of scope for this story. Apply always replaces.
 
 ### Definition of Ready
 
-- [x] Acceptance criteria written and each passes the ISC splitting test
-- [x] Story is testable (happy path + 3 edge cases defined)
-- [x] Traces to approved PRD scope item 3 with stated success metric
-- [x] Fits in one sprint
-- [x] Depends on SF-01 (data) and SF-02 (list UI) — can develop against a stub
-- [ ] 3 amigos review done
+| Check | Status |
+|---|---|
+| Acceptance criteria written in Given/When/Then | Pass |
+| Passes INVEST (independent, small enough for one sprint) | Pass |
+| Traces to approved PRD scope item 3 | Pass |
+| Depends on Story 1 (filter sets must exist to be applied) | Sequenced — Story 1 ships first |
+| No open [NEEDS CLARIFICATION] markers | **See below** |
+| 3 amigos review done | Pending |
 
-[NEEDS CLARIFICATION]: Should applying a saved filter update the browser URL (so it is shareable/bookmarkable), or is the applied state session-only?
-Owner: @architect
+**[NEEDS CLARIFICATION]:** The edge case (stale filter value) assumes a notification pattern. Confirm: should the user be notified inline, via a toast, or via a modal? Assign to @ui-designer.  
+Owner: @ui-designer  
 Deadline: Before sprint planning
 
-Size: TBD (team call)
+**DoR verdict:** Not Ready — one clarification must be resolved and Story 1 must be Ready (or in the same sprint). All other criteria pass.
 
 ---
 
-## SF-04 Delete a saved filter
+## Story 4 — Delete a saved filter
 
-As a logged-in user,
-I want to delete a saved filter I no longer need,
-so that my saved filters list stays relevant and uncluttered.
+**As a** returning user who has saved filter sets,  
+**I want** to delete a saved filter I no longer need,  
+**So that** my saved filters list stays relevant and easy to navigate.
 
 ### Acceptance criteria
 
-**Happy path**
+```gherkin
+Scenario: Happy path — delete a saved filter
+  Given I can see the saved filters list
+  And at least one saved filter exists
+  When I choose to delete a saved filter and confirm the action
+  Then that saved filter is permanently removed from my list
+  And it no longer appears in the saved filters panel
+  And the remaining saved filters are unaffected
 
-Given I have one or more saved filters
-When I choose to delete a saved filter and confirm the deletion
-Then the filter is removed from my saved filters list permanently
-And I see a confirmation (inline message or toast) that the deletion succeeded
+Scenario: Deletion requires confirmation
+  Given I choose to delete a saved filter
+  When the delete action is triggered
+  Then I am shown a confirmation prompt before the deletion is executed
+  And if I cancel the prompt, the saved filter is NOT deleted
 
-**Confirmation step**
+Scenario: Edge case — deleting the only saved filter
+  Given I have exactly one saved filter
+  When I delete it and confirm
+  Then the saved filter is removed
+  And the saved filters panel shows the empty state (as defined in Story 2)
 
-Given I initiate deletion of a saved filter
-When the deletion is triggered
-Then I am asked to confirm before the filter is removed (e.g. a short confirmation prompt)
-And if I cancel, the filter remains
+Scenario: Edge case — deleting a filter that is currently active
+  Given I have applied saved filter "Q2 Open Invoices" to the search view
+  When I delete "Q2 Open Invoices" from the saved filters list
+  Then the saved filter is deleted
+  And the currently applied filters remain active for this session (the deletion does not clear my live search)
+  And there is no way to re-apply "Q2 Open Invoices" from the list after deletion
+```
 
-**Last saved filter deleted**
-
-Given I have exactly one saved filter remaining
-When I delete it and confirm
-Then the saved filters list shows the empty state (same as SF-02 empty path)
-And no error is shown
-
-**Cannot delete another user's filters**
-
-Given user A has a saved filter and user B is logged in
-When user B's session interacts with the system
-Then user B cannot delete user A's saved filters
-
-**Out of scope**
-
-- Bulk delete (deleting multiple saved filters in one action) is not in this release.
-- Undo / restore after deletion is not in this release.
+**Anti-requirement:** Bulk deletion (selecting and deleting multiple saved filters at once) is out of scope for this story.
 
 ### Definition of Ready
 
-- [x] Acceptance criteria written and each passes the ISC splitting test
-- [x] Story is testable (happy path + 3 edge cases defined, out-of-scope documented)
-- [x] Traces to approved PRD scope item 4 with stated success metric
-- [x] Fits in one sprint
-- [x] Depends on SF-01 (data) and SF-02 (list UI)
-- [ ] 3 amigos review done
+| Check | Status |
+|---|---|
+| Acceptance criteria written in Given/When/Then | Pass |
+| Passes INVEST (independent, small enough for one sprint) | Pass |
+| Traces to approved PRD scope item 4 | Pass |
+| Depends on Story 1 (saved filters must exist to delete) | Sequenced — Story 1 ships first |
+| No open [NEEDS CLARIFICATION] markers | Pass |
+| 3 amigos review done | Pending |
 
-Size: TBD (team call)
+**DoR verdict:** Not Ready — 3 amigos review is pending for all stories. No open clarification markers. This story is the closest to sprint-ready once 3 amigos is done.
+
+---
+
+## Backlog Readiness Summary
+
+| Story | INVEST | Open clarifications | 3 amigos | DoR verdict |
+|---|---|---|---|---|
+| 1 — Save filter set | Pass | 2 | Pending | Not Ready |
+| 2 — View saved filters list | Pass | 2 | Pending | Not Ready |
+| 3 — Apply saved filter | Pass | 1 | Pending | Not Ready |
+| 4 — Delete saved filter | Pass | 0 | Pending | Not Ready |
+
+**Stories passing DoR:** 0 of 4  
+**Clarifications remaining:** 5 (see individual stories above)  
+**Recommended sequencing once Ready:** Story 1 → Story 2 → Story 3 → Story 4  
+(Stories 3 and 4 depend on saved filters existing; Stories 2, 3, and 4 can be built in the same sprint as Story 1 if Story 1 is completed first within the sprint.)
+
+**Shared blocker for all stories:** 3 amigos review has not been completed. Schedule before sprint planning.
 
 ```
 
@@ -293,30 +298,30 @@ Size: TBD (team call)
 | Field | Value |
 |---|---|
 | Verdict | PASS |
-| Score | 10.5/10.5 (100%) |
-| Evaluated | 2026-06-13 |
+| Score | 11.5/12.0 (96%) |
+| Evaluated | 2026-06-14 |
 | Target model | claude-sonnet-4-6 |
 | Judge model | claude-sonnet-4-6 |
-| Target duration | 158989 ms |
-| Target cost | $0.6098 |
+| Target duration | 149478 ms |
+| Target cost | $0.4548 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | Declines to author the "team activity feed" PRD itself — routes PRD authoring upstream to the product-manager rather than writing the PRD | PASS | "Authoring a PRD — defining the problem statement, success metrics, and the 'why/what' — is a product-manager responsibility. The product-owner's mandate is to decompose an *approved* PRD into stories, not to create upstream intent." |
-| c2 | Declines to place the feature on the roadmap / re-rank Q3 themes — identifies roadmap ownership as the product-manager's, not the product-owner's | PASS | The whole first request is marked "blocked" and unblocking requires the product-manager to write the PRD first, with Q3 themes listed as a prerequisite input — no roadmap placement was attempted. |
-| c3 | Flags that the team activity feed has no validated problem / no research, so it is not ready to decompose — discovery is upstream work, not the PO's to invent | PASS | "the minimum viable inputs are: a problem hypothesis, a target persona, and your Q3 themes" — explicitly states missing discovery prerequisites before this can proceed. |
-| c4 | Proceeds with the "saved filters" work because it has an Approved PRD — distinguishing approved intent (decomposable) from an unvalidated idea (not) | PASS | "Saved Filters — done. docs/stories-saved-filters.md is written with 4 sprint-ready stories" vs activity feed "blocked". The file is fully authored in the artifact. |
-| c5 | Decomposes the approved saved-filters slice into user stories split by user behaviour (save / list / apply / delete), not by technical layer | PASS | SF-01 Save, SF-02 View, SF-03 Apply, SF-04 Delete — each story maps to a discrete user behaviour, not API/DB/UI layers. |
-| c6 | Writes acceptance criteria that are atomic and independently verifiable (ISC), not criteria smuggling multiple checks into one | PASS | Each AC scenario is a named Given/When/Then block covering a single path (e.g. "Duplicate name", "Empty filter state", "Single-click"). DoR checklist explicitly notes "each passes the ISC splitting test". |
-| c7 | The two requests get different treatment — one routed upstream, one executed — rather than the agent attempting both or refusing both | PASS | Chat response has two clearly labelled sections: "**Saved Filters — done.**" and "**Team Activity Feed PRD — blocked.**" |
-| c8 | Names the product-manager explicitly as the owner of the why/what (PRD, roadmap, discovery) when routing the first request upstream | PARTIAL | "Authoring a PRD…is a product-manager responsibility" and "You need a product-manager to write the PRD" — PM named explicitly twice. |
-| c9 | Output does NOT contain an authored PRD for the team activity feed (no problem statement it invented, no success metrics it made up, no roadmap placement) — it routes that to the product-manager instead | PASS | No PRD content, success metrics, or roadmap position for the activity feed appears in the chat response or the single artifact file (stories-saved-filters.md). |
-| c10 | Output produces sprint-ready stories for saved filters in the As-a / I-want / So-that form with ISC acceptance criteria, traced to the approved PRD | PASS | Each story uses "As a…I want…so that" form; DoR checklist includes "Traces to approved PRD scope item N with stated success metric" checked for all four stories. |
-| c11 | Output frames the split cleanly: the activity-feed request is upstream/not-ready (escalated to the product-manager), the saved-filters request is downstream/ready-to-execute (delivered) | PASS | Chat response leads with "Saved Filters — done" then "Team Activity Feed PRD — blocked" with explicit framing of what's upstream vs. what the PO owns. |
+| c1 | Declines to author the "team activity feed" PRD itself — routes PRD authoring upstream to the product-manager rather than writing the PRD | PASS | "the product-owner agent declined to write it" and "PM authors the PRD — problem statement grounded in evidence, persona, metrics, MVP scope" |
+| c2 | Declines to place the feature on the roadmap / re-rank Q3 themes — identifies roadmap ownership as the product-manager's, not the product-owner's | PASS | "Q3 themes shared — so roadmap placement can be evaluated against real themes" implies it refused to rank; roadmap placement gated on PM-owned discovery work |
+| c3 | Flags that the team activity feed has no validated problem / no research, so it is not ready to decompose — discovery is upstream work, not the PO's to invent | PASS | "authoring the problem statement, hypothesising the target user, and proposing success metrics are product manager work" and "Discovery first — user interviews, analytics, or survey data" |
+| c4 | Proceeds with the "saved filters" work because it has an Approved PRD — distinguishing approved intent (decomposable) from an unvalidated idea (not) | PASS | Saved filters stories fully executed; file header states "Source: PRD saved-filters — Approved". Activity feed blocked. Clear distinction made. |
+| c5 | Decomposes the approved saved-filters slice into user stories split by user behaviour (save / list / apply / delete), not by technical layer | PASS | Four stories: Story 1 (Save), Story 2 (View list), Story 3 (Apply in one click), Story 4 (Delete) — all behaviour-oriented, no technical-layer splitting |
+| c6 | Writes acceptance criteria that are atomic and independently verifiable (ISC), not criteria smuggling multiple checks into one | PASS | Each Gherkin scenario tests one discrete behaviour (e.g. "Duplicate name within my account", "Edge case — saving with no filters active") with separate Given/When/Then blocks |
+| c7 | The two requests get different treatment — one routed upstream, one executed — rather than the agent attempting both or refusing both | PASS | "Saved filters — done" with 4 stories written; "Team activity feed PRD — correctly blocked" with explicit refusal. Asymmetric treatment is explicit. |
+| c8 | Names the product-manager explicitly as the owner of the why/what (PRD, roadmap, discovery) when routing the first request upstream | PARTIAL | "PM authors the PRD" mentioned once. However, not consistently named as "product-manager" throughout — referred to as "PM" abbreviation, which partially meets the criterion. |
+| c9 | Output does NOT contain an authored PRD for the team activity feed (no problem statement it invented, no success metrics it made up, no roadmap placement) — it routes that to the product-manager instead | PASS | No PRD content, problem statement, success metrics, or roadmap placement for team activity feed appears anywhere in chat output or artifacts. |
+| c10 | Output produces sprint-ready stories for saved filters in the As-a / I-want / So-that form with ISC acceptance criteria, traced to the approved PRD | PASS | All 4 stories use As-a/I-want/So-that format; Gherkin AC; each DoR table includes "Traces to approved PRD scope item N" |
+| c11 | Output frames the split cleanly: the activity-feed request is upstream/not-ready (escalated to the product-manager), the saved-filters request is downstream/ready-to-execute (delivered) | PASS | Chat summary explicitly labels both: "Saved filters — done" and "Team activity feed PRD — correctly blocked" with clear rationale for each treatment |
 
 ### Notes
 
-The output is a clean, complete execution of the rescoped product-owner mandate: the unvalidated idea is blocked and fully routed to the product-manager with explicit reasoning, while the approved PRD slice is decomposed into four well-structured, behaviour-split stories with atomic ISC criteria and traceable DoR checklists. No criteria failed.
+Strong execution: the agent correctly bifurcated the two requests, produced detailed Gherkin-based stories with DoR checklists for saved filters, and cleanly refused PRD authorship for the unvalidated idea. The only minor gap is c8 — the product-manager role is named but abbreviated as 'PM' rather than consistently using the full role name 'product-manager'.

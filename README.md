@@ -380,6 +380,8 @@ Structured reasoning, learning system, project health checks. See [Thinking and 
 |---|---|
 | [session-discipline](plugins/practices/thinking/rules/session-discipline.md) | Session focus, scope-drift detection, and deferred work markers |
 | [mechanism-design](plugins/practices/thinking/rules/mechanism-design.md) | Design recurring actions as mechanisms with triggers and failure handling |
+| [planning-fallacy](plugins/practices/thinking/rules/planning-fallacy.md) | Reference-class forecasting — correct optimistic bottoms-up estimates against how long similar past efforts actually took |
+| [multi-instance-dispatch](plugins/practices/thinking/rules/multi-instance-dispatch.md) | Run several instances of one agent across independent slices — how a lead dispatches them, how an instance respects its slice boundary |
 
 | Skill | Description | Example |
 |---|---|---|
@@ -1117,7 +1119,7 @@ The regex classifier self-evolves. Each retrospective that classifies an ambiguo
 
 ### Evaluation framework
 
-Every plugin definition is tested against a calibrated [evaluator agent](plugins/practices/plugin-curator/agents/evaluator.md). Each test has a [realistic prompt, criteria, captured output, and per-criterion evaluation](examples/). The Example column in each plugin table links to the evaluated output.
+Every plugin definition is tested by invoking it for real in a headless session and scoring the captured output against the test's criteria with a judge model — no simulation. The [evaluator agent](plugins/practices/plugin-curator/agents/evaluator.md) orchestrates this. Each test has a [realistic prompt, criteria, captured output, and per-criterion evaluation](examples/). The Example column in each plugin table links to the captured output.
 
 Run evaluations via the [evaluate skill](plugins/practices/plugin-curator/skills/evaluate/SKILL.md):
 
@@ -1128,6 +1130,8 @@ Run evaluations via the [evaluate skill](plugins/practices/plugin-curator/skills
 ```
 
 The skill prints a summary table to the chat. Per-test `result.md` files in each test directory carry the full output and judge breakdown — those are linked from the Example column in every plugin table above.
+
+Hooks are tested separately. A hook is deterministic — stdin and environment in, stdout and an exit code out — so it doesn't need a judge. A `hook-test.md` declares the hook's input and a set of exact assertions (exit code, stdout content, files written); the [`run-hook-test.py`](plugins/practices/plugin-curator/scripts/run-hook-test.py) runner checks them with no model call and no cost. `/evaluate` discovers and routes both `test.md` and `hook-test.md`. Format and assertion reference live in [scripts/README.md](plugins/practices/plugin-curator/scripts/README.md).
 
 The 23 per-agent `bootstrap` skills don't appear in the skill tables (they're not user-invocable — `/coordinator:bootstrap-project` delegates to them), but each one has its own rubric test under `examples/<category>/<plugin>/skills/bootstrap/result.md`. The safe-merge contract — preserving user-edited sections while appending missing template sections — is exercised against a synthetic project fixture for every bootstrap.
 
