@@ -6,8 +6,10 @@ TODO.md
 .claude/settings.local.json
 .claude/rules/
 
-# Marketplace-managed transient state (one line per enabled marketplace)
+# Marketplace-managed transient state (learnings, handoff, drift, locks)
 .claude/turtlestack/
+.claude/plugins/
+.claude/scheduled_tasks.lock
 
 tmp/
 __pycache__/
