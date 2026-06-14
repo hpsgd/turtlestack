@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.4.1](https://github.com/hpsgd/turtlestack/compare/v3.4.0...v3.4.1) (2026-06-14)
+
+
+### Miscellaneous Chores
+
+* release 3.4.1 ([#46](https://github.com/hpsgd/turtlestack/issues/46)) ([80061d0](https://github.com/hpsgd/turtlestack/commit/80061d0bbd7ea438f2655e9d6ebfb0a668dc2a73))
+
 ## [3.4.0](https://github.com/hpsgd/turtlestack/compare/v3.3.1...v3.4.0) (2026-06-14)
 
 
