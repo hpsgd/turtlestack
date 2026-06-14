@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.4.0](https://github.com/hpsgd/turtlestack/compare/v3.3.1...v3.4.0) (2026-06-14)
+
+
+### Features
+
+* add agile-coach, delivery-manager, and product-team agents ([#38](https://github.com/hpsgd/turtlestack/issues/38)) ([230f57d](https://github.com/hpsgd/turtlestack/commit/230f57d628b28d6cb9fcbb395ba006bca84b54a8))
+* add security baseline pattern hook and session change notices ([#40](https://github.com/hpsgd/turtlestack/issues/40)) ([a5a3c07](https://github.com/hpsgd/turtlestack/commit/a5a3c074f54fdffd44e9998925fc20e5e6290c70))
+* multi-instance agent dispatch, hook-test harness, PO boundary fix ([#42](https://github.com/hpsgd/turtlestack/issues/42)) ([186be6b](https://github.com/hpsgd/turtlestack/commit/186be6b1e5a175bd6054543f4f8de49890060c15))
+
 ## [3.3.1](https://github.com/hpsgd/turtlestack/compare/v3.3.0...v3.3.1) (2026-05-31)
 
 
