@@ -1,7 +1,7 @@
 {
   "name": "delivery-manager",
   "description": "Delivery manager — RAID logs, dependency tracking, weekly status reporting, release-readiness coordination, organisational impediment removal, multi-team coordination, and GDS service-assessment readiness.",
-  "version": "3.3.1",
+  "version": "3.4.0",
   "author": {
     "name": "hps.gd"
   },
