@@ -1,5 +1,6 @@
 ---
 name: bootstrap
+bootstrap-phase: market
 description: "Bootstrap the support and customer success documentation structure for a project. Creates docs/support/, generates initial templates, and writes domain CLAUDE.md. Idempotent — merges missing sections into existing files without overwriting."
 argument-hint: "[project name]"
 user-invocable: false

@@ -1133,7 +1133,7 @@ The skill prints a summary table to the chat. Per-test `result.md` files in each
 
 Hooks are tested separately. A hook is deterministic — stdin and environment in, stdout and an exit code out — so it doesn't need a judge. A `hook-test.md` declares the hook's input and a set of exact assertions (exit code, stdout content, files written); the [`run-hook-test.py`](plugins/practices/plugin-curator/scripts/run-hook-test.py) runner checks them with no model call and no cost. `/evaluate` discovers and routes both `test.md` and `hook-test.md`. Format and assertion reference live in [scripts/README.md](plugins/practices/plugin-curator/scripts/README.md).
 
-The 23 per-agent `bootstrap` skills don't appear in the skill tables (they're not user-invocable — `/coordinator:bootstrap-project` delegates to them), but each one has its own rubric test under `examples/<category>/<plugin>/skills/bootstrap/result.md`. The safe-merge contract — preserving user-edited sections while appending missing template sections — is exercised against a synthetic project fixture for every bootstrap.
+The 28 per-agent `bootstrap` skills don't appear in the skill tables (they're not user-invocable — `/coordinator:bootstrap-project` delegates to them), but each one has its own rubric test under `examples/<category>/<plugin>/skills/bootstrap/result.md`. The safe-merge contract — preserving user-edited sections while appending missing template sections — is exercised against a synthetic project fixture for every bootstrap.
 
 ### Creating a new plugin
 

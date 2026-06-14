@@ -1,6 +1,7 @@
 ---
 name: bootstrap
-description: "Bootstrap the architecture documentation structure for a project. Creates docs/architecture/, generates initial templates, and writes domain CLAUDE.md. Idempotent — merges missing sections into existing files without overwriting."
+bootstrap-phase: foundations
+description: "Bootstrap the architecture documentation structure for a project. Creates docs/architecture/, generates initial templates, and writes the architect fragment of the architecture domain doc. Idempotent — merges missing sections into existing files without overwriting."
 argument-hint: "[project name]"
 user-invocable: false
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
@@ -15,7 +16,7 @@ Bootstrap the architecture documentation structure for **$ARGUMENTS**.
 ### Step 1: Check and create domain directory
 
 ```bash
-mkdir -p docs/architecture/adr
+mkdir -p docs/architecture/adr docs/architecture/_sections
 ```
 
 ### Step 2: Create or merge files
@@ -24,15 +25,15 @@ For each file below, apply the safe merge pattern:
 - If file does not exist → create from template
 - If file exists → read both, find sections in template missing from file, append missing sections with `<!-- Merged from architect bootstrap v0.1.0 -->`
 
-#### File 1: `docs/architecture/CLAUDE.md`
+#### Fragment: `docs/architecture/_sections/architect.md`
 
-Create with this content (~120 lines):
+`docs/architecture/CLAUDE.md` is **assembled by the coordinator** from the fragments in `_sections/` — no
+plugin writes it directly, so the architect and the stack developers (python, php, dotnet, react) never
+collide on it. Write the architect's contribution as this fragment. It starts at H2 (the coordinator
+generates the `# Architecture Domain` H1). `architect.md` sorts before the stack-developer fragments, so this
+overview assembles first:
 
 ```markdown
-# Architecture Domain
-
-This directory contains architecture documentation for the project: decision records, system design artefacts, and API design guidelines.
-
 ## What This Domain Covers
 
 - **Architecture Decision Records (ADRs)** — capturing significant technical decisions
@@ -276,7 +277,7 @@ After creating/merging all files, output a summary:
 ## Architecture Bootstrap Complete
 
 ### Files created
-- `docs/architecture/CLAUDE.md` — domain conventions and skill reference
+- `docs/architecture/_sections/architect.md` — architect's fragment of the architecture domain doc (assembled into `docs/architecture/CLAUDE.md` by the coordinator)
 - `docs/architecture/adr/0001-use-adr-process.md` — initial ADR
 - `docs/architecture/system-design.md` — system design template
 

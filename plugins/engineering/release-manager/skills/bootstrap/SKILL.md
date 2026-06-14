@@ -1,5 +1,6 @@
 ---
 name: bootstrap
+bootstrap-phase: engineering
 description: "Bootstrap the release documentation structure for a project. Creates docs/release/, generates initial templates and root CHANGELOG.md, and writes domain CLAUDE.md. Idempotent — merges missing sections into existing files without overwriting."
 argument-hint: "[project name]"
 user-invocable: false

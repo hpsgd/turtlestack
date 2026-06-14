@@ -1,6 +1,7 @@
 ---
 name: bootstrap
-description: "Bootstrap React/Next.js conventions into the architecture documentation. Appends frontend-specific sections to docs/architecture/CLAUDE.md. Idempotent — merges missing sections into existing files without overwriting."
+bootstrap-phase: stack
+description: "Bootstrap React/Next.js conventions into the architecture documentation. Writes the react-developer fragment of the architecture domain doc. Idempotent — merges missing sections into existing files without overwriting."
 argument-hint: "[project name]"
 user-invocable: false
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
@@ -10,24 +11,26 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 
 Bootstrap React/Next.js development conventions for **$ARGUMENTS**.
 
-This skill does NOT create its own domain directory. It appends React-specific sections to `docs/architecture/CLAUDE.md`.
+This skill writes only its own fragment — `docs/architecture/_sections/react-developer.md`. The architecture domain `CLAUDE.md` is assembled by the coordinator from every fragment in `_sections/`, so this skill never collides with the architect or the other stack developers.
 
 ## Process
 
-### Step 1: Verify architecture domain exists
+### Step 1: Create the sections directory
 
 ```bash
-mkdir -p docs/architecture
+mkdir -p docs/architecture/_sections
 ```
 
-If `docs/architecture/CLAUDE.md` does not exist, stop and report that the architect bootstrap should run first.
+### Step 2: Write the React fragment
 
-### Step 2: Append React conventions to `docs/architecture/CLAUDE.md`
+`docs/architecture/CLAUDE.md` is **assembled by the coordinator** from the fragments in `_sections/` — no plugin writes it directly, so this skill and the architect never collide on it. Write the React/Next.js contribution as `docs/architecture/_sections/react-developer.md`. It starts at H2 (the coordinator generates the `# Architecture Domain` H1).
 
-Check if `docs/architecture/CLAUDE.md` already contains a "React/Next.js Conventions" section. If not, append the following:
+Apply the safe merge pattern:
+
+- If the fragment does not exist → create it from the template below
+- If the fragment exists → read both, find sections in the template missing from the file, append only the missing sections with the marker `<!-- Added by react-developer bootstrap v0.1.0 -->`
 
 ```markdown
-
 <!-- Added by react-developer bootstrap v0.1.0 -->
 ## React/Next.js Conventions
 
@@ -103,11 +106,11 @@ After creating/merging all files, output a summary:
 ```
 ## React Developer Bootstrap Complete
 
-### Files updated
-- `docs/architecture/CLAUDE.md` — appended React/Next.js Conventions section
+### Files created
+- `docs/architecture/_sections/react-developer.md` — react-developer's fragment of the architecture domain doc (assembled into `docs/architecture/CLAUDE.md` by the coordinator)
 
 ### Files merged
-- (list any existing files where sections were appended)
+- (list the fragment here if it already existed and missing sections were appended, or "none")
 
 ### Next steps
 - Configure Tailwind CSS and `cn()` utility
@@ -115,3 +118,8 @@ After creating/merging all files, output a summary:
 - Use `/react-developer:component-from-spec` for new components
 - Use `/react-developer:performance-audit` for performance reviews
 ```
+
+## Rules
+
+- **Write only your own fragment.** `docs/architecture/CLAUDE.md` is assembled by the coordinator; this skill writes `docs/architecture/_sections/react-developer.md` and nothing else. The architect and the other stack developers write their own fragments — there is no shared file to clobber.
+- **Safe-merge the fragment, idempotent by design.** If the fragment exists, preserve user-authored content and append only missing template sections with the marker — never overwrite. Running twice produces no duplicate sections.

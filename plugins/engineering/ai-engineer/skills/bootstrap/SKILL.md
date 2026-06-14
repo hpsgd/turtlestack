@@ -1,5 +1,6 @@
 ---
 name: bootstrap
+bootstrap-phase: stack
 description: "Bootstrap the AI/ML documentation structure for a project. Creates docs/ai/, generates initial templates, and writes domain CLAUDE.md. Idempotent — merges missing sections into existing files without overwriting."
 argument-hint: "[project name]"
 user-invocable: false

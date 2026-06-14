@@ -1,5 +1,6 @@
 ---
 name: bootstrap
+bootstrap-phase: governance
 description: "Bootstrap the governance, risk, and compliance documentation structure for a project. Creates docs/governance/, generates initial templates, and writes domain CLAUDE.md. Idempotent — merges missing sections into existing files without overwriting."
 argument-hint: "[project name]"
 user-invocable: false

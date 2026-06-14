@@ -1,14 +1,14 @@
 # Bootstrap
 
-Scenario: A synthetic project root at `{workspace}/work/` is pre-staged with a partial `docs/architecture/CLAUDE.md` containing a user-authored section. The react-developer bootstrap skill should preserve that user content while appending the React/Next.js Conventions section (with a merge marker), without creating any new files. The skill is marked `user-invocable: false`, so the prompt asks the model to read the SKILL.md directly and execute its process. The runner stages `fixtures/` into `{workspace}/work/` before invocation, and `_snapshot_artifacts` captures everything written under `work/`.
+Scenario: A synthetic project root at `{workspace}/work/` is pre-staged with a partial `docs/architecture/_sections/react-developer.md` fragment containing a user-authored section. The react-developer bootstrap skill should preserve that user content while appending the React/Next.js Conventions section (with a merge marker). It writes only its own fragment — `docs/architecture/CLAUDE.md` is assembled by the coordinator from the fragments in `_sections/`, so this skill never touches it. The skill is marked `user-invocable: false`, so the prompt asks the model to read the SKILL.md directly and execute its process. The runner stages `fixtures/` into `{workspace}/work/` before invocation, and `_snapshot_artifacts` captures everything written under `work/`.
 
 ## Prompt
 
-> The current working directory (`{workspace}/work/`) is the project root for a project called "TestProject". A partial `docs/architecture/CLAUDE.md` is already present — it contains a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`.
+> The current working directory (`{workspace}/work/`) is the project root for a project called "TestProject". A partial `docs/architecture/_sections/react-developer.md` fragment is already present — it contains a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`.
 > 
 > Read the react-developer bootstrap skill at `/Users/martin/Projects/turtlestack/plugins/engineering/react-developer/skills/bootstrap/SKILL.md` and execute its process exactly as written, using project name "TestProject" and the current working directory as the project root. Apply the safe-merge pattern as documented. Do not pause for confirmation — proceed with all defaults.
 > 
-> After the bootstrap completes, output the manifest summary the skill defines (files updated, files merged, next steps).
+> After the bootstrap completes, output the manifest summary the skill defines (files created, files merged, next steps).
 
 ## Output
 
@@ -16,15 +16,13 @@ Captured from a real headless invocation of the skill/agent.
 
 ### Chat response
 
-**Step 3: Return manifest**
-
 ## React Developer Bootstrap Complete
 
-### Files updated
-- `docs/architecture/CLAUDE.md` — appended React/Next.js Conventions section
+### Files created
+- None (fragment already existed)
 
 ### Files merged
-- `docs/architecture/CLAUDE.md` — React conventions appended while preserving existing custom team notes section and USER-EDIT-SENTINEL marker
+- `docs/architecture/_sections/react-developer.md` — merged 8 missing template sections (React/Next.js Conventions with TypeScript, Styling, Component Patterns, Testing, Project Structure, Deployment, Tooling, and Available Skills) while preserving the existing user-authored "Custom team notes" section with the `USER-EDIT-SENTINEL-DO-NOT-STRIP` marker
 
 ### Next steps
 - Configure Tailwind CSS and `cn()` utility
@@ -34,12 +32,10 @@ Captured from a real headless invocation of the skill/agent.
 
 ### Artifacts written
 
-#### `work/docs/architecture/CLAUDE.md`
+#### `work/docs/architecture/_sections/react-developer.md`
 
 ```
-# Architecture Domain
-
-This directory contains architecture documentation for the project.
+<!-- react-developer fragment of the architecture domain doc. Assembled into docs/architecture/CLAUDE.md by the coordinator. -->
 
 ## Custom team notes
 
@@ -123,25 +119,28 @@ src/
 | Field | Value |
 |---|---|
 | Verdict | PASS |
-| Score | 7.5/8.0 (94%) |
-| Evaluated | 2026-05-13 |
-| Target duration | 24894 ms |
-| Target cost | $0.1185 |
+| Score | 9.0/9.0 (100%) |
+| Evaluated | 2026-06-15 |
+| Target model | claude-haiku-4-5-20251001 |
+| Judge model | claude-sonnet-4-6 |
+| Target duration | 26910 ms |
+| Target cost | $0.0646 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | After bootstrap, `docs/architecture/CLAUDE.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | Artifact shows 'USER-EDIT-SENTINEL-DO-NOT-STRIP' on its own line under '## Custom team notes', preserved verbatim. |
-| c2 | After bootstrap, `docs/architecture/CLAUDE.md` contains the merge marker `<!-- Added by react-developer bootstrap v0.1.0 -->` — the React conventions section was appended with the correct marker, not silently dropped | PASS | Artifact contains '<!-- Added by react-developer bootstrap v0.1.0 -->' immediately before '## React/Next.js Conventions'. |
-| c3 | After bootstrap, `docs/architecture/CLAUDE.md` contains a `## React/Next.js Conventions` heading — the top-level section was appended | PASS | Artifact contains '## React/Next.js Conventions' as a heading after the merge marker. |
-| c4 | After bootstrap, `docs/architecture/CLAUDE.md` contains at least two of the subsection headings from the template (`### TypeScript`, `### Styling`, `### Component Patterns`, `### Testing`, `### Project Structure`, `### Deployment`) — proving the template body was appended, not just the heading | PASS | Artifact contains all six subsections: '### TypeScript', '### Styling', '### Component Patterns', '### Testing', '### Project Structure', '### Deployment'. |
-| c5 | Chat output includes a manifest summary that names `docs/architecture/CLAUDE.md` and uses append or update language (not "overwrote" or "replaced") | PASS | Chat output: 'docs/architecture/CLAUDE.md — appended React/Next.js Conventions section' and 'React conventions appended while preserving existing custom team notes'. |
-| c6 | Output names `docs/architecture/CLAUDE.md` individually in the manifest — a bare "bootstrap complete" without listing the file is not enough | PASS | Manifest lists 'docs/architecture/CLAUDE.md' explicitly under both 'Files updated' and 'Files merged' sections. |
-| c7 | Output does not claim it overwrote or replaced `docs/architecture/CLAUDE.md` — the language reflects append/merge, not replacement | PASS | Only 'appended' and 'merged' language used. No 'overwrote' or 'replaced' anywhere in chat output or artifact. |
-| c8 | Output points the reader at next steps consistent with the skill's documented manifest (mentions Tailwind, Vitest, or `/react-developer:component-from-spec`) | PARTIAL | Next steps section mentions 'Configure Tailwind CSS', 'Set up Vitest with React Testing Library', and '/react-developer:component-from-spec' — all three skill markers present. |
+| c1 | After bootstrap, `docs/architecture/_sections/react-developer.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | Artifact contains 'USER-EDIT-SENTINEL-DO-NOT-STRIP' on its own line under '## Custom team notes', with full surrounding paragraph preserved. |
+| c2 | After bootstrap, `docs/architecture/_sections/react-developer.md` contains the merge marker `<!-- Added by react-developer bootstrap v0.1.0 -->` — the React conventions section was appended with the correct marker, not silently dropped | PASS | Artifact contains '<!-- Added by react-developer bootstrap v0.1.0 -->' immediately before '## React/Next.js Conventions'. |
+| c3 | After bootstrap, `docs/architecture/_sections/react-developer.md` contains a `## React/Next.js Conventions` heading — the top-level section was appended | PASS | Artifact contains '## React/Next.js Conventions' as a heading after the merge marker. |
+| c4 | After bootstrap, `docs/architecture/_sections/react-developer.md` contains at least two of the subsection headings from the template (`### TypeScript`, `### Styling`, `### Component Patterns`, `### Testing`, `### Project Structure`, `### Deployment`) — proving the template body was appended, not just the heading | PASS | Artifact contains all six: '### TypeScript', '### Styling', '### Component Patterns', '### Testing', '### Project Structure', '### Deployment'. |
+| c5 | The skill did NOT write `docs/architecture/CLAUDE.md` — that file is coordinator-assembled, and the skill writes only its own fragment | PASS | ARTIFACTS WRITTEN section lists only 'work/docs/architecture/_sections/react-developer.md'; no CLAUDE.md artifact is present. |
+| c6 | Chat output includes a manifest summary that names `docs/architecture/_sections/react-developer.md` and uses append or update language (not "overwrote" or "replaced") | PASS | Chat output under 'Files merged' says 'docs/architecture/_sections/react-developer.md — merged 8 missing template sections... while preserving the existing user-authored...'. |
+| c7 | Output names `docs/architecture/_sections/react-developer.md` individually in the manifest — a bare "bootstrap complete" without listing the file is not enough | PASS | Chat output explicitly lists 'docs/architecture/_sections/react-developer.md' as a bullet under 'Files merged'. |
+| c8 | Output does not claim it overwrote or replaced `docs/architecture/_sections/react-developer.md` — the language reflects append/merge, not replacement | PASS | Chat uses 'merged' and 'preserving'; no 'overwrote' or 'replaced' language anywhere in the output. |
+| c9 | Output points the reader at next steps consistent with the skill's documented manifest (mentions Tailwind, Vitest, or `/react-developer:component-from-spec`) | PARTIAL | Next steps mention 'Configure Tailwind CSS', 'Set up Vitest with React Testing Library', and '/react-developer:component-from-spec' — all three referenced. |
 
 ### Notes
 
-All criteria met cleanly. The safe-merge contract was honoured: user-authored content and sentinel preserved, merge marker applied, full template body appended, and manifest language accurately described append/merge semantics throughout.
+The skill executed flawlessly: the sentinel was preserved, the merge marker and full convention template were appended, CLAUDE.md was not touched, and the manifest used merge language throughout. C9 is capped at PARTIAL by the test author, but the evidence for it is strong.

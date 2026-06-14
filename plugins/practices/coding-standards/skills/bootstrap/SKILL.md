@@ -1,5 +1,6 @@
 ---
 name: bootstrap
+bootstrap-phase: foundations
 description: "Bootstrap the coding standards documentation for a project. Creates docs/tooling-register.md and appends coding conventions to root CLAUDE.md. Idempotent — merges missing sections into existing files without overwriting. Rule installation is handled separately by the thinking plugin's SessionStart hook."
 argument-hint: "[project name]"
 user-invocable: false

@@ -1,6 +1,7 @@
 ---
 name: bootstrap
-description: "Bootstrap the UX research documentation structure for a project. Appends research conventions to docs/design/CLAUDE.md and copies persona/journey-map templates. Idempotent — merges missing sections into existing files without overwriting."
+bootstrap-phase: product
+description: "Bootstrap the UX research documentation structure for a project. Writes the ux-researcher fragment of the design domain doc and copies persona/journey-map templates. Idempotent — merges missing sections into existing files without overwriting."
 argument-hint: "[project name]"
 user-invocable: false
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
@@ -15,7 +16,7 @@ Bootstrap the UX research documentation structure for **$ARGUMENTS**.
 ### Step 1: Check and create domain directory
 
 ```bash
-mkdir -p docs/design
+mkdir -p docs/design/_sections
 ```
 
 ### Step 2: Create or merge files
@@ -24,19 +25,11 @@ For each file below, apply the safe merge pattern:
 - If file does not exist → create from template
 - If file exists → read both, find sections in template missing from file, append missing sections with `<!-- Merged from ux-researcher bootstrap v0.1.0 -->`
 
-#### File 1: `docs/design/CLAUDE.md` — APPEND
+#### Fragment: `docs/design/_sections/ux-researcher.md`
 
-**Important:** This file may already exist (created by `ui-designer:bootstrap`). If it exists, APPEND the sections below that are missing. If it does not exist, create it with BOTH the header and the content below.
-
-If the file does not exist, start with this header before the content below:
-
-```markdown
-# Design Domain
-
-This directory contains design and UX research documentation.
-```
-
-Append this content (~80 lines):
+`docs/design/CLAUDE.md` is **assembled by the coordinator** from the fragments in `_sections/` — no plugin
+writes it directly, so the ux-researcher and ui-designer never collide on it. Write the UX research
+contribution as this fragment. It starts at H2 (the coordinator generates the `# Design Domain` H1):
 
 ```markdown
 ## UX Research
@@ -156,14 +149,25 @@ After creating/merging all files, output a summary:
 ## UX Research Bootstrap Complete
 
 ### Files created
+- `docs/design/_sections/ux-researcher.md` — ux-researcher's fragment of the design domain doc (assembled into `docs/design/CLAUDE.md` by the coordinator)
 - `docs/design/persona-template.md` — persona card template
 - `docs/design/journey-map-template.md` — journey map template
 
 ### Files merged
-- `docs/design/CLAUDE.md` — appended UX research conventions
+- (list any existing files where sections were appended)
 
 ### Next steps
 - Create initial personas using `/ux-researcher:persona-definition`
 - Map critical user journeys using `/ux-researcher:journey-map`
 - Run `/ux-researcher:usability-review` on existing interfaces
 ```
+
+## Rules
+
+- **Write only your own fragment.** `docs/design/CLAUDE.md` is assembled by the coordinator; this skill writes `docs/design/_sections/ux-researcher.md` and nothing else. The ui-designer writes its own fragment — there is no shared file to clobber.
+- **Safe-merge the fragment, idempotent by design.** If the fragment exists, preserve user-authored content and append only missing template sections with the merge marker — never overwrite. Running twice produces no duplicate sections.
+- **Don't overwrite the templates.** If `persona-template.md` or `journey-map-template.md` already exist, leave them as-is.
+
+## Output Format
+
+The manifest in Step 3 is the output. Report files created, files merged, and next steps. Nothing else.

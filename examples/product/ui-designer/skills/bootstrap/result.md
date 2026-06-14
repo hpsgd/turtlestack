@@ -1,10 +1,10 @@
 # Bootstrap
 
-Scenario: A synthetic project root at `{workspace}/work/` is pre-staged with a partial `docs/design/CLAUDE.md` containing a user-authored section. The ui-designer bootstrap skill should preserve that user content while appending the template's missing sections (with a merge marker), and should create the file the fixture is missing — `docs/design/design-tokens.md` — copied from the plugin template. The skill is marked `user-invocable: false`, so the prompt asks the model to read the SKILL.md directly and execute its process. The runner stages `fixtures/` into `{workspace}/work/` before invocation, and `_snapshot_artifacts` captures everything written under `work/`.
+Scenario: A synthetic project root at `{workspace}/work/` is pre-staged with a partial `docs/design/_sections/ui-designer.md` fragment containing a user-authored section. The ui-designer bootstrap skill should preserve that user content while appending the template's missing sections (with a merge marker), and should create the file the fixture is missing — `docs/design/design-tokens.md` — copied from the plugin template. `docs/design/CLAUDE.md` itself is assembled by the coordinator from the fragments in `_sections/`, so this skill never writes it. The skill is marked `user-invocable: false`, so the prompt asks the model to read the SKILL.md directly and execute its process. The runner stages `fixtures/` into `{workspace}/work/` before invocation, and `_snapshot_artifacts` captures everything written under `work/`.
 
 ## Prompt
 
-> The current working directory (`{workspace}/work/`) is the project root for a project called "TestProject". A partial `docs/design/CLAUDE.md` is already present — it contains a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`.
+> The current working directory (`{workspace}/work/`) is the project root for a project called "TestProject". A partial `docs/design/_sections/ui-designer.md` fragment is already present — it contains a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`.
 > 
 > Read the ui-designer bootstrap skill at `/Users/martin/Projects/turtlestack/plugins/product/ui-designer/skills/bootstrap/SKILL.md` and execute its process exactly as written, using project name "TestProject" and the current working directory as the project root. Apply the safe-merge pattern as documented. Do not pause for confirmation — proceed with all defaults.
 > 
@@ -19,10 +19,10 @@ Captured from a real headless invocation of the skill/agent.
 ## Design Bootstrap Complete
 
 ### Files created
-- `docs/design/design-tokens.md` — design token template with TestProject values
+- `docs/design/design-tokens.md` — design token template
 
 ### Files merged
-- `docs/design/CLAUDE.md` — appended design domain sections while preserving user custom notes
+- `docs/design/_sections/ui-designer.md` — merged missing template sections while preserving user-authored "Custom team notes"
 
 ### Next steps
 - Populate `design-tokens.md` with project-specific token values
@@ -40,7 +40,7 @@ Captured from a real headless invocation of the skill/agent.
 |---|---|
 | **System** | TestProject |
 | **Version** | 1.0.0 |
-| **Last Updated** | 2026-05-13 |
+| **Last Updated** | 2026-06-15 |
 
 ## Colour Primitives
 
@@ -85,12 +85,12 @@ Map primitives to usage. Override per theme.
 
 | Token Name | Font Family | Size | Weight | Line-Height | Letter-Spacing | Usage |
 |---|---|---|---|---|---|---|
-| `type-display` | `system-ui, -apple-system, sans-serif` | `2.25rem` | `700` | `1.2` | `-0.02em` | Hero headings |
-| `type-heading-1` | `system-ui, -apple-system, sans-serif` | `1.5rem` | `600` | `1.3` | `-0.01em` | Page titles |
-| `type-heading-2` | `system-ui, -apple-system, sans-serif` | `1.25rem` | `600` | `1.3` | `0` | Section headings |
-| `type-body` | `system-ui, -apple-system, sans-serif` | `0.875rem` | `400` | `1.5` | `0` | Body text |
-| `type-body-small` | `system-ui, -apple-system, sans-serif` | `0.75rem` | `400` | `1.5` | `0` | Captions, help text |
-| `type-code` | `Monaco, 'Courier New', monospace` | `0.8125rem` | `400` | `1.6` | `0` | Code blocks |
+| `type-display` | system-ui, -apple-system, "Segoe UI", sans-serif | `2.25rem` | `700` | `1.2` | `-0.02em` | Hero headings |
+| `type-heading-1` | system-ui, -apple-system, "Segoe UI", sans-serif | `1.5rem` | `600` | `1.3` | `-0.01em` | Page titles |
+| `type-heading-2` | system-ui, -apple-system, "Segoe UI", sans-serif | `1.25rem` | `600` | `1.3` | `0` | Section headings |
+| `type-body` | system-ui, -apple-system, "Segoe UI", sans-serif | `0.875rem` | `400` | `1.5` | `0` | Body text |
+| `type-body-small` | system-ui, -apple-system, "Segoe UI", sans-serif | `0.75rem` | `400` | `1.5` | `0` | Captions, help text |
+| `type-code` | "Monaco", "Courier New", monospace | `0.8125rem` | `400` | `1.6` | `0` | Code blocks |
 
 ## Border Radius
 
@@ -137,13 +137,9 @@ Map primitives to usage. Override per theme.
 
 ```
 
-#### `work/docs/design/CLAUDE.md`
+#### `work/docs/design/_sections/ui-designer.md`
 
 ```
-# Design Domain
-
-This directory contains design documentation for the project.
-
 ## Custom team notes
 
 USER-EDIT-SENTINEL-DO-NOT-STRIP
@@ -171,7 +167,6 @@ Design tokens follow a two-tier model:
 | **Semantic** | Usage-mapped tokens referencing primitives | `color-text-primary`, `color-bg-surface` |
 
 ### Rules
-
 - **Never reference primitives directly in components** — always go through semantic tokens
 - All semantic colour tokens must define both light and dark values
 - New primitives require design-system review before merge
@@ -187,7 +182,6 @@ Every new or significantly changed component follows this process:
 4. **Verify** — accessibility audit and visual regression check
 
 ### Component spec structure
-
 - **Anatomy** — labelled diagram of sub-elements
 - **States** — default, hover, focus, active, disabled, error, loading
 - **Variants** — size, colour, layout variations
@@ -199,7 +193,6 @@ Every new or significantly changed component follows this process:
 Target **WCAG 2.2 Level AA** conformance as the minimum standard.
 
 ### Key requirements
-
 | Criterion | Requirement |
 |-----------|-------------|
 | Colour contrast | 4.5:1 for body text, 3:1 for large text (>= 18px bold / 24px) |
@@ -210,7 +203,6 @@ Target **WCAG 2.2 Level AA** conformance as the minimum standard.
 | Screen reader | Meaningful alt text, ARIA labels, logical heading hierarchy |
 
 ### Testing
-
 - Automated: axe-core in CI (catches ~30% of issues)
 - Manual: keyboard-only navigation, screen reader testing (VoiceOver / NVDA)
 - Visual: colour contrast checker for all text/background pairings
@@ -248,25 +240,28 @@ Target **WCAG 2.2 Level AA** conformance as the minimum standard.
 | Field | Value |
 |---|---|
 | Verdict | PASS |
-| Score | 7.5/7.5 (100%) |
-| Evaluated | 2026-05-13 |
-| Target duration | 48350 ms |
-| Target cost | $0.1669 |
+| Score | 8.5/8.5 (100%) |
+| Evaluated | 2026-06-15 |
+| Target model | claude-haiku-4-5-20251001 |
+| Judge model | claude-sonnet-4-6 |
+| Target duration | 54782 ms |
+| Target cost | $0.1195 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | After bootstrap, `docs/design/CLAUDE.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | Artifact shows `USER-EDIT-SENTINEL-DO-NOT-STRIP` on its own line under `## Custom team notes`, with surrounding user text intact. |
-| c2 | After bootstrap, `docs/design/CLAUDE.md` contains the safe-merge marker `<!-- Merged from ui-designer bootstrap v0.1.0 -->` — sections missing from the fixture were appended, not silently merged | PASS | Artifact contains `<!-- Merged from ui-designer bootstrap v0.1.0 -->` immediately before the appended template sections. |
-| c3 | After bootstrap, `docs/design/CLAUDE.md` contains the appended template sections — at minimum the "Design Token Architecture" and "WCAG 2.2 Accessibility Requirements" headings now appear alongside the preserved user content | PASS | Artifact contains `## Design Token Architecture` and `## WCAG 2.2 Accessibility Requirements` headings, both appearing after the merge marker and user section. |
-| c4 | After bootstrap, `docs/design/design-tokens.md` exists and was created from the plugin template (contains `## Colour Primitives` and `## Semantic Colour Tokens` headings) | PASS | Artifact `work/docs/design/design-tokens.md` contains both `## Colour Primitives` and `## Semantic Colour Tokens` headings with full token tables. |
-| c5 | Chat output includes a manifest summary that distinguishes files created (`design-tokens.md`) from files merged (`CLAUDE.md`) | PASS | Chat response has separate `### Files created` and `### Files merged` sections, each listing the respective file. |
-| c6 | Output names each created and merged file individually — a bare "bootstrap complete" without the per-file manifest is not enough | PASS | `docs/design/design-tokens.md` named under created; `docs/design/CLAUDE.md` named under merged, each with a description. |
-| c7 | Output does not claim it overwrote or replaced `docs/design/CLAUDE.md` — the language reflects merge, not replacement | PASS | Output says "appended design domain sections while preserving user custom notes" — no overwrite/replace language anywhere. |
-| c8 | Output points the reader at next steps (populating `design-tokens.md`, using `/ui-designer:component-spec`) consistent with the skill's documented manifest | PARTIAL | Next steps list "Populate `design-tokens.md`", "Use `/ui-designer:component-spec`", and "/ui-designer:accessibility-audit" — fully matches the skill manifest. |
+| c1 | After bootstrap, `docs/design/_sections/ui-designer.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | Artifact `work/docs/design/_sections/ui-designer.md` contains 'USER-EDIT-SENTINEL-DO-NOT-STRIP' in the '## Custom team notes' section. |
+| c2 | After bootstrap, `docs/design/_sections/ui-designer.md` contains the safe-merge marker `<!-- Merged from ui-designer bootstrap v0.1.0 -->` — sections missing from the fixture were appended, not silently merged | PASS | Artifact contains '<!-- Merged from ui-designer bootstrap v0.1.0 -->' between the user content and the appended template sections. |
+| c3 | After bootstrap, `docs/design/_sections/ui-designer.md` contains the appended template sections — at minimum the "Design Token Architecture" and "WCAG 2.2 Accessibility Requirements" headings now appear alongside the preserved user content | PASS | Artifact includes '## Design Token Architecture' and '## WCAG 2.2 Accessibility Requirements' headings after the user-authored section and merge marker. |
+| c4 | The fragment `docs/design/_sections/ui-designer.md` starts at an H2 (`##`) heading — it carries no `# Design Domain` H1, since the coordinator generates that when assembling `docs/design/CLAUDE.md` | PASS | Artifact starts with '## Custom team notes' — no H1 present in the file. |
+| c5 | After bootstrap, `docs/design/design-tokens.md` exists and was created from the plugin template (contains `## Colour Primitives` and `## Semantic Colour Tokens` headings) | PASS | Artifact `work/docs/design/design-tokens.md` contains both '## Colour Primitives' and '## Semantic Colour Tokens' sections. |
+| c6 | Chat output includes a manifest summary that distinguishes files created (`design-tokens.md`) from files merged (`_sections/ui-designer.md`) | PASS | Chat output has distinct '### Files created' and '### Files merged' sections listing the respective files. |
+| c7 | Output names each created and merged file individually — a bare "bootstrap complete" without the per-file manifest is not enough | PASS | Output lists 'docs/design/design-tokens.md' under created and 'docs/design/_sections/ui-designer.md' under merged, each with a description. |
+| c8 | Output does not claim it overwrote or replaced the `docs/design/_sections/ui-designer.md` fragment — the language reflects merge, not replacement | PASS | Output states 'merged missing template sections while preserving user-authored "Custom team notes"' — explicitly merge language. |
+| c9 | Output points the reader at next steps (populating `design-tokens.md`, using `/ui-designer:component-spec`) consistent with the skill's documented manifest | PARTIAL | Output lists 'Populate design-tokens.md with project-specific token values', 'Use /ui-designer:component-spec to spec new components', and '/ui-designer:accessibility-audit'. |
 
 ### Notes
 
-All eight criteria are met; the skill correctly preserved user content, applied the merge marker, appended template sections, and created the missing file from the template. The manifest summary is well-structured and distinguishes created from merged files.
+All criteria passed cleanly. The skill correctly implemented the safe-merge pattern — preserving user content, appending template sections with a merge marker, creating design-tokens.md from template, and producing a well-structured manifest. c9 capped at PARTIAL per test-author ceiling but was fully satisfied.

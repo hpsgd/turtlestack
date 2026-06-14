@@ -1,10 +1,10 @@
 # Bootstrap
 
-Scenario: A synthetic project root at `{workspace}/work/` is pre-staged with a partial `docs/product/CLAUDE.md` containing a user-authored section. The product-owner bootstrap skill should preserve that user content while appending the template's missing sections (with a merge marker), and should create the file the fixture is missing — `docs/product/jtbd-canvas.md`. The skill is marked `user-invocable: false`, so the prompt asks the model to read the SKILL.md directly and execute its process. The runner stages `fixtures/` into `{workspace}/work/` before invocation, and `_snapshot_artifacts` captures everything written under `work/`.
+Scenario: A synthetic project root at `{workspace}/work/` is pre-staged with a partial product-owner fragment at `docs/product/_sections/product-owner.md` containing a user-authored section. `docs/product/CLAUDE.md` itself is assembled by the coordinator from the fragments — the bootstrap skill never writes it. The product-owner bootstrap skill should preserve the user content in its fragment while appending the template's missing sections (with a merge marker), and should create the file the fixture is missing — `docs/product/jtbd-canvas.md`. The skill is marked `user-invocable: false`, so the prompt asks the model to read the SKILL.md directly and execute its process. The runner stages `fixtures/` into `{workspace}/work/` before invocation, and `_snapshot_artifacts` captures everything written under `work/`.
 
 ## Prompt
 
-> The current working directory (`{workspace}/work/`) is the project root for a project called "TestProject". A partial `docs/product/CLAUDE.md` is already present — it contains a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`.
+> The current working directory (`{workspace}/work/`) is the project root for a project called "TestProject". A partial product-owner fragment `docs/product/_sections/product-owner.md` is already present — it contains a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`.
 > 
 > Read the product-owner bootstrap skill at `/Users/martin/Projects/turtlestack/plugins/product/product-owner/skills/bootstrap/SKILL.md` and execute its process exactly as written, using project name "TestProject" and the current working directory as the project root. Apply the safe-merge pattern as documented. Do not pause for confirmation — proceed with all defaults.
 > 
@@ -16,15 +16,13 @@ Captured from a real headless invocation of the skill/agent.
 
 ### Chat response
 
-Excellent! Bootstrap complete. Here's the manifest summary:
-
 ## Product Bootstrap Complete
 
 ### Files created
 - `docs/product/jtbd-canvas.md` — JTBD canvas template
 
 ### Files merged
-- `docs/product/CLAUDE.md` — product domain conventions and skill reference (preserved existing "Custom team notes" section, appended missing sections with merge marker)
+- `docs/product/_sections/product-owner.md` — appended template sections (What This Domain Covers, PRD Conventions, RICE Scoring, JTBD Methodology, User Story Format, Spec-Driven Development Flow, Tooling, Available Skills, Conventions) while preserving user-authored "Custom team notes" section with sentinel marker
 
 ### Next steps
 - Create initial PRDs for planned features using `/product-owner:write-prd`
@@ -103,12 +101,18 @@ Break the job into steps the performer goes through:
 
 ```
 
-#### `work/docs/product/CLAUDE.md`
+#### `work/docs/product/_sections/product-owner.md`
 
 ```
-# Product Domain
+## Custom team notes
 
-This directory contains product documentation: PRDs, user stories, JTBD canvases, and backlog management conventions.
+USER-EDIT-SENTINEL-DO-NOT-STRIP
+
+This section was written by the team and must survive any bootstrap re-run.
+It exists to test the safe-merge contract: the bootstrap skill must not
+overwrite or remove user-authored content.
+
+<!-- Merged from product-owner bootstrap v0.1.0 -->
 
 ## What This Domain Covers
 
@@ -221,16 +225,6 @@ Write in Given/When/Then format (see `docs/quality/CLAUDE.md` for BDD convention
 - User stories reference the parent PRD or JTBD
 - Spec-driven: spec first, then build, then verify against spec
 
-<!-- Merged from product-owner bootstrap v0.1.0 -->
-
-## Custom team notes
-
-USER-EDIT-SENTINEL-DO-NOT-STRIP
-
-This section was written by the team and must survive any bootstrap re-run.
-It exists to test the safe-merge contract: the bootstrap skill must not
-overwrite or remove user-authored content.
-
 ```
 
 ## Evaluation
@@ -238,26 +232,30 @@ overwrite or remove user-authored content.
 | Field | Value |
 |---|---|
 | Verdict | PASS |
-| Score | 8.5/8.5 (100%) |
-| Evaluated | 2026-05-13 |
-| Target duration | 36044 ms |
-| Target cost | $0.1348 |
+| Score | 10.5/10.5 (100%) |
+| Evaluated | 2026-06-15 |
+| Target model | claude-haiku-4-5-20251001 |
+| Judge model | claude-sonnet-4-6 |
+| Target duration | 40614 ms |
+| Target cost | $0.0849 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | After bootstrap, `docs/product/CLAUDE.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | Artifact `work/docs/product/CLAUDE.md` contains `USER-EDIT-SENTINEL-DO-NOT-STRIP` under the '## Custom team notes' section at the end of the file. |
-| c2 | After bootstrap, `docs/product/CLAUDE.md` contains the safe-merge marker `<!-- Merged from product-owner bootstrap v0.1.0 -->` — sections missing from the fixture were appended, not silently merged | PASS | Artifact contains `<!-- Merged from product-owner bootstrap v0.1.0 -->` appearing just before the preserved '## Custom team notes' section. |
-| c3 | After bootstrap, `docs/product/CLAUDE.md` contains the appended template sections — at minimum the "PRD Conventions" and "RICE Scoring" headings now appear alongside the preserved user content | PASS | Artifact contains `## PRD Conventions` and `## RICE Scoring` headings alongside the preserved user content and sentinel line. |
-| c4 | After bootstrap, `docs/product/jtbd-canvas.md` exists and was created from the skill's template | PASS | Artifact `work/docs/product/jtbd-canvas.md` is present and contains a full JTBD canvas template. |
-| c5 | The created `jtbd-canvas.md` contains the JTBD canvas structure — at minimum a "Job Statement" section and a "Job Performer" section | PASS | Artifact contains `## Job Statement` and `## Job Performer` sections with full table structure and instructions. |
-| c6 | Chat output includes a manifest summary that distinguishes files created (`jtbd-canvas.md`) from files merged (`CLAUDE.md`) | PASS | Chat output has separate '### Files created' and '### Files merged' sections, listing jtbd-canvas.md and CLAUDE.md respectively. |
-| c7 | Output names each created and merged file individually — a bare "bootstrap complete" without the per-file manifest is not enough | PASS | Each file is individually named: '`docs/product/jtbd-canvas.md`' under created and '`docs/product/CLAUDE.md`' under merged, with per-file descriptions. |
-| c8 | Output does not claim it overwrote or replaced `docs/product/CLAUDE.md` — the language reflects merge, not replacement | PASS | Output uses '### Files merged' and describes 'preserved existing "Custom team notes" section, appended missing sections with merge marker' — no overwrite language. |
-| c9 | Output points the reader at next steps (creating PRDs, completing JTBD canvases, setting up backlog) consistent with the skill's documented manifest | PARTIAL | Next steps include 'Create initial PRDs using `/product-owner:write-prd`', 'Complete JTBD canvases', and 'Set up backlog in GitHub Issues' — all three areas covered. |
+| c1 | After bootstrap, `docs/product/_sections/product-owner.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | Artifact shows '## Custom team notes\n\nUSER-EDIT-SENTINEL-DO-NOT-STRIP' at the top of the merged file, exactly as in the fixture. |
+| c2 | After bootstrap, `docs/product/_sections/product-owner.md` contains the safe-merge marker `<!-- Merged from product-owner bootstrap v0.1.0 -->` — sections missing from the fixture were appended, not silently merged | PASS | Artifact contains the exact line '<!-- Merged from product-owner bootstrap v0.1.0 -->' between the user block and the appended template sections. |
+| c3 | After bootstrap, `docs/product/_sections/product-owner.md` contains the appended template sections — at minimum the "PRD Conventions" and "RICE Scoring" headings now appear alongside the preserved user content | PASS | Artifact shows '## PRD Conventions' and '## RICE Scoring' headings present alongside the preserved '## Custom team notes' user content. |
+| c4 | The fragment starts at an H2 heading — it contains no `# ` H1 (the coordinator generates the `# Product Domain` H1 when it assembles `docs/product/CLAUDE.md`) | PASS | Artifact begins with '## Custom team notes' (H2). No H1 `# ` heading appears anywhere in the file. |
+| c5 | The skill does NOT write `docs/product/CLAUDE.md` directly — that file is assembled by the coordinator from `_sections/` | PASS | ARTIFACTS WRITTEN section lists only `work/docs/product/jtbd-canvas.md` and `work/docs/product/_sections/product-owner.md` — no `CLAUDE.md` written. |
+| c6 | After bootstrap, `docs/product/jtbd-canvas.md` exists and was created from the skill's template | PASS | Artifact `work/docs/product/jtbd-canvas.md` is present in the captured artifacts with full template content. |
+| c7 | The created `jtbd-canvas.md` contains the JTBD canvas structure — at minimum a "Job Statement" section and a "Job Performer" section | PASS | Artifact contains '## Job Statement' and '## Job Performer' headings with structured content and tables. |
+| c8 | Chat output includes a manifest summary that distinguishes files created (`jtbd-canvas.md`) from files merged (the `_sections/product-owner.md` fragment) | PASS | Chat response has distinct '### Files created' and '### Files merged' sections listing jtbd-canvas.md and product-owner.md respectively. |
+| c9 | Output names each created and merged file individually — a bare "bootstrap complete" without the per-file manifest is not enough | PASS | Chat lists `docs/product/jtbd-canvas.md` under Files created and `docs/product/_sections/product-owner.md` under Files merged, each with description. |
+| c10 | Output does not claim it overwrote or replaced the product-owner fragment — the language reflects merge, not replacement | PASS | Chat says 'appended template sections... while preserving user-authored "Custom team notes" section with sentinel marker' — merge language throughout. |
+| c11 | Output points the reader at next steps (creating PRDs, completing JTBD canvases, setting up backlog) consistent with the skill's documented manifest | PARTIAL | Chat '### Next steps' lists creating PRDs via `/product-owner:write-prd`, completing JTBD canvases, and setting up backlog in GitHub Issues — all consistent. |
 
 ### Notes
 
-The skill executed flawlessly: the sentinel was preserved, the merge marker was inserted, template sections were appended, and jtbd-canvas.md was created with correct structure. The chat manifest cleanly separated created from merged files with per-file detail and accurate merge language.
+All criteria met cleanly. The safe-merge contract was fully honoured: sentinel preserved, merge marker present, template sections appended, no CLAUDE.md written, and the manifest summary clearly separates created from merged files.

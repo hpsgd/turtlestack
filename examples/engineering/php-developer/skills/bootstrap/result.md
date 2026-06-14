@@ -1,14 +1,14 @@
 # Bootstrap
 
-Scenario: A synthetic project root at `{workspace}/work/` is pre-staged with a `docs/architecture/CLAUDE.md` that already contains architecture conventions and a user-authored "Custom team notes" section with a sentinel line. The php-developer bootstrap skill should detect the existing file, append the "PHP Conventions" section (with a merge marker), and leave the user-authored content untouched. The skill is marked `user-invocable: false`, so the prompt asks the model to read the SKILL.md directly and execute its process. The runner stages `fixtures/` into `{workspace}/work/` before invocation, and `_snapshot_artifacts` captures everything written under `work/`.
+Scenario: A synthetic project root at `{workspace}/work/` is pre-staged with a `docs/architecture/_sections/php-developer.md` fragment that already contains a user-authored "Custom team notes" section with a sentinel line. The php-developer bootstrap skill should detect the existing fragment, append the "PHP Conventions" section (with a merge marker), and leave the user-authored content untouched. It writes only its own fragment — `docs/architecture/CLAUDE.md` is assembled by the coordinator from the fragments in `_sections/`, so this skill never touches it. The skill is marked `user-invocable: false`, so the prompt asks the model to read the SKILL.md directly and execute its process. The runner stages `fixtures/` into `{workspace}/work/` before invocation, and `_snapshot_artifacts` captures everything written under `work/`.
 
 ## Prompt
 
-> The current working directory (`{workspace}/work/`) is the project root for a project called "TestProject". A `docs/architecture/CLAUDE.md` already exists — it contains architecture conventions from a prior architect bootstrap and a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`.
+> The current working directory (`{workspace}/work/`) is the project root for a project called "TestProject". A `docs/architecture/_sections/php-developer.md` fragment already exists — it contains a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`.
 > 
 > Read the php-developer bootstrap skill at `/Users/martin/Projects/turtlestack/plugins/engineering/php-developer/skills/bootstrap/SKILL.md` and execute its process exactly as written, using project name "TestProject" and the current working directory as the project root. Do not pause for confirmation — proceed with all defaults.
 > 
-> After the bootstrap completes, output the manifest summary the skill defines (files updated, files merged, next steps).
+> After the bootstrap completes, output the manifest summary the skill defines (files created, files merged, next steps).
 
 ## Output
 
@@ -18,8 +18,11 @@ Captured from a real headless invocation of the skill/agent.
 
 ## PHP Developer Bootstrap Complete
 
+### Files created
+- `docs/architecture/_sections/php-developer.md` — php-developer's fragment of the architecture domain doc (assembled into `docs/architecture/CLAUDE.md` by the coordinator)
+
 ### Files merged
-- `docs/architecture/CLAUDE.md` — appended PHP Conventions section
+- `docs/architecture/_sections/php-developer.md` — existing fragment preserved user-authored "Custom team notes" section; appended missing PHP Conventions template sections with marker `<!-- Added by php-developer bootstrap v3.0.1 -->`
 
 ### Next steps
 - Confirm `composer.json` pins PHP 8.4+ and `config.platform.php`
@@ -32,22 +35,10 @@ Captured from a real headless invocation of the skill/agent.
 
 ### Artifacts written
 
-#### `work/docs/architecture/CLAUDE.md`
+#### `work/docs/architecture/_sections/php-developer.md`
 
 ```
-# Architecture Domain
-
-This directory contains architecture documentation for the project: decision records, system design artefacts, and API design guidelines.
-
-## What This Domain Covers
-
-- **Architecture Decision Records (ADRs)** — capturing significant technical decisions
-- **System design** — C4 model diagrams, arc42 documentation, component relationships
-- **API design** — REST/GraphQL/gRPC contract guidelines
-
-## ADR Conventions
-
-We use **MADR** (Markdown Any Decision Records) v3.0 format. Store ADRs in `docs/architecture/adr/`.
+<!-- php-developer fragment of the architecture domain doc. Assembled into docs/architecture/CLAUDE.md by the coordinator. -->
 
 ## Custom team notes
 
@@ -201,30 +192,31 @@ features/bootstrap/  # Behat step definitions
 | Field | Value |
 |---|---|
 | Verdict | PASS |
-| Score | 10.5/10.5 (100%) |
-| Evaluated | 2026-05-23 |
+| Score | 11.5/11.5 (100%) |
+| Evaluated | 2026-06-15 |
 | Target model | claude-haiku-4-5-20251001 |
 | Judge model | claude-sonnet-4-6 |
-| Target duration | 38547 ms |
-| Target cost | $0.1042 |
+| Target duration | 43442 ms |
+| Target cost | $0.0866 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | After bootstrap, `docs/architecture/CLAUDE.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | Artifact contains 'USER-EDIT-SENTINEL-DO-NOT-STRIP' within the 'Custom team notes' section, followed by the full user-authored paragraph. |
-| c2 | After bootstrap, `docs/architecture/CLAUDE.md` contains the merge marker `<!-- Added by php-developer bootstrap v3.0.1 -->` — the PHP Conventions section was appended with the correct marker | PASS | Artifact contains '<!-- Added by php-developer bootstrap v3.0.1 -->' immediately before the '## PHP Conventions' heading. |
-| c3 | After bootstrap, `docs/architecture/CLAUDE.md` contains a `## PHP Conventions` heading — the conventions block was appended | PASS | Artifact contains '## PHP Conventions' heading with all subsections beneath it. |
-| c4 | After bootstrap, `docs/architecture/CLAUDE.md` contains the `### Static analysis` subsection naming PHPStan | PASS | '### Static analysis' subsection present with '**PHPStan at level 9**' and 'phpstan/phpstan-strict-rules enabled'. |
-| c5 | After bootstrap, `docs/architecture/CLAUDE.md` contains the `### Code style` subsection naming PHP-CS-Fixer and PER-CS | PASS | '### Code style' subsection present with '**PHP-CS-Fixer 3.x** with `@PER-CS:risky` ruleset' and 'PER Coding Style 3.0 supersedes PSR-12'. |
-| c6 | After bootstrap, `docs/architecture/CLAUDE.md` contains the `### Testing` subsection naming Pest, Behat, and Infection | PASS | '### Testing' subsection present with '**Pest v4**', '**Behat** for BDD acceptance tests', and '**Infection** for mutation testing'. |
-| c7 | After bootstrap, `docs/architecture/CLAUDE.md` contains the `### Event sourcing` subsection naming EventSauce | PASS | '### Event sourcing' subsection present with '**EventSauce** for framework-agnostic event sourcing'. |
-| c8 | Chat output includes a manifest summary listing `docs/architecture/CLAUDE.md` as updated or merged | PASS | Chat output '### Files merged' section lists '`docs/architecture/CLAUDE.md` — appended PHP Conventions section'. |
-| c9 | Output names `docs/architecture/CLAUDE.md` as the file that was updated — a bare 'bootstrap complete' without the per-file manifest is not enough | PASS | Chat output explicitly names '`docs/architecture/CLAUDE.md`' under '### Files merged' with a per-file description. |
-| c10 | Output does not claim it overwrote or replaced `docs/architecture/CLAUDE.md` — the language reflects append or merge, not replacement | PASS | Chat output uses '### Files merged' heading and 'appended PHP Conventions section' — no overwrite/replacement language anywhere. |
-| c11 | Output points the reader at next steps (configuring PHPStan, PHP-CS-Fixer, or using `/php-developer:write-feature-spec`) consistent with the skill's documented manifest | PARTIAL | '### Next steps' lists PHPStan level 9, PHP-CS-Fixer, and '/php-developer:write-feature-spec' among others — fully consistent with skill manifest. |
+| c1 | PASS: After bootstrap, `docs/architecture/_sections/php-developer.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | Artifact contains 'USER-EDIT-SENTINEL-DO-NOT-STRIP' within the preserved '## Custom team notes' section. |
+| c2 | PASS: After bootstrap, `docs/architecture/_sections/php-developer.md` contains the merge marker `<!-- Added by php-developer bootstrap v3.0.1 -->` — the PHP Conventions section was appended with the correct marker | PASS | Artifact contains '<!-- Added by php-developer bootstrap v3.0.1 -->' immediately before '## PHP Conventions'. |
+| c3 | PASS: After bootstrap, `docs/architecture/_sections/php-developer.md` contains a `## PHP Conventions` heading — the conventions block was appended | PASS | Artifact contains '## PHP Conventions' heading after the merge marker. |
+| c4 | PASS: After bootstrap, `docs/architecture/_sections/php-developer.md` contains the `### Static analysis` subsection naming PHPStan | PASS | Artifact contains '### Static analysis' subsection with '**PHPStan at level 9**' and 'phpstan/phpstan-strict-rules'. |
+| c5 | PASS: After bootstrap, `docs/architecture/_sections/php-developer.md` contains the `### Code style` subsection naming PHP-CS-Fixer and PER-CS | PASS | Artifact contains '### Code style' with '**PHP-CS-Fixer 3.x**' and '@PER-CS:risky ruleset'. |
+| c6 | PASS: After bootstrap, `docs/architecture/_sections/php-developer.md` contains the `### Testing` subsection naming Pest, Behat, and Infection | PASS | Artifact contains '### Testing' with '**Pest v4**', '**Behat**', and '**Infection**' all explicitly named. |
+| c7 | PASS: After bootstrap, `docs/architecture/_sections/php-developer.md` contains the `### Event sourcing` subsection naming EventSauce | PASS | Artifact contains '### Event sourcing' with '**EventSauce** for framework-agnostic event sourcing'. |
+| c8 | PASS: The skill did NOT write `docs/architecture/CLAUDE.md` — that file is coordinator-assembled, and the skill writes only its own fragment | PASS | Only artifact listed is 'work/docs/architecture/_sections/php-developer.md'; no CLAUDE.md artifact appears in the written files. |
+| c9 | PASS: Chat output includes a manifest summary listing `docs/architecture/_sections/php-developer.md` as created or merged | PASS | Chat output shows 'Files created' and 'Files merged' sections both listing 'docs/architecture/_sections/php-developer.md'. |
+| c10 | PASS: Output names `docs/architecture/_sections/php-developer.md` as the file that was written — a bare 'bootstrap complete' without the per-file manifest is not enough | PASS | Chat output explicitly names 'docs/architecture/_sections/php-developer.md' under both 'Files created' and 'Files merged' headings. |
+| c11 | PASS: Output does not claim it overwrote or replaced `docs/architecture/_sections/php-developer.md` — the language reflects append or merge, not replacement | PASS | Chat output uses 'existing fragment preserved user-authored...sections; appended missing PHP Conventions template sections' — merge language throughout. |
+| c12 | PARTIAL: Output points the reader at next steps (configuring PHPStan, PHP-CS-Fixer, or using `/php-developer:write-feature-spec`) consistent with the skill's documented manifest | PARTIAL | Chat output lists next steps including PHPStan neon config, PHP-CS-Fixer, and 'Use /php-developer:write-feature-spec for Behat specs'. |
 
 ### Notes
 
-The skill executed flawlessly: user-authored sentinel preserved, merge marker present, all required PHP Conventions subsections appended, and the chat manifest correctly uses merge/append language. All criteria met at ceiling.
+The skill executed flawlessly: sentinel preserved, merge marker correct, all expected convention subsections present, CLAUDE.md not touched, and manifest output well-structured. Full marks across all criteria.

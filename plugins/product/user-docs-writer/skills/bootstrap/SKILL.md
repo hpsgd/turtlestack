@@ -1,6 +1,7 @@
 ---
 name: bootstrap
-description: "Bootstrap the user documentation conventions for a project. Appends user guide, onboarding, and KB article conventions to docs/content/CLAUDE.md. Idempotent — merges missing sections into existing files without overwriting."
+bootstrap-phase: content
+description: "Bootstrap the user documentation conventions for a project. Creates docs/content/, and writes the user-docs-writer fragment of the content domain doc — user guide, onboarding, and KB article conventions. Idempotent — merges missing sections into existing files without overwriting."
 argument-hint: "[project name]"
 user-invocable: false
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
@@ -15,7 +16,7 @@ Bootstrap the user documentation conventions for **$ARGUMENTS**.
 ### Step 1: Check and create domain directory
 
 ```bash
-mkdir -p docs/content
+mkdir -p docs/content/_sections
 ```
 
 ### Step 2: Create or merge files
@@ -24,19 +25,12 @@ For each file below, apply the safe merge pattern:
 - If file does not exist → create from template
 - If file exists → read both, find sections in template missing from file, append missing sections with `<!-- Merged from user-docs-writer bootstrap v0.1.0 -->`
 
-#### File 1: `docs/content/CLAUDE.md` — APPEND
+#### Fragment: `docs/content/_sections/user-docs-writer.md`
 
-**Important:** This file may already exist (created by `developer-docs-writer:bootstrap`). If it exists, APPEND the sections below that are missing. If it does not exist, create it with BOTH the header and the content below.
-
-If the file does not exist, start with this header before the content below:
-
-```markdown
-# Content Domain
-
-This directory contains documentation conventions and content standards.
-```
-
-Append this content (~60 lines):
+`docs/content/CLAUDE.md` is **assembled by the coordinator** from the fragments in `_sections/` — no plugin
+writes it directly, so developer-docs-writer, internal-docs-writer, and user-docs-writer never collide on it.
+Write the user-documentation contribution as this fragment. It starts at H2 (the coordinator generates the
+`# Content Domain` H1):
 
 ```markdown
 ## User Documentation
@@ -126,11 +120,23 @@ After creating/merging all files, output a summary:
 ```
 ## User Docs Bootstrap Complete
 
+### Files created
+- `docs/content/_sections/user-docs-writer.md` — user-docs-writer's fragment of the content domain doc (assembled into `docs/content/CLAUDE.md` by the coordinator)
+
 ### Files merged
-- `docs/content/CLAUDE.md` — appended user documentation conventions
+- (list the fragment here instead if it already existed and sections were appended, or "none")
 
 ### Next steps
 - Write onboarding content using `/user-docs-writer:write-onboarding`
 - Create initial KB articles using `/user-docs-writer:write-kb-article`
 - Define content strategy using `/user-docs-writer:content-strategy`
 ```
+
+## Rules
+
+- **Write only your own fragment.** `docs/content/CLAUDE.md` is assembled by the coordinator; this skill writes `docs/content/_sections/user-docs-writer.md` and nothing else. The developer-docs-writer and internal-docs-writer write their own fragments — there is no shared file to clobber.
+- **Safe-merge the fragment, idempotent by design.** If the fragment exists, preserve user-authored content and append only missing template sections with the merge marker — never overwrite. Running twice produces no duplicate sections.
+
+## Output Format
+
+The manifest in Step 3 is the output. Report files created, files merged, and next steps. Nothing else.

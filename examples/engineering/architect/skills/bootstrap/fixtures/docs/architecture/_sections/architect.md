@@ -1,6 +1,4 @@
-# Content Domain
-
-This directory contains documentation conventions and content standards.
+<!-- architect fragment of the architecture domain doc. Assembled into docs/architecture/CLAUDE.md by the coordinator. -->
 
 ## Custom team notes
 

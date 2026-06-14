@@ -1,7 +1,3 @@
-# Design Domain
-
-This directory contains design documentation for the project.
-
 ## Custom team notes
 
 USER-EDIT-SENTINEL-DO-NOT-STRIP

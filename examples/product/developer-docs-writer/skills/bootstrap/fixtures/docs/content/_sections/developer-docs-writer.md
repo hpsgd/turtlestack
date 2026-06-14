@@ -1,7 +1,3 @@
-# Design Domain
-
-This directory contains design and UX research documentation.
-
 ## Custom team notes
 
 USER-EDIT-SENTINEL-DO-NOT-STRIP
