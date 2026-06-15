@@ -1,7 +1,7 @@
 ---
 name: bootstrap
 bootstrap-phase: market
-description: "Bootstrap the go-to-market documentation structure for a project. Creates docs/gtm/, generates initial templates, and writes domain CLAUDE.md. Idempotent — merges missing sections into existing files without overwriting."
+description: "Bootstrap the go-to-market documentation structure for a project. Creates docs/gtm/, generates initial templates, and writes the gtm fragment of the gtm domain doc (the coordinator assembles docs/gtm/CLAUDE.md). Idempotent — merges missing sections into existing files without overwriting."
 argument-hint: "[project name]"
 user-invocable: false
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
@@ -16,7 +16,7 @@ Bootstrap the go-to-market documentation structure for **$ARGUMENTS**.
 ### Step 1: Check and create domain directory
 
 ```bash
-mkdir -p docs/gtm
+mkdir -p docs/gtm docs/gtm/_sections
 ```
 
 ### Step 2: Create or merge files
@@ -25,15 +25,15 @@ For each file below, apply the safe merge pattern:
 - If file does not exist -> create from template
 - If file exists -> read both, find sections in template missing from file, append missing sections with `<!-- Merged from gtm bootstrap v0.1.0 -->`
 
-#### File 1: `docs/gtm/CLAUDE.md`
+#### Fragment: `docs/gtm/_sections/gtm.md`
 
-Create with this content (~80 lines):
+`docs/gtm/CLAUDE.md` is **assembled by the coordinator** from the fragments in `_sections/` — no plugin writes
+it directly. Write the GTM contribution as this fragment. It starts at H2 (the coordinator generates the
+`# GTM Domain` H1 and a one-line intro — the `domain-title` hint below gives it the acronym). Create it with
+this content:
 
 ```markdown
-# GTM Domain
-
-This directory contains go-to-market documentation: positioning, launch plans, competitive intelligence, and battle cards.
-
+<!-- domain-title: GTM -->
 ## What This Domain Covers
 
 - **Positioning** — April Dunford methodology for product positioning
@@ -199,7 +199,7 @@ After creating/merging all files, output a summary:
 ## GTM Bootstrap Complete
 
 ### Files created
-- `docs/gtm/CLAUDE.md` — domain conventions and skill reference
+- `docs/gtm/_sections/gtm.md` — gtm fragment (coordinator assembles `docs/gtm/CLAUDE.md` from it)
 - `docs/gtm/positioning-canvas.md` — positioning canvas template
 
 ### Files merged

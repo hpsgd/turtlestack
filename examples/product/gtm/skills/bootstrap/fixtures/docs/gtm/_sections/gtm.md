@@ -1,6 +1,4 @@
-# Data Domain
-
-This directory contains data documentation for the project.
+<!-- gtm fragment of the gtm domain doc. Assembled into docs/gtm/CLAUDE.md by the coordinator. -->
 
 ## Custom team notes
 

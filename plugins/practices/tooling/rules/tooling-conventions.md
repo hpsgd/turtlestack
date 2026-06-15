@@ -6,6 +6,8 @@ description: Organisational tooling conventions — which tool for which functio
 
 When recommending, configuring, or referencing tools, use the organisation's standard stack. Never suggest alternatives to adopted tools without an explicit evaluation request.
 
+These are org **defaults**, and a project's `docs/tooling-register.md` is the source of truth that overrides them. Two things follow. A function only applies if the project actually has it — a backend service or a library has no frontend to host, so the Vercel default simply does not apply to it; don't push it in. And where the register records a choice, the register wins, no evaluation needed (the choice was already made when the register was written).
+
 ## Standard tools
 
 | Function | Tool | NOT these |

@@ -1,10 +1,10 @@
 # Bootstrap
 
-Scenario: A synthetic project root at `{workspace}/work/` is pre-staged with a partial `docs/gtm/CLAUDE.md` containing a user-authored section. The GTM bootstrap skill should preserve that user content while appending the template's missing sections (with a merge marker), and should create the file the fixture is missing — `docs/gtm/positioning-canvas.md`. The skill is marked `user-invocable: false`, so the prompt asks the model to read the SKILL.md directly and execute its process. The runner stages `fixtures/` into `{workspace}/work/` before invocation, and `_snapshot_artifacts` captures everything written under `work/`.
+Scenario: A synthetic project root at `{workspace}/work/` is pre-staged with a partial `docs/gtm/_sections/gtm.md` fragment containing a user-authored section. The GTM bootstrap skill should preserve that user content while appending the template's missing sections (with a merge marker), and should create the file the fixture is missing — `docs/gtm/positioning-canvas.md`. The GTM skill never writes `docs/gtm/CLAUDE.md` directly — the coordinator assembles it from the fragments in `_sections/`. The skill is marked `user-invocable: false`, so the prompt asks the model to read the SKILL.md directly and execute its process. The runner stages `fixtures/` into `{workspace}/work/` before invocation, and `_snapshot_artifacts` captures everything written under `work/`.
 
 ## Prompt
 
-> The current working directory (`{workspace}/work/`) is the project root for a project called "TestProject". A partial `docs/gtm/CLAUDE.md` is already present — it contains a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`.
+> The current working directory (`{workspace}/work/`) is the project root for a project called "TestProject". A partial `docs/gtm/_sections/gtm.md` fragment is already present — it contains a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`.
 > 
 > Read the GTM bootstrap skill at `/Users/martin/Projects/turtlestack/plugins/product/gtm/skills/bootstrap/SKILL.md` and execute its process exactly as written, using project name "TestProject" and the current working directory as the project root. Apply the safe-merge pattern as documented. Do not pause for confirmation — proceed with all defaults.
 > 
@@ -22,7 +22,7 @@ Captured from a real headless invocation of the skill/agent.
 - `docs/gtm/positioning-canvas.md` — positioning canvas template
 
 ### Files merged
-- `docs/gtm/CLAUDE.md` — appended missing sections (What This Domain Covers, Positioning methodology, Launch Tiers, Competitive Intelligence, Tooling, Available Skills, Conventions) while preserving user-authored "Custom team notes" section and sentinel line
+- `docs/gtm/_sections/gtm.md` — appended 8 missing sections (What This Domain Covers, Positioning, Launch Tiers, Competitive Intelligence, Tooling, Available Skills, Conventions) while preserving user-authored "Custom team notes" section with `USER-EDIT-SENTINEL-DO-NOT-STRIP`
 
 ### Next steps
 - Complete positioning canvas using `/gtm:positioning`
@@ -103,12 +103,10 @@ Captured from a real headless invocation of the skill/agent.
 
 ```
 
-#### `work/docs/gtm/CLAUDE.md`
+#### `work/docs/gtm/_sections/gtm.md`
 
 ```
-# GTM Domain
-
-This directory contains go-to-market documentation for the project.
+<!-- gtm fragment of the gtm domain doc. Assembled into docs/gtm/CLAUDE.md by the coordinator. -->
 
 ## Custom team notes
 
@@ -120,6 +118,7 @@ overwrite or remove user-authored content.
 
 <!-- Merged from gtm bootstrap v0.1.0 -->
 
+<!-- domain-title: GTM -->
 ## What This Domain Covers
 
 - **Positioning** — April Dunford methodology for product positioning
@@ -210,26 +209,30 @@ Battle cards are 1-page sales enablement docs for competitive situations:
 | Field | Value |
 |---|---|
 | Verdict | PASS |
-| Score | 8.5/8.5 (100%) |
-| Evaluated | 2026-05-13 |
-| Target duration | 36136 ms |
-| Target cost | $0.1487 |
+| Score | 10.5/10.5 (100%) |
+| Evaluated | 2026-06-15 |
+| Target model | claude-haiku-4-5-20251001 |
+| Judge model | claude-sonnet-4-6 |
+| Target duration | 37643 ms |
+| Target cost | $0.0827 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | After bootstrap, `docs/gtm/CLAUDE.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | Artifact `work/docs/gtm/CLAUDE.md` contains the exact line `USER-EDIT-SENTINEL-DO-NOT-STRIP` within the preserved 'Custom team notes' section. |
-| c2 | After bootstrap, `docs/gtm/CLAUDE.md` contains the safe-merge marker `<!-- Merged from gtm bootstrap v0.1.0 -->` — sections missing from the fixture were appended, not silently merged | PASS | Artifact `work/docs/gtm/CLAUDE.md` contains `<!-- Merged from gtm bootstrap v0.1.0 -->` immediately after the user-authored section. |
-| c3 | After bootstrap, `docs/gtm/CLAUDE.md` contains the appended template sections — at minimum the "Positioning (April Dunford Methodology)" and "Launch Tiers" headings now appear alongside the preserved user content | PASS | Artifact contains `## Positioning (April Dunford Methodology)` and `## Launch Tiers` headings alongside the preserved user section. |
-| c4 | After bootstrap, `docs/gtm/positioning-canvas.md` exists and was created from the skill's template | PASS | Artifact `work/docs/gtm/positioning-canvas.md` is present and contains a fully structured positioning canvas template based on April Dunford's methodology. |
-| c5 | The created `positioning-canvas.md` contains the five positioning components (Competitive Alternatives, Unique Attributes, Value, Target Customer Segments, Market Category) as section headings | PASS | All five headings present: `## 1. Competitive Alternatives`, `## 2. Unique Attributes`, `## 3. Value for Customers`, `## 4. Target Customer Segments`, `## 5. Market Category`. |
-| c6 | Chat output includes a manifest summary that distinguishes files created (`positioning-canvas.md`) from files merged (`CLAUDE.md`) | PASS | Chat output has explicit `### Files created` and `### Files merged` sections, listing `positioning-canvas.md` under created and `CLAUDE.md` under merged. |
-| c7 | Output names each created and merged file individually — a bare "bootstrap complete" without the per-file manifest is not enough | PASS | Each file is individually named with a description: `docs/gtm/positioning-canvas.md — positioning canvas template` and `docs/gtm/CLAUDE.md — appended missing sections…`. |
-| c8 | Output does not claim it overwrote or replaced `docs/gtm/CLAUDE.md` — the language reflects merge, not replacement | PASS | Chat says 'appended missing sections… while preserving user-authored "Custom team notes" section and sentinel line' — merge language throughout, no replacement claim. |
-| c9 | Output points the reader at next steps (completing the positioning canvas, creating launch plans) consistent with the skill's documented manifest | PARTIAL | Next steps list: 'Complete positioning canvas using `/gtm:positioning`', 'Create launch plans using `/gtm:launch-plan`', 'Set up competitor tracking in `docs/gtm/competitors/`'. |
+| c1 | After bootstrap, `docs/gtm/_sections/gtm.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | Artifact shows '## Custom team notes\n\nUSER-EDIT-SENTINEL-DO-NOT-STRIP\n\nThis section was written by the team...' intact at the top of the merged file. |
+| c2 | After bootstrap, `docs/gtm/_sections/gtm.md` contains the safe-merge marker `<!-- Merged from gtm bootstrap v0.1.0 -->` — sections missing from the fixture were appended, not silently merged | PASS | Artifact contains the exact line '<!-- Merged from gtm bootstrap v0.1.0 -->' immediately before the appended template sections. |
+| c3 | After bootstrap, `docs/gtm/_sections/gtm.md` contains the appended template sections — at minimum the "Positioning (April Dunford Methodology)" and "Launch Tiers" headings now appear alongside the preserved user content | PASS | Artifact shows '## Positioning (April Dunford Methodology)' and '## Launch Tiers' both present after the user-authored section and merge marker. |
+| c4 | The gtm fragment is authored at H2 and below — it does not introduce a `# Gtm Domain` H1 (the coordinator generates that when it assembles `docs/gtm/CLAUDE.md`) | PASS | All headings in `_sections/gtm.md` are `##` or lower (e.g. '## Custom team notes', '## What This Domain Covers'). No `#` H1 present. |
+| c5 | The skill does NOT write `docs/gtm/CLAUDE.md` directly — that file is the coordinator's to assemble from `_sections/` | PASS | Only two artifacts were written: `work/docs/gtm/positioning-canvas.md` and `work/docs/gtm/_sections/gtm.md`. No `docs/gtm/CLAUDE.md` artifact exists. |
+| c6 | After bootstrap, `docs/gtm/positioning-canvas.md` exists and was created from the skill's template | PASS | Artifact `work/docs/gtm/positioning-canvas.md` is fully present with the April Dunford canvas template content. |
+| c7 | The created `positioning-canvas.md` contains the five positioning components (Competitive Alternatives, Unique Attributes, Value, Target Customer Segments, Market Category) as section headings | PASS | Artifact shows '## 1. Competitive Alternatives', '## 2. Unique Attributes', '## 3. Value for Customers', '## 4. Target Customer Segments', '## 5. Market Category' — all five present. |
+| c8 | Chat output includes a manifest summary that distinguishes files created (`positioning-canvas.md`) from files merged (`_sections/gtm.md`) | PASS | Chat output has separate '### Files created' and '### Files merged' sections, each listing the respective file. |
+| c9 | Output names each created and merged file individually — a bare "bootstrap complete" without the per-file manifest is not enough | PASS | Output explicitly names '`docs/gtm/positioning-canvas.md`' under created and '`docs/gtm/_sections/gtm.md`' under merged with descriptions. |
+| c10 | Output does not claim it overwrote or replaced `docs/gtm/_sections/gtm.md` — the language reflects merge, not replacement | PASS | Chat output says 'appended 8 missing sections... while preserving user-authored "Custom team notes" section' — clear merge language, no replacement claim. |
+| c11 | Output points the reader at next steps (completing the positioning canvas, creating launch plans) consistent with the skill's documented manifest | PARTIAL | '### Next steps' lists 'Complete positioning canvas using `/gtm:positioning`' and 'Create launch plans for upcoming releases using `/gtm:launch-plan`' — both expected items present. |
 
 ### Notes
 
-The skill executed flawlessly across all dimensions: the safe-merge pattern preserved the sentinel and user content, the merge marker was correctly inserted, all template sections were appended, `positioning-canvas.md` was created with all five April Dunford components, and the manifest clearly separated created from merged files. c9 is capped at PARTIAL per test design.
+The skill executed flawlessly: sentinel preserved, merge marker applied, all template sections appended, no H1 introduced, CLAUDE.md not written, positioning canvas created with all five Dunford components, and manifest clearly distinguished created vs merged files. A perfect score within the rubric's ceiling constraints.

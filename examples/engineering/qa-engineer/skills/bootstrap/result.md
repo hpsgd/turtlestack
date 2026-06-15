@@ -1,10 +1,10 @@
 # Bootstrap
 
-Scenario: A synthetic project root at `{workspace}/work/` is pre-staged with a `pyproject.toml` (marking it as a Python project) and a partial `docs/testing/CLAUDE.md` containing a user-authored section. The qa-engineer bootstrap skill should detect Python, preserve the user content while appending missing sections (with a merge marker), and create the two new files — `docs/testing/test-config.md` and `docs/testing/ci-test-jobs.md` — filtered to Python only. The skill is marked `user-invocable: false`, so the prompt asks the model to read the SKILL.md directly and execute its process. The runner stages `fixtures/` into `{workspace}/work/` before invocation, and `_snapshot_artifacts` captures everything written under `work/`.
+Scenario: A synthetic project root at `{workspace}/work/` is pre-staged with a `pyproject.toml` (marking it as a Python project) and a partial `docs/testing/_sections/qa-engineer.md` fragment containing a user-authored section. The qa-engineer bootstrap skill should detect Python, preserve the user content while appending missing sections (with a merge marker), and create the two new files — `docs/testing/test-config.md` and `docs/testing/ci-test-jobs.md` — filtered to Python only. The qa-engineer never writes `docs/testing/CLAUDE.md` directly — the coordinator assembles it from the fragments in `_sections/`. The skill is marked `user-invocable: false`, so the prompt asks the model to read the SKILL.md directly and execute its process. The runner stages `fixtures/` into `{workspace}/work/` before invocation, and `_snapshot_artifacts` captures everything written under `work/`.
 
 ## Prompt
 
-> The current working directory (`{workspace}/work/`) is the project root for a project called "TestProject". A `pyproject.toml` is present at the root. A partial `docs/testing/CLAUDE.md` is already present — it contains a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`.
+> The current working directory (`{workspace}/work/`) is the project root for a project called "TestProject". A `pyproject.toml` is present at the root. A partial `docs/testing/_sections/qa-engineer.md` fragment is already present — it contains a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`.
 > 
 > Read the qa-engineer bootstrap skill at `/Users/martin/Projects/turtlestack/plugins/engineering/qa-engineer/skills/bootstrap/SKILL.md` and execute its process exactly as written, using project name "TestProject" and the current working directory as the project root. Apply the safe-merge pattern as documented. Do not pause for confirmation — proceed with all defaults.
 > 
@@ -16,17 +16,19 @@ Captured from a real headless invocation of the skill/agent.
 
 ### Chat response
 
+---
+
 ## Testing Bootstrap Complete
 
 ### Detected languages
-- **Python** (detected via `pyproject.toml`)
+- **Python** — detected from `pyproject.toml` presence at project root
 
 ### Files created
-- `docs/testing/test-config.md` — pytest configuration template, E2E Playwright config
-- `docs/testing/ci-test-jobs.md` — GitHub Actions job templates for Python and E2E testing
+- `docs/testing/test-config.md` — framework config templates (Python + E2E Playwright)
+- `docs/testing/ci-test-jobs.md` — GitHub Actions job templates (Python + E2E Playwright)
 
 ### Files merged
-- `docs/testing/CLAUDE.md` — appended domain conventions, framework reference, evidence requirements, tooling guidance, and available skills. Existing "Custom team notes" section preserved with USER-EDIT-SENTINEL-DO-NOT-STRIP marker intact.
+- `docs/testing/_sections/qa-engineer.md` — existing file with user-authored "Custom team notes" preserved; template sections (What this domain covers, Runner commands, Test directory structure, Evidence requirements, Rules, Tooling, Available skills) inserted before custom section with merge marker `<!-- Merged from qa-engineer bootstrap v0.1.0 -->`
 
 ### Next steps
 - Review generated config templates and adjust for your project
@@ -156,20 +158,10 @@ Add SonarCloud coverage upload after test steps: `SonarSource/sonarcloud-github-
 
 ```
 
-#### `work/docs/testing/CLAUDE.md`
+#### `work/docs/testing/_sections/qa-engineer.md`
 
 ```
-# Testing Domain
-
-This directory covers test infrastructure, framework configuration, and CI test integration. Test strategy, quality gates, DoR, and DoD live in `docs/quality/` (owned by qa-lead).
-
-## Custom team notes
-
-USER-EDIT-SENTINEL-DO-NOT-STRIP
-
-This section was written by the team and must survive any bootstrap re-run.
-It exists to test the safe-merge contract: the bootstrap skill must not
-overwrite or remove user-authored content.
+<!-- qa-engineer fragment of the testing domain doc. Assembled into docs/testing/CLAUDE.md by the coordinator. -->
 
 <!-- Merged from qa-engineer bootstrap v0.1.0 -->
 
@@ -230,6 +222,14 @@ Every test result must include: exact command (copy-pasteable), exit code, test 
 | `/qa-engineer:generate-tests` | Generate test files from specs or source code |
 | `/qa-engineer:write-bug-report` | Write a structured bug report |
 
+## Custom team notes
+
+USER-EDIT-SENTINEL-DO-NOT-STRIP
+
+This section was written by the team and must survive any bootstrap re-run.
+It exists to test the safe-merge contract: the bootstrap skill must not
+overwrite or remove user-authored content.
+
 ```
 
 ## Evaluation
@@ -237,27 +237,31 @@ Every test result must include: exact command (copy-pasteable), exit code, test 
 | Field | Value |
 |---|---|
 | Verdict | PASS |
-| Score | 9.5/10.0 (95%) |
-| Evaluated | 2026-05-13 |
-| Target duration | 51801 ms |
-| Target cost | $0.1757 |
+| Score | 11.5/11.5 (100%) |
+| Evaluated | 2026-06-15 |
+| Target model | claude-haiku-4-5-20251001 |
+| Judge model | claude-sonnet-4-6 |
+| Target duration | 57183 ms |
+| Target cost | $0.1110 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | After bootstrap, `docs/testing/CLAUDE.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | CLAUDE.md artifact contains 'USER-EDIT-SENTINEL-DO-NOT-STRIP' on its own line inside the 'Custom team notes' section. |
-| c2 | After bootstrap, `docs/testing/CLAUDE.md` contains the safe-merge marker `<!-- Merged from qa-engineer bootstrap v0.1.0 -->` — sections missing from the fixture were appended, not silently merged | PASS | CLAUDE.md artifact contains the exact line '<!-- Merged from qa-engineer bootstrap v0.1.0 -->' between the user section and the appended content. |
-| c3 | After bootstrap, `docs/testing/CLAUDE.md` contains the appended template sections — at minimum the "Runner commands" and "Evidence requirements" headings now appear alongside the preserved user content | PASS | CLAUDE.md artifact contains '## Runner commands' (with full table) and '## Evidence requirements' headings after the merge marker. |
-| c4 | After bootstrap, `docs/testing/test-config.md` exists and contains the `## Python (pytest)` section (language filtering matched `pyproject.toml`) | PASS | test-config.md artifact exists and contains '## Python (pytest)' heading with full pyproject.toml pytest config block. |
-| c5 | After bootstrap, `docs/testing/test-config.md` does NOT contain `## C# (xUnit)` — language filtering excluded C# because no `.csproj` or `.sln` was detected | PASS | test-config.md contains only '## Python (pytest)' and '## E2E (Playwright)' sections — no C# section present. |
-| c6 | After bootstrap, `docs/testing/ci-test-jobs.md` exists and contains the `## Python` CI job | PASS | ci-test-jobs.md artifact exists and contains '## Python' heading with a full GitHub Actions job using actions/setup-python@v5 and pytest. |
-| c7 | Chat output's manifest summary includes a "Detected languages" section naming Python | PASS | Chat output has '### Detected languages' with '- **Python** (detected via `pyproject.toml`)'. |
-| c8 | Output names each created and merged file individually — a bare "bootstrap complete" without the per-file manifest is not enough | PASS | Chat output has '### Files created' listing test-config.md and ci-test-jobs.md, and '### Files merged' listing CLAUDE.md with per-file descriptions. |
-| c9 | Output does not claim it overwrote or replaced `docs/testing/CLAUDE.md` — the language reflects merge, not replacement | PASS | Chat says 'appended domain conventions... Existing "Custom team notes" section preserved with USER-EDIT-SENTINEL-DO-NOT-STRIP marker intact.' No overwrite language. |
-| c10 | Output points the reader at next steps consistent with the skill's documented manifest (reviewing config templates, adding CI jobs, using `/qa-engineer:generate-tests`) | PARTIAL | Next steps list all three: 'Review generated config templates', 'Add CI jobs to your `.github/workflows/ci.yml`', 'Generate initial tests with `/qa-engineer:generate-tests`'. |
+| c1 | After bootstrap, `docs/testing/_sections/qa-engineer.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | Artifact shows '## Custom team notes' section with 'USER-EDIT-SENTINEL-DO-NOT-STRIP' intact on its own line. |
+| c2 | After bootstrap, `docs/testing/_sections/qa-engineer.md` contains the safe-merge marker `<!-- Merged from qa-engineer bootstrap v0.1.0 -->` — sections missing from the fixture were appended, not silently merged | PASS | Artifact line 3: '<!-- Merged from qa-engineer bootstrap v0.1.0 -->' present near top of file. |
+| c3 | After bootstrap, `docs/testing/_sections/qa-engineer.md` contains the appended template sections — at minimum the "Runner commands" and "Evidence requirements" headings now appear alongside the preserved user content | PASS | Artifact contains '## Runner commands' table and '## Evidence requirements' section both present before the preserved custom section. |
+| c4 | The qa-engineer fragment is authored at H2 and below — it does not introduce a `# Testing Domain` H1 (the coordinator generates that when it assembles `docs/testing/CLAUDE.md`) | PASS | Artifact opens with HTML comment and merge marker; first heading is '## What this domain covers' (H2). No H1 present. |
+| c5 | The skill does NOT write `docs/testing/CLAUDE.md` directly — that file is the coordinator's to assemble from `_sections/` | PASS | Artifacts list only: pyproject.toml, test-config.md, ci-test-jobs.md, _sections/qa-engineer.md. No docs/testing/CLAUDE.md written. |
+| c6 | After bootstrap, `docs/testing/test-config.md` exists and contains the `## Python (pytest)` section (language filtering matched `pyproject.toml`) | PASS | Artifact work/docs/testing/test-config.md contains '## Python (pytest)' heading with full pytest config block. |
+| c7 | After bootstrap, `docs/testing/test-config.md` does NOT contain `## C# (xUnit)` — language filtering excluded C# because no `.csproj` or `.sln` was detected | PASS | Artifact test-config.md has only '## Python (pytest)' and '## E2E (Playwright)' sections; no C# section present. |
+| c8 | After bootstrap, `docs/testing/ci-test-jobs.md` exists and contains the `## Python` CI job | PASS | Artifact work/docs/testing/ci-test-jobs.md contains '## Python' with full GitHub Actions yaml job 'test-python'. |
+| c9 | Chat output's manifest summary includes a "Detected languages" section naming Python | PASS | Chat response section '### Detected languages' lists '**Python** — detected from `pyproject.toml` presence at project root'. |
+| c10 | Output names each created and merged file individually — a bare "bootstrap complete" without the per-file manifest is not enough | PASS | '### Files created' lists both test-config.md and ci-test-jobs.md; '### Files merged' names qa-engineer.md individually. |
+| c11 | Output does not claim it overwrote or replaced `docs/testing/_sections/qa-engineer.md` — the language reflects merge, not replacement | PASS | Chat says 'existing file with user-authored "Custom team notes" preserved; template sections … inserted before custom section with merge marker'. |
+| c12 | Output points the reader at next steps consistent with the skill's documented manifest (reviewing config templates, adding CI jobs, using `/qa-engineer:generate-tests`) | PARTIAL | '### Next steps' lists: review config templates, add CI jobs to .github/workflows/ci.yml, and '/qa-engineer:generate-tests' — all three match. |
 
 ### Notes
 
-All ten criteria are met cleanly. The artifacts confirm the safe-merge contract was honoured (sentinel preserved, marker inserted, new sections appended), language filtering excluded C#, and the chat manifest accurately describes each file outcome. c10 is capped at PARTIAL by the test author.
+The skill executed flawlessly across all criteria: safe-merge preserved user content and sentinel, language filtering excluded C#, the coordinator boundary (no CLAUDE.md written) was respected, and the manifest summary was complete and accurate. No gaps found.

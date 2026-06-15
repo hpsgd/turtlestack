@@ -1,10 +1,10 @@
 # Bootstrap
 
-Scenario: A synthetic project root at `{workspace}/work/` is pre-staged with a partial `docs/support/CLAUDE.md` containing a user-authored section. The support bootstrap skill should preserve that user content while appending the template's missing sections (with a merge marker), and should create the two files the fixture is missing — `escalation-playbook.md` and `kb-article-template.md`. The skill is marked `user-invocable: false`, so the prompt asks the model to read the SKILL.md directly and execute its process. The runner stages `fixtures/` into `{workspace}/work/` before invocation, and `_snapshot_artifacts` captures everything written under `work/`.
+Scenario: A synthetic project root at `{workspace}/work/` is pre-staged with a partial `docs/support/_sections/support.md` fragment containing a user-authored section. The support bootstrap skill should preserve that user content while appending the template's missing sections (with a merge marker), and should create the two files the fixture is missing — `escalation-playbook.md` and `kb-article-template.md`. The support skill never writes `docs/support/CLAUDE.md` directly — the coordinator assembles it from the fragments in `_sections/`. The skill is marked `user-invocable: false`, so the prompt asks the model to read the SKILL.md directly and execute its process. The runner stages `fixtures/` into `{workspace}/work/` before invocation, and `_snapshot_artifacts` captures everything written under `work/`.
 
 ## Prompt
 
-> The current working directory (`{workspace}/work/`) is the project root for a project called "TestProject". A partial `docs/support/CLAUDE.md` is already present — it contains a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`.
+> The current working directory (`{workspace}/work/`) is the project root for a project called "TestProject". A partial `docs/support/_sections/support.md` fragment is already present — it contains a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`.
 > 
 > Read the support bootstrap skill at `/Users/martin/Projects/turtlestack/plugins/product/support/skills/bootstrap/SKILL.md` and execute its process exactly as written, using project name "TestProject" and the current working directory as the project root. Apply the safe-merge pattern as documented. Do not pause for confirmation — proceed with all defaults.
 > 
@@ -19,18 +19,18 @@ Captured from a real headless invocation of the skill/agent.
 ## Support & Customer Success Bootstrap Complete
 
 ### Files created
-- `docs/support/CLAUDE.md` — domain conventions and skill reference (support + CS)
 - `docs/support/escalation-playbook.md` — escalation playbook template
 - `docs/support/kb-article-template.md` — knowledge base article template
 
 ### Files merged
-- `docs/support/CLAUDE.md` — appended missing sections (What This Domain Covers, Ticket Triage Process, KB Article Lifecycle, Escalation Paths, Feedback Synthesis, Customer Health Scoring, QBR Process, Onboarding Playbook, Tooling, Available Skills, Conventions) while preserving user-authored "Custom team notes" section with `USER-EDIT-SENTINEL-DO-NOT-STRIP`
+- `docs/support/_sections/support.md` — support + CS fragment merged with user-authored "Custom team notes" section preserved (safe-merge pattern applied, template content appended with `<!-- Merged from support bootstrap v0.1.0 -->`)
 
 ### Next steps
-- Create escalation playbooks for common issue types
-- Set up GitHub Wiki for KB articles
-- Configure customer health scoring using `/support:feedback-synthesis`
+- Create escalation playbooks for common issue types (copy `escalation-playbook.md` and fill in details)
+- Set up GitHub Wiki for KB articles (using `kb-article-template.md` as the authoring guide)
+- Configure customer health scoring using `/support:health-assessment` 
 - Triage existing tickets using `/support:triage-tickets`
+- Schedule coordinator to assemble `docs/support/CLAUDE.md` from `_sections/support.md` and other domain fragments
 
 ### Artifacts written
 
@@ -176,12 +176,10 @@ Thank you for your patience. Here's an update on [issue summary]:
 
 ```
 
-#### `work/docs/support/CLAUDE.md`
+#### `work/docs/support/_sections/support.md`
 
 ```
-# Support Domain
-
-This directory contains support documentation for the project.
+<!-- support fragment of the support domain doc. Assembled into docs/support/CLAUDE.md by the coordinator. -->
 
 ## Custom team notes
 
@@ -355,27 +353,31 @@ Standard onboarding phases:
 | Field | Value |
 |---|---|
 | Verdict | PASS |
-| Score | 9.5/10.0 (95%) |
-| Evaluated | 2026-05-13 |
-| Target duration | 50202 ms |
-| Target cost | $0.1602 |
+| Score | 11.5/12.0 (96%) |
+| Evaluated | 2026-06-15 |
+| Target model | claude-haiku-4-5-20251001 |
+| Judge model | claude-sonnet-4-6 |
+| Target duration | 55955 ms |
+| Target cost | $0.1052 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | After bootstrap, `docs/support/CLAUDE.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | Artifact `work/docs/support/CLAUDE.md` contains the line `USER-EDIT-SENTINEL-DO-NOT-STRIP` under the `## Custom team notes` section, preserved verbatim. |
-| c2 | After bootstrap, `docs/support/CLAUDE.md` contains the safe-merge marker `<!-- Merged from support bootstrap v0.1.0 -->` — sections missing from the fixture were appended, not silently merged | PASS | Artifact contains `<!-- Merged from support bootstrap v0.1.0 -->` immediately before the appended template sections, after the preserved user content block. |
-| c3 | After bootstrap, `docs/support/CLAUDE.md` contains the appended template sections — at minimum the `## Ticket Triage Process` and `## Customer Health Scoring` headings now appear alongside the preserved user content | PASS | Artifact contains both `## Ticket Triage Process` and `## Customer Health Scoring` headings after the merge marker, alongside the preserved user content. |
-| c4 | After bootstrap, `docs/support/escalation-playbook.md` exists and was created from the skill's template (contains `## Escalation Trigger` and `## L2 Investigation` headings) | PASS | Artifact `work/docs/support/escalation-playbook.md` exists and contains both `## Escalation Trigger` and `## L2 Investigation` headings. |
-| c5 | After bootstrap, `docs/support/kb-article-template.md` exists and was created from the skill's template (contains `## Instructions` and `## Expected Result` headings) | PASS | Artifact `work/docs/support/kb-article-template.md` exists and contains both `## Instructions` and `## Expected Result` headings. |
-| c6 | Chat output includes a manifest summary that distinguishes files created (`escalation-playbook.md`, `kb-article-template.md`) from files merged (`CLAUDE.md`) | PASS | Chat output has distinct `### Files created` and `### Files merged` sections; escalation-playbook.md and kb-article-template.md under created, CLAUDE.md under merged. |
-| c7 | The manifest output header is `## Support & Customer Success Bootstrap Complete` — the exact heading the skill specifies | PASS | Chat output opens with exactly `## Support & Customer Success Bootstrap Complete`. |
-| c8 | Output names each created and merged file individually — a bare "bootstrap complete" without the per-file manifest is not enough | PASS | Each file is listed individually with description: CLAUDE.md, escalation-playbook.md, and kb-article-template.md are all named with their purpose. |
-| c9 | Output does not claim it overwrote or replaced `docs/support/CLAUDE.md` — the language reflects merge, not replacement | PASS | Merged section says "appended missing sections... while preserving user-authored 'Custom team notes' section" — merge language, not overwrite/replace. |
-| c10 | Output points the reader at next steps consistent with the skill's documented manifest (creating escalation playbooks, setting up GitHub Wiki, or using support/CS skills) | PARTIAL | Chat output includes `### Next steps` with four items: escalation playbooks, GitHub Wiki setup, `/support:feedback-synthesis`, and `/support:triage-tickets` — all consistent. |
+| c1 | After bootstrap, `docs/support/_sections/support.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | The artifact `work/docs/support/_sections/support.md` contains 'USER-EDIT-SENTINEL-DO-NOT-STRIP' on its own line within the Custom team notes section. |
+| c2 | After bootstrap, `docs/support/_sections/support.md` contains the safe-merge marker `<!-- Merged from support bootstrap v0.1.0 -->` — sections missing from the fixture were appended, not silently merged | PASS | The artifact contains '<!-- Merged from support bootstrap v0.1.0 -->' immediately after the user-authored section, before the appended template content. |
+| c3 | After bootstrap, `docs/support/_sections/support.md` contains the appended template sections — at minimum the `## Ticket Triage Process` and `## Customer Health Scoring` headings now appear alongside the preserved user content | PASS | The artifact contains both '## Ticket Triage Process' and '## Customer Health Scoring' headings in the merged support.md file. |
+| c4 | The support fragment is authored at H2 and below — it does not introduce a `# Support Domain` H1 (the coordinator generates that when it assembles `docs/support/CLAUDE.md`) | PASS | The support.md artifact starts with an HTML comment then '## Custom team notes' — no H1 heading is present anywhere in the file. |
+| c5 | The skill does NOT write `docs/support/CLAUDE.md` directly — that file is the coordinator's to assemble from `_sections/` | PASS | No `docs/support/CLAUDE.md` artifact appears in the written files. The chat output says 'Schedule coordinator to assemble docs/support/CLAUDE.md from _sections/support.md'. |
+| c6 | After bootstrap, `docs/support/escalation-playbook.md` exists and was created from the skill's template (contains `## Escalation Trigger` and `## L2 Investigation` headings) | PASS | The artifact `work/docs/support/escalation-playbook.md` contains both '## Escalation Trigger' and '## L2 Investigation' headings. |
+| c7 | After bootstrap, `docs/support/kb-article-template.md` exists and was created from the skill's template (contains `## Instructions` and `## Expected Result` headings) | PASS | The artifact `work/docs/support/kb-article-template.md` contains both '## Instructions' and '## Expected Result' headings. |
+| c8 | Chat output includes a manifest summary that distinguishes files created (`escalation-playbook.md`, `kb-article-template.md`) from files merged (`_sections/support.md`) | PASS | Chat output has separate '### Files created' and '### Files merged' sections, with escalation-playbook.md and kb-article-template.md under created, and _sections/support.md under merged. |
+| c9 | The manifest output header is `## Support & Customer Success Bootstrap Complete` — the exact heading the skill specifies | PASS | Chat output begins with '## Support & Customer Success Bootstrap Complete' exactly as specified. |
+| c10 | Output names each created and merged file individually — a bare 'bootstrap complete' without the per-file manifest is not enough | PASS | Each file is listed individually: 'docs/support/escalation-playbook.md', 'docs/support/kb-article-template.md', and 'docs/support/_sections/support.md' with descriptions. |
+| c11 | Output does not claim it overwrote or replaced `docs/support/_sections/support.md` — the language reflects merge, not replacement | PASS | Chat output says 'merged with user-authored... preserved (safe-merge pattern applied, template content appended)' — clearly merge language, not replacement. |
+| c12 | Output points the reader at next steps consistent with the skill's documented manifest (creating escalation playbooks, setting up GitHub Wiki, or using support/CS skills) | PARTIAL | Next steps include creating escalation playbooks, setting up GitHub Wiki, configuring health scoring via '/support:health-assessment', and triage via '/support:triage-tickets' — all consistent with skill's manifest. |
 
 ### Notes
 
-The bootstrap executed correctly: sentinel preserved, merge marker present, template sections appended, and both new files created with correct headings. The only minor anomaly is CLAUDE.md appearing under both 'Files created' and 'Files merged' in the manifest, which is slightly inaccurate but does not undermine any criterion.
+The output is highly faithful to the skill's documented process: sentinel preserved, merge marker present, template sections appended, correct H2-only fragment structure, CLAUDE.md not written directly, both template files created with correct headings, and manifest properly distinguishes created from merged. All criteria met at ceiling.

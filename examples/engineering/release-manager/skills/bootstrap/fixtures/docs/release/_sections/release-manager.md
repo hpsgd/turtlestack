@@ -1,6 +1,4 @@
-# Testing Domain
-
-This directory contains testing documentation for the project.
+<!-- release-manager fragment of the release domain doc. Assembled into docs/release/CLAUDE.md by the coordinator. -->
 
 ## Custom team notes
 

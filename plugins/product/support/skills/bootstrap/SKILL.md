@@ -1,7 +1,7 @@
 ---
 name: bootstrap
 bootstrap-phase: market
-description: "Bootstrap the support and customer success documentation structure for a project. Creates docs/support/, generates initial templates, and writes domain CLAUDE.md. Idempotent — merges missing sections into existing files without overwriting."
+description: "Bootstrap the support and customer success documentation structure for a project. Creates docs/support/, generates initial templates, and writes the support fragment of the support domain doc (the coordinator assembles docs/support/CLAUDE.md). Idempotent — merges missing sections into existing files without overwriting."
 argument-hint: "[project name]"
 user-invocable: false
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
@@ -18,7 +18,7 @@ This skill covers both support and customer success since they share the `docs/s
 ### Step 1: Check and create domain directory
 
 ```bash
-mkdir -p docs/support
+mkdir -p docs/support docs/support/_sections
 ```
 
 ### Step 2: Create or merge files
@@ -27,15 +27,13 @@ For each file below, apply the safe merge pattern:
 - If file does not exist -> create from template
 - If file exists -> read both, find sections in template missing from file, append missing sections with `<!-- Merged from support bootstrap v0.1.0 -->`
 
-#### File 1: `docs/support/CLAUDE.md`
+#### Fragment: `docs/support/_sections/support.md`
 
-Create with this content (~110 lines):
+`docs/support/CLAUDE.md` is **assembled by the coordinator** from the fragments in `_sections/` — no plugin
+writes it directly. Write the support and customer-success contribution as this fragment. It starts at H2 (the
+coordinator generates the `# Support Domain` H1 and a one-line intro). Create it with this content:
 
 ```markdown
-# Support & Customer Success Domain
-
-This directory contains support and customer success documentation: ticket triage, KB articles, escalation playbooks, health scoring, and customer lifecycle management.
-
 ## What This Domain Covers
 
 ### Support
@@ -344,7 +342,7 @@ After creating/merging all files, output a summary:
 ## Support & Customer Success Bootstrap Complete
 
 ### Files created
-- `docs/support/CLAUDE.md` — domain conventions and skill reference (support + CS)
+- `docs/support/_sections/support.md` — support + CS fragment (coordinator assembles `docs/support/CLAUDE.md` from it)
 - `docs/support/escalation-playbook.md` — escalation playbook template
 - `docs/support/kb-article-template.md` — knowledge base article template
 

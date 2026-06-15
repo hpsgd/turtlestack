@@ -1,6 +1,6 @@
 # Bootstrap
 
-Scenario: A coach is onboarding to a new team and needs the `docs/coaching/` structure created from scratch — domain CLAUDE.md, working-agreements starter, and DoD starter — without the skill authoring the team's actual agreements or DoD content.
+Scenario: A coach is onboarding to a new team and needs the `docs/coaching/` structure created from scratch — the agile-coach fragment of the coaching domain doc, a working-agreements starter, and a DoD starter — without the skill authoring the team's actual agreements or DoD content. The coach never writes `docs/coaching/CLAUDE.md` directly; the coordinator assembles it from the fragments in `_sections/`.
 
 ## Prompt
 
@@ -17,19 +17,22 @@ Captured from a real headless invocation of the skill/agent.
 ## Coaching Bootstrap Complete
 
 ### Files created
-- `docs/coaching/CLAUDE.md` — domain conventions and skill reference
-- `docs/coaching/working-agreements.md` — working-agreements starter
-- `docs/coaching/definition-of-done.md` — DoD starter
-- `docs/coaching/retrospectives/` — directory for retro outputs
-- `docs/coaching/health/` — directory for health scans
+- `docs/coaching/_sections/agile-coach.md` — agile-coach fragment (coordinator assembles `docs/coaching/CLAUDE.md` from it)
+- `docs/coaching/working-agreements.md` — working-agreements starter (team-authored template)
+- `docs/coaching/definition-of-done.md` — DoD starter (team-authored template)
+
+### Directories created
+- `docs/coaching/retrospectives/` — for per-retro output files
+- `docs/coaching/health/` — for periodic team-health scans
 
 ### Files merged
-- (none — fresh repo)
+- (none — clean bootstrap)
 
 ### Next steps
-- Run `/agile-coach:design-working-agreements` to facilitate the team authoring its agreements
-- Run `/agile-coach:team-health-scan` to establish a safety baseline
-- Record the team's method and ceremony cadence in `docs/coaching/CLAUDE.md`
+- Run `/agile-coach:design-working-agreements` to facilitate the billing team authoring its agreements
+- Run `/agile-coach:coach-definition-of-done` to facilitate the billing team authoring its Definition of Done
+- Run `/agile-coach:team-health-scan` to establish a psychological-safety baseline
+- Record the billing team's method and ceremony cadence in `docs/coaching/_sections/agile-coach.md`
 
 ### Artifacts written
 
@@ -68,14 +71,32 @@ team behaves together; the DoD governs when work is complete.
 
 ```
 
-#### `work/docs/coaching/CLAUDE.md`
+#### `work/docs/coaching/definition-of-done.md`
 
 ```
-# Coaching Domain
+# Definition of Done
 
-This directory holds the team's process artifacts: working agreements, Definition of Done, retrospective
-outputs, and team-health scans. The agile coach owns the structure; the team owns the content.
+> The team owns this. It is the team's quality contract for any increment. Make every item specific and testable.
 
+## Applies to
+
+[State the work types this DoD covers — e.g. user-facing features, API changes, infrastructure.]
+
+## Done means
+
+- [ ] [Specific, testable item — e.g. "unit tests written, line coverage >= 80%"]
+- [ ] [Specific, testable item — e.g. "merged to main behind a feature flag"]
+- [ ] [Specific, testable item]
+
+## Review cadence
+
+Reviewed in the retrospective when an item proves vague or is repeatedly skipped.
+
+```
+
+#### `work/docs/coaching/_sections/agile-coach.md`
+
+```
 ## What this domain covers
 
 - **Working agreements** — how the team operates (norms, communication, meeting behaviour)
@@ -129,59 +150,38 @@ refinement and the sprint review. The coach coaches flow metrics; the delivery m
 
 ```
 
-#### `work/docs/coaching/definition-of-done.md`
-
-```
-# Definition of Done
-
-> The team owns this. It is the team's quality contract for any increment. Make every item specific and testable.
-
-## Applies to
-
-[State the work types this DoD covers — e.g. user-facing features, API changes, infrastructure.]
-
-## Done means
-
-- [ ] [Specific, testable item — e.g. "unit tests written, line coverage >= 80%"]
-- [ ] [Specific, testable item — e.g. "merged to main behind a feature flag"]
-- [ ] [Specific, testable item]
-
-## Review cadence
-
-Reviewed in the retrospective when an item proves vague or is repeatedly skipped.
-
-```
-
 ## Evaluation
 
 | Field | Value |
 |---|---|
 | Verdict | PASS |
-| Score | 11.0/11.0 (100%) |
-| Evaluated | 2026-06-12 |
+| Score | 13.0/13.0 (100%) |
+| Evaluated | 2026-06-15 |
 | Target model | claude-haiku-4-5-20251001 |
 | Judge model | claude-sonnet-4-6 |
-| Target duration | 35806 ms |
-| Target cost | $0.1059 |
+| Target duration | 35709 ms |
+| Target cost | $0.0716 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | Creates the `docs/coaching/` directory with a `retrospectives/` subdirectory for per-retro outputs | PASS | Chat manifest lists 'docs/coaching/retrospectives/ — directory for retro outputs'; CLAUDE.md artifact also defines retrospectives/ convention. |
-| c2 | Creates `docs/coaching/CLAUDE.md` as a domain conventions file that names the coach-owns-structure / team-owns-content boundary | PASS | CLAUDE.md artifact states explicitly: 'The agile coach owns the structure; the team owns the content.' |
-| c3 | The domain CLAUDE.md lists the available agile-coach skills as a reference for a future coach orienting to the repo | PASS | CLAUDE.md artifact contains a full 'Available skills' table with 12 skills and their purposes. |
-| c4 | Creates a working-agreements starter file and a definition-of-done starter file under `docs/coaching/` | PASS | Both work/docs/coaching/working-agreements.md and work/docs/coaching/definition-of-done.md artifacts are present. |
-| c5 | The skill does NOT author actual working agreements or DoD criteria — it creates structure and starter prompts only, leaving the team to fill them in | PASS | working-agreements.md uses bracketed placeholders '[Specific, testable agreement...]'; DoD uses checkbox stubs '[Specific, testable item...]'. No invented content. |
-| c6 | Output is a bootstrap manifest listing files created (and any merged), plus next steps pointing to design-working-agreements and team-health-scan | PASS | Chat response has 'Files created', 'Files merged', and 'Next steps' sections; next steps name `/agile-coach:design-working-agreements` and `/agile-coach:team-health-scan`. |
-| c7 | The DoD starter and CLAUDE.md note that content is team-owned and specific/testable, not handed down by management | PARTIAL | DoD: 'The team owns this.' CLAUDE.md: 'The Definition of Done is owned by the team, not handed down by management.' Both explicit. |
-| c8 | Output names the files it created at their paths under `docs/coaching/` — CLAUDE.md, working-agreements, definition-of-done — not just a vague 'done' | PASS | Manifest lists full paths: docs/coaching/CLAUDE.md, docs/coaching/working-agreements.md, docs/coaching/definition-of-done.md, retrospectives/, health/. |
-| c9 | The created `docs/coaching/CLAUDE.md` records the convention that every retro produces action items with an owner and a due sprint | PASS | CLAUDE.md artifact: 'Every retro produces action items with an owner and a due sprint — no exceptions'. |
-| c10 | The created files contain placeholder/template content (e.g. bracketed prompts, checkbox stubs) rather than invented team-specific agreements or quality criteria | PASS | working-agreements.md uses '[...]' bracketed examples; definition-of-done.md uses '- [ ] [Specific, testable item...]' stubs throughout. |
-| c11 | Output's next-steps point the user at the skills that fill the structure (design-working-agreements, team-health-scan) rather than declaring the team's process complete | PASS | Next steps: 'Run /agile-coach:design-working-agreements to facilitate the team authoring its agreements' and 'Run /agile-coach:team-health-scan to establish a safety baseline'. |
-| c12 | Output reflects an idempotent / safe-merge intent — it states it would merge missing sections rather than overwrite if files already existed | PARTIAL | Manifest has a 'Files merged: (none — fresh repo)' section, implying merge-tracking design, but doesn't describe the merge strategy explicitly. |
+| c1 | Creates the `docs/coaching/` directory with a `retrospectives/` subdirectory for per-retro outputs and a `_sections/` subdirectory for the domain fragment | PASS | Chat response: 'Directories created: docs/coaching/retrospectives/' and artifact at work/docs/coaching/_sections/ confirms _sections/ exists. |
+| c2 | Creates `docs/coaching/_sections/agile-coach.md` as the agile-coach fragment naming the coach-owns-structure / team-owns-content boundary | PASS | agile-coach.md '## The coach's boundary' section: 'The coach owns the team's internal process... The Definition of Done is owned by the team, not handed down by management.' |
+| c3 | The fragment is authored at H2 and below — it does not introduce a `# Coaching Domain` H1 (the coordinator generates that when it assembles `docs/coaching/CLAUDE.md`) | PASS | agile-coach.md starts with '## What this domain covers' — no H1 heading present in the artifact. |
+| c4 | The skill does NOT write `docs/coaching/CLAUDE.md` directly — that file is the coordinator's to assemble from `_sections/` | PASS | Only three artifacts written: working-agreements.md, definition-of-done.md, _sections/agile-coach.md. No CLAUDE.md artifact present. |
+| c5 | The fragment lists the available agile-coach skills as a reference for a future coach orienting to the repo | PASS | agile-coach.md '## Available skills' table lists 12 skills with purpose column, e.g. '/agile-coach:facilitate-retrospective', '/agile-coach:team-health-scan'. |
+| c6 | Creates a working-agreements starter file and a definition-of-done starter file under `docs/coaching/` | PASS | Artifacts confirm work/docs/coaching/working-agreements.md and work/docs/coaching/definition-of-done.md both written. |
+| c7 | The skill does NOT author actual working agreements or DoD criteria — it creates structure and starter prompts only, leaving the team to fill them in | PASS | working-agreements.md uses '[Specific, testable agreement — e.g. …]' placeholders; DoD uses '- [ ] [Specific, testable item — e.g. …]' stubs. No actual content invented. |
+| c8 | Output is a bootstrap manifest listing files created (and any merged), plus next steps pointing to design-working-agreements and team-health-scan | PASS | Chat response has '### Files created', '### Files merged (none)', '### Next steps' with /agile-coach:design-working-agreements and /agile-coach:team-health-scan. |
+| c9 | The DoD starter and the fragment note that content is team-owned and specific/testable, not handed down by management | PARTIAL | DoD: 'The team owns this… Make every item specific and testable.' Fragment: 'The Definition of Done is owned by the team, not handed down by management.' |
+| c10 | Output names the files it created at their paths under `docs/coaching/` — `_sections/agile-coach.md`, working-agreements, definition-of-done — not just a vague "done" | PASS | Chat lists exact paths: 'docs/coaching/_sections/agile-coach.md', 'docs/coaching/working-agreements.md', 'docs/coaching/definition-of-done.md'. |
+| c11 | The created `docs/coaching/_sections/agile-coach.md` records the convention that every retro produces action items with an owner and a due sprint | PASS | agile-coach.md '## Conventions': 'Every retro produces action items with an owner and a due sprint — no exceptions.' |
+| c12 | The created files contain placeholder/template content (e.g. bracketed prompts, checkbox stubs) rather than invented team-specific agreements or quality criteria | PASS | All three artifacts use bracketed prompts '[…]', checkbox stubs '- [ ] [Specific, testable item]', and table placeholders '[Scrum / Kanban / Scrumban]'. |
+| c13 | Output's next-steps point the user at the skills that fill the structure (design-working-agreements, team-health-scan) rather than declaring the team's process complete | PASS | Next steps list '/agile-coach:design-working-agreements', '/agile-coach:coach-definition-of-done', '/agile-coach:team-health-scan' — no claim that process is complete. |
+| c14 | Output reflects an idempotent / safe-merge intent — it states it would merge missing sections rather than overwrite if files already existed | PARTIAL | '### Files merged: (none — clean bootstrap)' implies merge awareness in the manifest structure, but no explicit statement of overwrite-vs-merge behavior for existing files. |
 
 ### Notes
 
-All criteria met at their ceilings. The output is a clean, complete bootstrap manifest with well-structured placeholder artifacts, explicit coach/team boundary language, and forward-pointing next steps.
+The skill output is comprehensive and well-structured, satisfying all criteria fully within their ceilings. The only nuance is c14, where the 'Files merged: none' section implies idempotent intent but stops short of explicitly describing merge behavior for existing files.

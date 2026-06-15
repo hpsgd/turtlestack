@@ -63,6 +63,26 @@ Each entry in `agents` looks like:
 
 **Output:** Manifest state — new or loaded with N existing agent entries.
 
+## Step 2.4: Establish project context and shape
+
+Before deriving the stack, the bootstrap needs two things it cannot get from the project name. **Never infer what the project does from its name.** "TestProject", "atlas", "phoenix" tell you nothing — a bootstrap that invents a purpose from the name writes confident fiction into every domain doc.
+
+Ask the user directly (skip anything already given in `$ARGUMENTS` or earlier in the session):
+
+1. **What does this project do?** One or two sentences, if known. This is the *initial context* — it flows to every agent bootstrap (Step 4) so domain docs describe the real project, not a guess. If the user doesn't know yet, record `unknown` and bootstraps leave a marked placeholder rather than invent one.
+2. **What shape(s) is it?** Any that apply: `web-frontend`, `backend-service`, `library`, `cli`, `mobile`, `data-pipeline`. A repo can be more than one (a web frontend plus a backend service).
+3. **What layout?** `single-package` or `monorepo`.
+
+Record the answers — shape and layout drive which defaults apply in Step 2.5; context and shape are passed to every bootstrap in Step 4.
+
+| Field | Value | Source |
+|---|---|---|
+| Context | [one-line description, or `unknown`] | user |
+| Shape | [one or more of: web-frontend, backend-service, library, cli, mobile, data-pipeline] | user |
+| Layout | [single-package / monorepo] | user |
+
+**Output:** Project context, shape, and layout — confirmed with the user.
+
 ## Step 2.5: Assemble Tech Context
 
 Derive the project's technology stack from two sources: installed agents (primary) and existing project files (override).
@@ -97,16 +117,19 @@ For existing projects (or `bootstrap update`), scan for files that indicate diff
 
 Project file signals take precedence over agent defaults.
 
-### Common defaults (always included)
+### Shape-conditional defaults
 
-These come from the tooling conventions, not from agents:
+Org tooling conventions supply defaults, but a default only flows in when the project's **shape** (Step 2.4) calls for it. A backend service, a library, or a CLI has no frontend to host and no browser to drive — seeding its stack with Vercel and Playwright is the spurious assumption this gate exists to stop.
 
-| Category | Default | Source |
-|---|---|---|
-| CI/CD | GitHub Actions | tooling conventions |
-| Code quality | SonarCloud | tooling conventions |
-| Frontend hosting | Vercel | tooling conventions |
-| E2E framework | Playwright | react-developer (if installed) |
+| Category | Default | Applies when | Source |
+|---|---|---|---|
+| CI/CD | GitHub Actions | always | tooling conventions |
+| Code quality | SonarCloud | always | tooling conventions |
+| Frontend hosting | Vercel | shape includes `web-frontend` | tooling conventions |
+| E2E framework | Playwright | shape includes `web-frontend` and react-developer installed | react-developer |
+| Monorepo task runner | Moon | layout is `monorepo` | devops (if installed) |
+
+GitHub Actions and SonarCloud are org-wide for any repo, so they stay universal. Everything else is gated — if a gated default's condition isn't met, leave it out, don't list it "for completeness".
 
 ### Assemble the context table
 
@@ -227,21 +250,31 @@ Include the confirmed tech context table (from Step 3) in every agent bootstrap 
 
 Agents that don't use tech context (most domain bootstraps) will ignore it. Agents that do (qa-engineer, code-reviewer, devops, coding-standards) will use it to make informed decisions about which frameworks, linters, and CI jobs to scaffold.
 
+### Passing project context
+
+Along with the tech context, give every bootstrap the project context, shape, and layout from Step 2.4:
+
+> **Project context:** [one-line description, or "unknown — do not invent one"]
+> **Shape:** [shapes]   **Layout:** [layout]
+>
+> Author the domain docs for *this* project using the context above. **Do not infer what the project does from its name.** Where context is "unknown", leave any purpose-specific spot as a clearly marked placeholder (e.g. `[describe the project's purpose]`) rather than guessing one.
+
+This is what stops a bootstrap turning a bare project name into invented product detail. Every domain bootstrap that writes narrative (architect, product-owner, security-engineer, the docs writers) gets the same directive, so the guess never happens in the first place.
+
 ### Invoking bootstraps
 
 No two bootstraps write the same file — that is the design, not a thing the coordinator has to police.
-Where several plugins contribute to one domain doc (`docs/product/CLAUDE.md`, `docs/design/CLAUDE.md`,
-`docs/content/CLAUDE.md`, `docs/architecture/CLAUDE.md`), each plugin writes only its **own fragment** at
-`docs/<domain>/_sections/<plugin>.md`. Those paths are disjoint, so there is no collision to coordinate and
-no ordering constraint within a phase. The coordinator assembles the domain `CLAUDE.md` from the fragments
-afterwards (see Step 4.5). Running sequentially is still fine and is the simplest default, but it is no
-longer load-bearing for correctness.
+No bootstrap writes a domain `CLAUDE.md` at all. Each plugin writes only its **own fragment** at
+`docs/<domain>/_sections/<plugin>.md`, whether the domain has one contributing plugin or several. Those
+paths are disjoint, so there is no collision to coordinate and no ordering constraint within a phase. The
+coordinator assembles the domain `CLAUDE.md` from the fragments afterwards (see Step 4.5). Running
+sequentially is still fine and is the simplest default, but it is no longer load-bearing for correctness.
 
 For each agent that needs bootstrapping, in phase order:
 
 1. **Skip** agents classified as "Current" or "No bootstrap".
 2. **New agents:** Invoke the agent's `bootstrap` skill with the tech context. The agent writes only paths
-   it exclusively owns — its own domain files, and, for a shared domain, its single fragment under
+   it exclusively owns — its own domain files, and its single domain fragment under
    `docs/<domain>/_sections/`. It never writes another plugin's file or the assembled domain `CLAUDE.md`.
 3. **Updated agents (merge mode):** Invoke the agent's `bootstrap` skill with the tech context and a merge
    instruction. The agent reads its own files, adds missing sections, and **never overwrites or deletes**
@@ -269,6 +302,12 @@ For each `docs/<domain>/_sections/` found with `Glob`:
 3. Otherwise write `docs/<domain>/CLAUDE.md` as: the generated marker, a generated `# <Domain> Domain` H1 and
    one-line intro, then each fragment's contents in order (fragments are authored at H2 and below — they never
    carry their own H1). Overwriting a file that already carries the marker is expected — it is a regenerate.
+   - **Display name:** `<Domain>` is the domain's display name, not always a title-cased directory. If any
+     fragment in `_sections/` begins with an HTML comment `<!-- domain-title: X -->`, use `X` (e.g. `GTM`, `AI`,
+     `Product Analytics`); otherwise title-case the directory name. This keeps acronym and multi-word domains
+     correct without the coordinator holding a name map — the display name is data the fragment carries, the
+     same single-source-of-truth principle as `bootstrap-phase`. The hint comment is invisible in rendered
+     output, so it may stay in the assembled file.
 4. The assembled file is generated output. Customisation goes in the fragments, not here.
 
 ```markdown
@@ -329,29 +368,41 @@ Use `Edit` to merge — never overwrite the root `CLAUDE.md`.
 
 ### 5c. `docs/tooling-register.md`
 
-If the file does not exist, create it from the coding-standards tooling register template:
+This file is the project's single source of truth for tool choices. The `tooling-conventions` rule defers to it: org defaults apply only until the register records a choice. Seed it from the confirmed tech context (Step 3) and project shape (Step 2.4), not from the full org list — a register that lists Vercel for a backend service is the same spurious assumption Step 2.5 gates against.
+
+If the file does not exist, create it:
 
 ```markdown
 <!-- Generated by bootstrap-project. Review and customize. -->
 # Tooling Register
 
+| Field | Value |
+|---|---|
+| Project | [project name] |
+| Context | [one-line description from Step 2.4, or `unknown`] |
+| Shape | [shapes from Step 2.4] |
+| Layout | [single-package / monorepo] |
+
+## Tools
+
 | Function | Tool | Version | Notes |
 |---|---|---|---|
-| Language | [e.g. Python 3.12] | | |
-| Framework | [e.g. FastAPI] | | |
+| Language | [from tech context] | | |
+| Framework | [from tech context] | | |
 | Package manager | [e.g. uv] | | |
-| Linter | [e.g. ruff] | | |
-| Formatter | [e.g. ruff format] | | |
-| Type checker | [e.g. mypy] | | |
-| Test runner | [e.g. pytest] | | |
-| CI/CD | [e.g. GitHub Actions] | | |
+| Linter | [from tech context] | | |
+| Formatter | [from tech context] | | |
+| Type checker | [from tech context] | | |
+| Test runner | [from tech context] | | |
+| CI/CD | GitHub Actions | | org default |
+| Code quality | SonarCloud | | org default |
 | Container runtime | [e.g. Docker] | | |
-| Orchestration | [e.g. Kubernetes] | | |
-| Monitoring | [e.g. Datadog] | | |
 | Error tracking | [e.g. Sentry] | | |
 
-> Populate this register with your actual tool choices. Keep it updated as the stack evolves.
+> Add rows only for functions this project actually has. A non-frontend project omits the frontend-hosting row; a single-package repo omits the monorepo task-runner row. Populate with your actual tool choices and keep it updated as the stack evolves.
 ```
+
+Include the shape-gated rows (frontend hosting → Vercel, E2E → Playwright, monorepo task runner → Moon) only when Step 2.4's shape/layout called them in.
 
 If the file already exists, skip.
 
@@ -492,12 +543,14 @@ Present the final summary:
 - **Delegate, don't generate.** The coordinator never creates domain-specific files itself. Each agent's `bootstrap` skill is responsible for its own domain directory and `CLAUDE.md`. The coordinator only produces shared cross-cutting artifacts (listed in Step 5).
 - **Plugin installation determines participation.** If a plugin is installed, it participates. If it is not installed, it does not. The user controls relevance by installing and uninstalling plugins.
 - **Tech context flows downward.** The coordinator assembles tech context from installed agents and project files, confirms it with the user, and passes it to every agent bootstrap. Agents use it or ignore it as appropriate.
+- **Never guess the project from its name.** Establish initial context, shape, and layout with the user (Step 2.4) before deriving anything. The name is a label, not a description — pass the real context down (Step 4) and have bootstraps leave a marked placeholder when context is `unknown`, never an invented purpose.
+- **Defaults are shape-gated, not universal.** Only org defaults the project's shape calls for flow into the tech context and tooling register. Vercel and Playwright need a `web-frontend`; Moon needs a `monorepo`. GitHub Actions and SonarCloud are the only universal defaults. The tooling register, seeded from shape, is the per-project source of truth the conventions rule defers to.
 - **Idempotent by default.** The manifest tracks what has been done. Re-runs only process new or updated agents. Use `--force` to re-run everything. Never duplicate work.
 - **Safe merge, never overwrite.** When updating existing files, review existing content and merge in missing sections. Never clobber existing files. Existing content represents decisions already made.
 - **Every coordinator-generated file gets the marker comment.** `<!-- Generated by bootstrap-project. Review and customize. -->` at the top. Agent-generated files follow their own conventions.
 - **Respect phase order, read it from the skill.** Sequence by each bootstrap skill's declared `bootstrap-phase`, ordered by the canonical phase list in Step 4. Foundations first, governance last, so later agents can reference earlier artifacts. Never hardcode which plugin belongs to which phase — that membership lives in the plugin's own frontmatter, which is what keeps downstream marketplaces working without editing this skill.
 - **Never silently skip a bootstrap.** A plugin with a missing or unknown `bootstrap-phase` still runs (in the default slot before governance) and emits a warning. Absence of a phase is a prompt to fix the frontmatter, not a reason to drop the plugin.
-- **No plugin writes a shared file; collisions cannot happen.** Where a domain doc is contributed to by several plugins, each writes only its own fragment under `docs/<domain>/_sections/<plugin>.md` — disjoint paths. The coordinator assembles the domain `CLAUDE.md` from the fragments in Step 4.5. There is no shared write to race on, so bootstraps need no ownership rules, no sequencing for safety, and no after-the-fact content merge. Adding a plugin to a domain is just one more fragment.
+- **No plugin writes a domain `CLAUDE.md`; the coordinator assembles every one.** Each bootstrap writes only its own fragment under `docs/<domain>/_sections/<plugin>.md` — disjoint paths, whether the domain has one contributing plugin or five. The coordinator assembles the domain `CLAUDE.md` from the fragments in Step 4.5. There is no shared write to race on, so bootstraps need no ownership rules, no sequencing for safety, and no after-the-fact content merge. A single-plugin domain is just a domain with one fragment; adding a plugin to a domain is one more fragment. This uniformity is what removed the surprise placeholder `CLAUDE.md` files that single-plugin bootstraps used to write directly.
 - **CHANGELOG.md uses [Keep a Changelog](https://keepachangelog.com/) format.** Sections: Added, Changed, Deprecated, Removed, Fixed, Security. Start with `## [Unreleased]`.
 - **SECURITY.md follows [GitHub conventions](https://docs.github.com/en/code-security/getting-started/adding-a-security-policy-to-your-repository).** Include supported versions, reporting process, and expected response time.
 - **Always confirm the work plan.** Present the classified agent table and wait for user confirmation before executing. This prevents unexpected changes.
@@ -506,7 +559,8 @@ Present the final summary:
 ## Output Format
 
 1. Installed plugins table (Step 1).
-2. Tech context table derived from installed agents and project files (Step 2.5).
+2. Project context, shape, and layout — confirmed with the user (Step 2.4).
+3. Tech context table derived from installed agents and project files (Step 2.5).
 3. Combined tech context + work plan — wait for user confirmation (Step 3).
 4. Per-phase execution log (Step 4).
 5. Summary table of all files created/merged, agent execution results, and numbered next steps (Step 7).

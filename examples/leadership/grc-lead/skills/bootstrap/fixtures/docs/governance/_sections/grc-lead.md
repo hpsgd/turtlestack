@@ -1,6 +1,4 @@
-# Infrastructure Domain
-
-This directory contains infrastructure documentation for the project.
+<!-- grc-lead fragment of the governance domain doc. Assembled into docs/governance/CLAUDE.md by the coordinator. -->
 
 ## Custom team notes
 

@@ -1,10 +1,10 @@
 # Bootstrap
 
-Scenario: A synthetic project root at `{workspace}/work/` is pre-staged with a partial `docs/performance/CLAUDE.md` containing a user-authored section. The performance-engineer bootstrap skill should preserve that user content while appending the template's missing sections (with a merge marker), and should create the file the fixture is missing — `performance-budget.md`. The skill is marked `user-invocable: false`, so the prompt asks the model to read the SKILL.md directly and execute its process. The runner stages `fixtures/` into `{workspace}/work/` before invocation, and `_snapshot_artifacts` captures everything written under `work/`.
+Scenario: A synthetic project root at `{workspace}/work/` is pre-staged with a partial `docs/performance/_sections/performance-engineer.md` fragment containing a user-authored section. The performance-engineer bootstrap skill should preserve that user content while appending the template's missing sections (with a merge marker), and should create the file the fixture is missing — `performance-budget.md`. The performance-engineer never writes `docs/performance/CLAUDE.md` directly — the coordinator assembles it from the fragments in `_sections/`. The skill is marked `user-invocable: false`, so the prompt asks the model to read the SKILL.md directly and execute its process. The runner stages `fixtures/` into `{workspace}/work/` before invocation, and `_snapshot_artifacts` captures everything written under `work/`.
 
 ## Prompt
 
-> The current working directory (`{workspace}/work/`) is the project root for a project called "TestProject". A partial `docs/performance/CLAUDE.md` is already present — it contains a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`.
+> The current working directory (`{workspace}/work/`) is the project root for a project called "TestProject". A partial `docs/performance/_sections/performance-engineer.md` fragment is already present — it contains a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`.
 > 
 > Read the performance-engineer bootstrap skill at `/Users/martin/Projects/turtlestack/plugins/engineering/performance-engineer/skills/bootstrap/SKILL.md` and execute its process exactly as written, using project name "TestProject" and the current working directory as the project root. Apply the safe-merge pattern as documented. Do not pause for confirmation — proceed with all defaults.
 > 
@@ -19,15 +19,17 @@ Captured from a real headless invocation of the skill/agent.
 ## Performance Bootstrap Complete
 
 ### Files created
-- `docs/performance/performance-budget.md` — performance budget template
+- `docs/performance/performance-budget.md` — performance budget template (1,617 bytes)
 
 ### Files merged
-- `docs/performance/CLAUDE.md` — merged 8 missing sections (What This Domain Covers, Core Web Vitals, USE Method, RED Method, Performance Budget Enforcement, Load Testing Conventions, Tooling, Available Skills, Conventions) while preserving user-authored Custom team notes section
+- `docs/performance/_sections/performance-engineer.md` — appended 8 missing H2 sections (What This Domain Covers, Core Web Vitals, USE Method, RED Method, Performance Budget Enforcement, Load Testing Conventions, Tooling, Available Skills, Conventions) with merge marker. User-authored "Custom team notes" section with `USER-EDIT-SENTINEL-DO-NOT-STRIP` preserved and survived the merge.
 
 ### Next steps
-- Fill in performance budgets based on project requirements
+- Fill in performance budgets based on project requirements in `docs/performance/performance-budget.md`
 - Set up Lighthouse CI in GitHub Actions
 - Use `/performance-engineer:load-test-plan` for load testing
+- Use `/performance-engineer:performance-profile` to profile and analyse performance
+- Use `/performance-engineer:capacity-plan` for capacity planning
 
 ### Artifacts written
 
@@ -35,8 +37,6 @@ Captured from a real headless invocation of the skill/agent.
 
 ```
 # Performance Budget — TestProject
-
-> Replace [Project Name] with the actual project name.
 
 ## Frontend Budget
 
@@ -102,12 +102,10 @@ Captured from a real headless invocation of the skill/agent.
 
 ```
 
-#### `work/docs/performance/CLAUDE.md`
+#### `work/docs/performance/_sections/performance-engineer.md`
 
 ```
-# Performance Domain
-
-This directory contains performance documentation for the project.
+<!-- performance-engineer fragment of the performance domain doc. Assembled into docs/performance/CLAUDE.md by the coordinator. -->
 
 ## Custom team notes
 
@@ -222,27 +220,31 @@ Performance budgets are enforced as CI gates:
 | Field | Value |
 |---|---|
 | Verdict | PASS |
-| Score | 9.5/9.5 (100%) |
-| Evaluated | 2026-05-13 |
-| Target duration | 50477 ms |
-| Target cost | $0.1444 |
+| Score | 11.5/11.5 (100%) |
+| Evaluated | 2026-06-15 |
+| Target model | claude-haiku-4-5-20251001 |
+| Judge model | claude-sonnet-4-6 |
+| Target duration | 43348 ms |
+| Target cost | $0.0929 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | After bootstrap, `docs/performance/CLAUDE.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | Artifact `work/docs/performance/CLAUDE.md` contains the exact line `USER-EDIT-SENTINEL-DO-NOT-STRIP` within the preserved 'Custom team notes' section. |
-| c2 | After bootstrap, `docs/performance/CLAUDE.md` contains the safe-merge marker `<!-- Merged from performance-engineer bootstrap v0.1.0 -->` — sections missing from the fixture were appended, not silently merged | PASS | Artifact contains `<!-- Merged from performance-engineer bootstrap v0.1.0 -->` on a line immediately after the user-authored section. |
-| c3 | After bootstrap, `docs/performance/CLAUDE.md` contains the appended template sections — at minimum the "Core Web Vitals" and "USE Method (Infrastructure)" headings now appear alongside the preserved user content | PASS | Artifact contains both `## Core Web Vitals` and `## USE Method (Infrastructure)` headings after the safe-merge marker, alongside the preserved user content. |
-| c4 | After bootstrap, `docs/performance/performance-budget.md` exists and was created from the skill's template | PASS | Artifact `work/docs/performance/performance-budget.md` is present and contains `# Performance Budget — TestProject` from the skill's template. |
-| c5 | The created `performance-budget.md` contains a "## Frontend Budget" section and a "## Backend Budget" section | PASS | Artifact contains both `## Frontend Budget` with Core Web Vitals/Bundle Size tables and `## Backend Budget` with API Response Times/Throughput tables. |
-| c6 | Chat output includes a manifest summary (`## Performance Bootstrap Complete`) that lists files created and files merged | PASS | Chat response opens with `## Performance Bootstrap Complete` followed by `### Files created` and `### Files merged` subsections. |
-| c7 | Chat output includes a `### Next steps` section pointing to relevant next actions (e.g. filling in budgets, setting up Lighthouse CI, or using `/performance-engineer:load-test-plan`) | PASS | `### Next steps` lists: fill in performance budgets, set up Lighthouse CI in GitHub Actions, use `/performance-engineer:load-test-plan`. |
-| c8 | Output names each created and merged file individually — a bare "bootstrap complete" without the per-file manifest is not enough | PASS | Output names `docs/performance/performance-budget.md` under Files created and `docs/performance/CLAUDE.md` under Files merged, each with a description. |
-| c9 | Output does not claim it overwrote or replaced `docs/performance/CLAUDE.md` — the language reflects merge, not replacement | PASS | Output states 'merged 8 missing sections … while preserving user-authored Custom team notes section' — explicit merge language, no overwrite claim. |
-| c10 | Output points the reader at next steps consistent with the skill's documented manifest (Lighthouse CI setup, load test plan skill) | PARTIAL | Next steps explicitly mention 'Set up Lighthouse CI in GitHub Actions' and 'Use `/performance-engineer:load-test-plan` for load testing' — both documented manifest items present. |
+| c1 | After bootstrap, `docs/performance/_sections/performance-engineer.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | Artifact shows 'USER-EDIT-SENTINEL-DO-NOT-STRIP' on its own line under '## Custom team notes', followed by the full user-authored paragraph unchanged. |
+| c2 | After bootstrap, `docs/performance/_sections/performance-engineer.md` contains the safe-merge marker `<!-- Merged from performance-engineer bootstrap v0.1.0 -->` — sections missing from the fixture were appended, not silently merged | PASS | Artifact contains exactly '<!-- Merged from performance-engineer bootstrap v0.1.0 -->' as a standalone comment line before the appended sections. |
+| c3 | After bootstrap, `docs/performance/_sections/performance-engineer.md` contains the appended template sections — at minimum the "Core Web Vitals" and "USE Method (Infrastructure)" headings now appear alongside the preserved user content | PASS | Artifact shows '## Core Web Vitals' and '## USE Method (Infrastructure)' headings both present after the merge marker, alongside the preserved user content. |
+| c4 | The performance-engineer fragment is authored at H2 and below — it does not introduce a `# Performance Domain` H1 (the coordinator generates that when it assembles `docs/performance/CLAUDE.md`) | PASS | Artifact begins with an HTML comment, then '## Custom team notes'. No H1 heading appears anywhere in the file. |
+| c5 | The skill does NOT write `docs/performance/CLAUDE.md` directly — that file is the coordinator's to assemble from `_sections/` | PASS | ARTIFACTS WRITTEN section lists only two files: 'work/docs/performance/performance-budget.md' and 'work/docs/performance/_sections/performance-engineer.md'. No CLAUDE.md written. |
+| c6 | After bootstrap, `docs/performance/performance-budget.md` exists and was created from the skill's template | PASS | Artifact 'work/docs/performance/performance-budget.md' is present with full content. Chat output lists it under '### Files created'. |
+| c7 | The created `performance-budget.md` contains a "## Frontend Budget" section and a "## Backend Budget" section | PASS | Artifact shows '## Frontend Budget' covering Core Web Vitals, Bundle Size, Resource Limits, and '## Backend Budget' covering API Response Times and Throughput. |
+| c8 | Chat output includes a manifest summary (`## Performance Bootstrap Complete`) that lists files created and files merged | PASS | Chat output opens with '## Performance Bootstrap Complete', followed by '### Files created' and '### Files merged' subsections. |
+| c9 | Chat output includes a `### Next steps` section pointing to relevant next actions (e.g. filling in budgets, setting up Lighthouse CI, or using `/performance-engineer:load-test-plan`) | PASS | '### Next steps' lists filling in budgets, 'Set up Lighthouse CI in GitHub Actions', and using '/performance-engineer:load-test-plan' and '/performance-engineer:performance-profile'. |
+| c10 | Output names each created and merged file individually — a bare "bootstrap complete" without the per-file manifest is not enough | PASS | Chat output names 'docs/performance/performance-budget.md' under created and 'docs/performance/_sections/performance-engineer.md' under merged, each with descriptive detail. |
+| c11 | Output does not claim it overwrote or replaced `docs/performance/_sections/performance-engineer.md` — the language reflects merge, not replacement | PASS | Chat uses 'Files merged', 'appended 8 missing H2 sections', and 'preserved and survived the merge' — no overwrite or replacement language anywhere. |
+| c12 | Output points the reader at next steps consistent with the skill's documented manifest (Lighthouse CI setup, load test plan skill) | PARTIAL | Next steps include 'Set up Lighthouse CI in GitHub Actions' and 'Use `/performance-engineer:load-test-plan` for load testing' — both explicitly named. |
 
 ### Notes
 
-The skill executed flawlessly: the sentinel was preserved, the merge marker applied, all template sections appended, and the missing file created. The manifest summary in chat was well-structured and accurate.
+The skill executed flawlessly: sentinel preserved, merge marker present, template sections appended, no CLAUDE.md written, performance-budget.md created with correct structure, and manifest summary fully formed. All criteria met at ceiling.

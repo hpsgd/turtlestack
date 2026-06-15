@@ -1,10 +1,10 @@
 # Bootstrap
 
-Scenario: A synthetic project root at `{workspace}/work/` is pre-staged with a partial `docs/release/CLAUDE.md` containing a user-authored section. The release-manager bootstrap skill should preserve that user content while appending the template's missing sections (with a merge marker), and should create the two files the fixture is missing — `CHANGELOG.md` (project root) and `docs/release/release-checklist.md`. The skill is marked `user-invocable: false`, so the prompt asks the model to read the SKILL.md directly and execute its process. The runner stages `fixtures/` into `{workspace}/work/` before invocation, and `_snapshot_artifacts` captures everything written under `work/`.
+Scenario: A synthetic project root at `{workspace}/work/` is pre-staged with a partial `docs/release/_sections/release-manager.md` fragment containing a user-authored section. The release-manager bootstrap skill should preserve that user content while appending the template's missing sections (with a merge marker), and should create the two files the fixture is missing — `CHANGELOG.md` (project root) and `docs/release/release-checklist.md`. The release-manager never writes `docs/release/CLAUDE.md` directly — the coordinator assembles it from the fragments in `_sections/`. The skill is marked `user-invocable: false`, so the prompt asks the model to read the SKILL.md directly and execute its process. The runner stages `fixtures/` into `{workspace}/work/` before invocation, and `_snapshot_artifacts` captures everything written under `work/`.
 
 ## Prompt
 
-> The current working directory (`{workspace}/work/`) is the project root for a project called "TestProject". A partial `docs/release/CLAUDE.md` is already present — it contains a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`.
+> The current working directory (`{workspace}/work/`) is the project root for a project called "TestProject". A partial `docs/release/_sections/release-manager.md` fragment is already present — it contains a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`.
 > 
 > Read the release-manager bootstrap skill at `/Users/martin/Projects/turtlestack/plugins/engineering/release-manager/skills/bootstrap/SKILL.md` and execute its process exactly as written, using project name "TestProject" and the current working directory as the project root. Apply the safe-merge pattern as documented. Do not pause for confirmation — proceed with all defaults.
 > 
@@ -20,10 +20,11 @@ Captured from a real headless invocation of the skill/agent.
 
 ### Files created
 - `CHANGELOG.md` — Keep a Changelog format (project root)
+- `docs/release/_sections/release-manager.md` — release-manager fragment (coordinator assembles `docs/release/CLAUDE.md` from it)
 - `docs/release/release-checklist.md` — release checklist template
 
 ### Files merged
-- `docs/release/CLAUDE.md` — appended missing sections (What This Domain Covers, Semantic Versioning, Keep a Changelog Format, Release Process, Rollback Procedures, DORA Metrics, Tooling, Available Skills, Conventions). User-authored "Custom team notes" section preserved with safe-merge sentinel intact.
+- `docs/release/_sections/release-manager.md` — preserved existing "Custom team notes" section with USER-EDIT-SENTINEL-DO-NOT-STRIP; appended missing template sections with merge marker
 
 ### Next steps
 - Use `/release-manager:release-plan` for upcoming releases
@@ -120,12 +121,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ```
 
-#### `work/docs/release/CLAUDE.md`
+#### `work/docs/release/_sections/release-manager.md`
 
 ```
-# Release Domain
+<!-- release-manager fragment of the release domain doc. Assembled into docs/release/CLAUDE.md by the coordinator. -->
 
-This directory contains release management documentation: release process, checklists, and versioning conventions.
+## Custom team notes
+
+USER-EDIT-SENTINEL-DO-NOT-STRIP
+
+This section was written by the team and must survive any bootstrap re-run.
+It exists to test the safe-merge contract: the bootstrap skill must not
+overwrite or remove user-authored content.
+
+<!-- Merged from release-manager bootstrap v0.1.0 -->
 
 ## What This Domain Covers
 
@@ -241,16 +250,6 @@ Track these four key metrics:
 - Release branches (if used) are named `release/vX.Y.Z`
 - Post-release monitoring period is 24 hours minimum
 
-<!-- Merged from release-manager bootstrap v0.1.0 -->
-
-## Custom team notes
-
-USER-EDIT-SENTINEL-DO-NOT-STRIP
-
-This section was written by the team and must survive any bootstrap re-run.
-It exists to test the safe-merge contract: the bootstrap skill must not
-overwrite or remove user-authored content.
-
 ```
 
 ## Evaluation
@@ -258,26 +257,30 @@ overwrite or remove user-authored content.
 | Field | Value |
 |---|---|
 | Verdict | PASS |
-| Score | 9.0/9.0 (100%) |
-| Evaluated | 2026-05-13 |
-| Target duration | 52671 ms |
-| Target cost | $0.1550 |
+| Score | 10.5/10.5 (100%) |
+| Evaluated | 2026-06-15 |
+| Target model | claude-haiku-4-5-20251001 |
+| Judge model | claude-sonnet-4-6 |
+| Target duration | 47821 ms |
+| Target cost | $0.1110 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | After bootstrap, `docs/release/CLAUDE.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | Artifact `work/docs/release/CLAUDE.md` contains `USER-EDIT-SENTINEL-DO-NOT-STRIP` in the '## Custom team notes' section at the bottom of the file. |
-| c2 | After bootstrap, `docs/release/CLAUDE.md` contains the safe-merge marker `<!-- Merged from release-manager bootstrap v0.1.0 -->` — sections missing from the fixture were appended, not silently merged | PASS | Artifact contains `<!-- Merged from release-manager bootstrap v0.1.0 -->` immediately before the preserved `## Custom team notes` section. |
-| c3 | After bootstrap, `docs/release/CLAUDE.md` contains the appended template sections — at minimum the "Semantic Versioning" and "Release Process" headings now appear alongside the preserved user content | PASS | Artifact contains `## Semantic Versioning` and `## Release Process` headings, plus What This Domain Covers, Keep a Changelog Format, Rollback Procedures, DORA Metrics, Tooling, Available Skills, and Conventions. |
-| c4 | After bootstrap, `CHANGELOG.md` exists at the project root and was created from the skill's template (contains `## [Unreleased]` and the standard Keep a Changelog categories) | PASS | Artifact `work/CHANGELOG.md` contains `## [Unreleased]` with subsections Added, Changed, Deprecated, Removed, Fixed, Security. |
-| c5 | After bootstrap, `docs/release/release-checklist.md` exists and was created from the skill's template (contains a `## Go/No-Go Decision` section and the participant sign-off table) | PASS | Artifact `work/docs/release/release-checklist.md` contains `## Go/No-Go Decision` with a table listing Engineering lead, QA lead, Product owner rows. |
-| c6 | Chat output includes a manifest summary that distinguishes files created (`CHANGELOG.md`, `release-checklist.md`) from files merged (`CLAUDE.md`) | PASS | Chat response has separate `### Files created` and `### Files merged` sections, listing CHANGELOG.md and release-checklist.md under created, CLAUDE.md under merged. |
-| c7 | Output names each created and merged file individually — a bare "bootstrap complete" without the per-file manifest is not enough | PASS | Each file is individually named with a description: `CHANGELOG.md`, `docs/release/release-checklist.md`, and `docs/release/CLAUDE.md` all listed separately. |
-| c8 | Output does not claim it overwrote or replaced `docs/release/CLAUDE.md` — the language reflects merge, not replacement | PASS | Output says 'appended missing sections' and 'User-authored "Custom team notes" section preserved with safe-merge sentinel intact' — no overwrite/replace language. |
-| c9 | Output points the reader at next steps (using `/release-manager:release-plan`, customising checklist participants, setting up GitHub Actions release workflow) consistent with the skill's documented manifest | PARTIAL | Next steps section lists all three: `/release-manager:release-plan`, 'Customise go/no-go participants in the checklist', 'Set up GitHub Actions release workflow'. |
+| c1 | After bootstrap, `docs/release/_sections/release-manager.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | Artifact shows 'USER-EDIT-SENTINEL-DO-NOT-STRIP' on its own line inside the '## Custom team notes' section, with surrounding user content intact. |
+| c2 | After bootstrap, `docs/release/_sections/release-manager.md` contains the safe-merge marker `<!-- Merged from release-manager bootstrap v0.1.0 -->` — sections missing from the fixture were appended, not silently merged | PASS | Artifact contains exact line '<!-- Merged from release-manager bootstrap v0.1.0 -->' between the user section and the appended template content. |
+| c3 | After bootstrap, `docs/release/_sections/release-manager.md` contains the appended template sections — at minimum the "Semantic Versioning" and "Release Process" headings now appear alongside the preserved user content | PASS | Artifact contains '## Semantic Versioning' and '## Release Process' headings after the merge marker, alongside the preserved user '## Custom team notes' section. |
+| c4 | The release-manager fragment is authored at H2 and below — it does not introduce a `# Release Domain` H1 (the coordinator generates that when it assembles `docs/release/CLAUDE.md`) | PASS | All headings in the artifact are `##` level (e.g. '## Custom team notes', '## Semantic Versioning'). No `#` H1 heading present — file starts with an HTML comment. |
+| c5 | The skill does NOT write `docs/release/CLAUDE.md` directly — that file is the coordinator's to assemble from `_sections/` | PASS | Artifacts written are: work/CHANGELOG.md, work/docs/release/release-checklist.md, work/docs/release/_sections/release-manager.md. No docs/release/CLAUDE.md artifact present. |
+| c6 | After bootstrap, `CHANGELOG.md` exists at the project root and was created from the skill's template (contains `## [Unreleased]` and the standard Keep a Changelog categories) | PASS | work/CHANGELOG.md artifact contains '## [Unreleased]' and all six categories: '### Added', '### Changed', '### Deprecated', '### Removed', '### Fixed', '### Security'. |
+| c7 | After bootstrap, `docs/release/release-checklist.md` exists and was created from the skill's template (contains a `## Go/No-Go Decision` section and the participant sign-off table) | PASS | Artifact contains '## Go/No-Go Decision' and a markdown table with rows for 'Engineering lead', 'QA lead', 'Product owner' with Decision/Notes columns. |
+| c8 | Chat output includes a manifest summary that distinguishes files created (`CHANGELOG.md`, `release-checklist.md`) from files merged (`_sections/release-manager.md`) | PASS | Chat output has distinct '### Files created' and '### Files merged' sections. The fragment also appears under 'Files created' (minor inconsistency) but the merged section correctly identifies the merge. |
+| c9 | Output names each created and merged file individually — a bare "bootstrap complete" without the per-file manifest is not enough | PASS | Each file is individually named with a description: 'CHANGELOG.md', 'docs/release/_sections/release-manager.md', 'docs/release/release-checklist.md' in created; fragment in merged. |
+| c10 | Output does not claim it overwrote or replaced `docs/release/_sections/release-manager.md` — the language reflects merge, not replacement | PASS | Under '### Files merged': 'preserved existing "Custom team notes" section with USER-EDIT-SENTINEL-DO-NOT-STRIP; appended missing template sections with merge marker' — merge language throughout. |
+| c11 | Output points the reader at next steps (using `/release-manager:release-plan`, customising checklist participants, setting up GitHub Actions release workflow) consistent with the skill's documented manifest | PARTIAL | '### Next steps' lists all three: '/release-manager:release-plan', 'Customise go/no-go participants in the checklist', 'Set up GitHub Actions release workflow'. |
 
 ### Notes
 
-The skill executed flawlessly across all criteria: user content preserved, merge marker present, template sections appended, both new files created with correct structure, and the manifest summary clearly distinguishes created from merged files. The PARTIAL ceiling on c9 is the only scoring cap applied, and the output fully satisfies even that criterion.
+All criteria pass cleanly. The only minor inconsistency is that the fragment file appears under both 'Files created' and 'Files merged' in the chat summary, but this does not prevent c8 from passing since the distinction between created and merged sections is clearly present.

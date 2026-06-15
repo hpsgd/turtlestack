@@ -1,7 +1,7 @@
 ---
 name: bootstrap
 bootstrap-phase: engineering
-description: "Bootstrap the code review documentation structure for a project. Creates docs/code-review/, generates initial templates, and writes domain CLAUDE.md. Idempotent — merges missing sections into existing files without overwriting."
+description: "Bootstrap the code review documentation structure for a project. Creates docs/code-review/, generates initial templates, and writes the code-reviewer fragment of the code-review domain doc (the coordinator assembles docs/code-review/CLAUDE.md). Idempotent — merges missing sections into existing files without overwriting."
 argument-hint: "[project name]"
 user-invocable: false
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
@@ -41,7 +41,7 @@ If the scan is ambiguous (e.g. both `package.json` and `pyproject.toml` exist bu
 ### Step 2: Create docs directory
 
 ```bash
-mkdir -p docs/code-review
+mkdir -p docs/code-review docs/code-review/_sections
 ```
 
 ### Step 3: Create or merge files
@@ -51,15 +51,15 @@ For each file below, apply the safe merge pattern:
 - If file does not exist, create from template
 - If file exists, read it, find sections in the template that are missing, append missing sections with `<!-- Merged from code-reviewer bootstrap v0.1.0 -->`
 
-#### File 1: `docs/code-review/CLAUDE.md`
+#### Fragment: `docs/code-review/_sections/code-reviewer.md`
 
-Create with this content (adapt linter commands to detected languages):
+`docs/code-review/CLAUDE.md` is **assembled by the coordinator** from the fragments in `_sections/` — no plugin
+writes it directly. Write the code-reviewer's contribution as this fragment (adapt linter commands to detected
+languages). It starts at H2 (the coordinator generates the `# Code Review Domain` H1 and a one-line intro).
+This domain owns *how* reviews are run, not *what* the code should look like — coding rules live in
+`coding-standards`. Create it with this content:
 
 ```markdown
-# Code Review
-
-This domain covers the review process, tooling configuration, and quality scoring. Coding rules and conventions live in `coding-standards` — this domain owns *how* reviews are run, not *what* the code should look like.
-
 ## Linter and formatter commands
 
 Run these before opening a PR. CI runs them too, but catching issues locally is faster.
@@ -231,7 +231,7 @@ After creating/merging all files, output a summary:
 ## Code Review Bootstrap Complete
 
 ### Files created
-- `docs/code-review/CLAUDE.md` — review process, scoring, tooling config
+- `docs/code-review/_sections/code-reviewer.md` — code-reviewer fragment (coordinator assembles `docs/code-review/CLAUDE.md` from it)
 - `docs/code-review/review-checklist.md` — per-PR checklist
 - `docs/code-review/pr-template.md` — suggested PR template
 
@@ -245,7 +245,7 @@ After creating/merging all files, output a summary:
 - (note whether .github/PULL_REQUEST_TEMPLATE.md exists and what action was taken)
 
 ### Next steps
-- Remove language sections from CLAUDE.md and checklist that don't apply
+- Remove language sections from the `_sections/code-reviewer.md` fragment and checklist that don't apply
 - Review and install the PR template if .github/PULL_REQUEST_TEMPLATE.md doesn't exist
 - Configure SonarCloud quality gates to match the scoring thresholds
 - Use `/code-reviewer:code-review` during PR reviews

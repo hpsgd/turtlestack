@@ -1,7 +1,7 @@
 ---
 name: bootstrap
 bootstrap-phase: engineering
-description: "Bootstrap the quality documentation structure for a project. Creates docs/quality/, generates initial templates, and writes domain CLAUDE.md. Idempotent — merges missing sections into existing files without overwriting."
+description: "Bootstrap the quality documentation structure for a project. Creates docs/quality/, generates initial templates, and writes the qa-lead fragment of the quality domain doc (the coordinator assembles docs/quality/CLAUDE.md). Idempotent — merges missing sections into existing files without overwriting."
 argument-hint: "[project name]"
 user-invocable: false
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
@@ -16,7 +16,7 @@ Bootstrap the quality documentation structure for **$ARGUMENTS**.
 ### Step 1: Check and create domain directory
 
 ```bash
-mkdir -p docs/quality
+mkdir -p docs/quality docs/quality/_sections
 ```
 
 ### Step 2: Create or merge files
@@ -25,15 +25,13 @@ For each file below, apply the safe merge pattern:
 - If file does not exist → create from template
 - If file exists → read both, find sections in template missing from file, append missing sections with `<!-- Merged from qa-lead bootstrap v0.1.0 -->`
 
-#### File 1: `docs/quality/CLAUDE.md`
+#### Fragment: `docs/quality/_sections/qa-lead.md`
 
-Create with this content (~130 lines):
+`docs/quality/CLAUDE.md` is **assembled by the coordinator** from the fragments in `_sections/` — no plugin
+writes it directly. Write the qa-lead's contribution as this fragment. It starts at H2 (the coordinator
+generates the `# Quality Domain` H1 and a one-line intro). Create it with this content:
 
 ```markdown
-# Quality Domain
-
-This directory contains quality assurance documentation: test strategy, quality gates, and definitions of ready/done.
-
 ## What This Domain Covers
 
 - **Test strategy** — overall approach to testing across the project
@@ -357,7 +355,7 @@ After creating/merging all files, output a summary:
 ## Quality Bootstrap Complete
 
 ### Files created
-- `docs/quality/CLAUDE.md` — domain conventions and skill reference
+- `docs/quality/_sections/qa-lead.md` — qa-lead fragment (coordinator assembles `docs/quality/CLAUDE.md` from it)
 - `docs/quality/test-strategy.md` — test strategy template
 - `docs/quality/definition-of-ready.md` — Definition of Ready checklist
 - `docs/quality/definition-of-done.md` — Definition of Done checklist

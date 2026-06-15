@@ -1,7 +1,7 @@
 ---
 name: bootstrap
 bootstrap-phase: stack
-description: "Bootstrap the AI/ML documentation structure for a project. Creates docs/ai/, generates initial templates, and writes domain CLAUDE.md. Idempotent — merges missing sections into existing files without overwriting."
+description: "Bootstrap the AI/ML documentation structure for a project. Creates docs/ai/, generates initial templates, and writes the ai-engineer fragment of the ai domain doc (the coordinator assembles docs/ai/CLAUDE.md). Idempotent — merges missing sections into existing files without overwriting."
 argument-hint: "[project name]"
 user-invocable: false
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
@@ -16,7 +16,7 @@ Bootstrap the AI/ML documentation structure for **$ARGUMENTS**.
 ### Step 1: Check and create domain directory
 
 ```bash
-mkdir -p docs/ai
+mkdir -p docs/ai docs/ai/_sections
 ```
 
 ### Step 2: Create or merge files
@@ -25,15 +25,15 @@ For each file below, apply the safe merge pattern:
 - If file does not exist -> create from template
 - If file exists -> read both, find sections in template missing from file, append missing sections with `<!-- Merged from ai-engineer bootstrap v0.1.0 -->`
 
-#### File 1: `docs/ai/CLAUDE.md`
+#### Fragment: `docs/ai/_sections/ai-engineer.md`
 
-Create with this content (~100 lines):
+`docs/ai/CLAUDE.md` is **assembled by the coordinator** from the fragments in `_sections/` — no plugin writes
+it directly. Write the ai-engineer's contribution as this fragment. It starts at H2 (the coordinator generates
+the `# AI Domain` H1 and a one-line intro — the `domain-title` hint below gives it the acronym). Create it
+with this content:
 
 ```markdown
-# AI Domain
-
-This directory contains AI/ML documentation: prompt engineering conventions, model evaluation frameworks, RAG pipeline design, and AI safety guidelines.
-
+<!-- domain-title: AI -->
 ## What This Domain Covers
 
 - **Prompt engineering** — design patterns, versioning, and testing
@@ -265,7 +265,7 @@ After creating/merging all files, output a summary:
 ## AI Engineer Bootstrap Complete
 
 ### Files created
-- `docs/ai/CLAUDE.md` — domain conventions and skill reference
+- `docs/ai/_sections/ai-engineer.md` — ai-engineer fragment (coordinator assembles `docs/ai/CLAUDE.md` from it)
 - `docs/ai/prompt-library.md` — prompt catalogue template
 - `docs/ai/eval-suite-template.md` — model evaluation suite template
 

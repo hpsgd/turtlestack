@@ -1,10 +1,10 @@
 # Bootstrap
 
-Scenario: A synthetic project root at `{workspace}/work/` is pre-staged with a partial `docs/quality/CLAUDE.md` containing a user-authored section. The qa-lead bootstrap skill should preserve that user content while appending the template's missing sections (with a merge marker), and should create the four files the fixture is missing — `test-strategy.md`, `definition-of-ready.md`, `definition-of-done.md`, and `quality-gates.md`. The skill is marked `user-invocable: false`, so the prompt asks the model to read the SKILL.md directly and execute its process. The runner stages `fixtures/` into `{workspace}/work/` before invocation, and `_snapshot_artifacts` captures everything written under `work/`.
+Scenario: A synthetic project root at `{workspace}/work/` is pre-staged with a partial `docs/quality/_sections/qa-lead.md` fragment containing a user-authored section. The qa-lead bootstrap skill should preserve that user content while appending the template's missing sections (with a merge marker), and should create the four files the fixture is missing — `test-strategy.md`, `definition-of-ready.md`, `definition-of-done.md`, and `quality-gates.md`. The qa-lead never writes `docs/quality/CLAUDE.md` directly — the coordinator assembles it from the fragments in `_sections/`. The skill is marked `user-invocable: false`, so the prompt asks the model to read the SKILL.md directly and execute its process. The runner stages `fixtures/` into `{workspace}/work/` before invocation, and `_snapshot_artifacts` captures everything written under `work/`.
 
 ## Prompt
 
-> The current working directory (`{workspace}/work/`) is the project root for a project called "TestProject". A partial `docs/quality/CLAUDE.md` is already present — it contains a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`.
+> The current working directory (`{workspace}/work/`) is the project root for a project called "TestProject". A partial `docs/quality/_sections/qa-lead.md` fragment is already present — it contains a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`.
 > 
 > Read the qa-lead bootstrap skill at `/Users/martin/Projects/turtlestack/plugins/engineering/qa-lead/skills/bootstrap/SKILL.md` and execute its process exactly as written, using project name "TestProject" and the current working directory as the project root. Apply the safe-merge pattern as documented. Do not pause for confirmation — proceed with all defaults.
 > 
@@ -16,9 +16,6 @@ Captured from a real headless invocation of the skill/agent.
 
 ### Chat response
 
-**Step 3: Output manifest summary**
-
-```
 ## Quality Bootstrap Complete
 
 ### Files created
@@ -28,15 +25,13 @@ Captured from a real headless invocation of the skill/agent.
 - `docs/quality/quality-gates.md` — quality gate definitions
 
 ### Files merged
-- `docs/quality/CLAUDE.md` — domain conventions and skill reference (7 sections appended with safe-merge marker)
+- `docs/quality/_sections/qa-lead.md` — qa-lead fragment (sections appended via safe-merge pattern, user-authored "Custom team notes" section preserved)
 
 ### Next steps
-- Fill in `test-strategy.md` with project-specific tools and scope
+- Fill in `test-strategy.md` with TestProject-specific tools and scope
 - Customise coverage thresholds in `quality-gates.md`
 - Use `/qa-lead:test-strategy` to elaborate the test strategy
-```
-
-Bootstrap complete. All 5 files are now in place. The existing `docs/quality/CLAUDE.md` preserved the user-authored "Custom team notes" section with the sentinel marker intact, and all missing template sections were appended after it.
+- The coordinator will assemble `docs/quality/CLAUDE.md` from the `_sections/qa-lead.md` fragment
 
 ### Artifacts written
 
@@ -175,12 +170,51 @@ A user story is **ready** for development when ALL of the following are true:
 
 ```
 
-#### `work/docs/quality/CLAUDE.md`
+#### `work/docs/quality/definition-of-done.md`
 
 ```
-# Quality Domain
+# Definition of Done
 
-This directory contains quality assurance documentation for the project.
+A user story is **done** when ALL of the following are true:
+
+## Code
+
+- [ ] Code implemented according to acceptance criteria
+- [ ] Code peer-reviewed and approved
+- [ ] No TODO/FIXME comments left without a linked issue
+
+## Testing
+
+- [ ] Unit tests written and passing
+- [ ] Integration tests written and passing (where applicable)
+- [ ] Acceptance criteria verified (automated preferred)
+- [ ] No regressions in existing tests
+- [ ] Code coverage maintained or improved
+
+## Quality
+
+- [ ] SonarCloud quality gate passes
+- [ ] No new critical or blocker issues
+- [ ] Linting and formatting checks pass
+
+## Documentation
+
+- [ ] Public API changes documented
+- [ ] README updated (if behaviour changes)
+- [ ] ADR written (if architectural decision made)
+
+## Deployment
+
+- [ ] Deployed to staging and verified
+- [ ] Feature flag configured (if applicable)
+- [ ] Monitoring/alerting in place (if new service)
+
+```
+
+#### `work/docs/quality/_sections/qa-lead.md`
+
+```
+<!-- qa-lead fragment of the quality domain doc. Assembled into docs/quality/CLAUDE.md by the coordinator. -->
 
 ## Custom team notes
 
@@ -328,73 +362,36 @@ A story is done when:
 
 ```
 
-#### `work/docs/quality/definition-of-done.md`
-
-```
-# Definition of Done
-
-A user story is **done** when ALL of the following are true:
-
-## Code
-
-- [ ] Code implemented according to acceptance criteria
-- [ ] Code peer-reviewed and approved
-- [ ] No TODO/FIXME comments left without a linked issue
-
-## Testing
-
-- [ ] Unit tests written and passing
-- [ ] Integration tests written and passing (where applicable)
-- [ ] Acceptance criteria verified (automated preferred)
-- [ ] No regressions in existing tests
-- [ ] Code coverage maintained or improved
-
-## Quality
-
-- [ ] SonarCloud quality gate passes
-- [ ] No new critical or blocker issues
-- [ ] Linting and formatting checks pass
-
-## Documentation
-
-- [ ] Public API changes documented
-- [ ] README updated (if behaviour changes)
-- [ ] ADR written (if architectural decision made)
-
-## Deployment
-
-- [ ] Deployed to staging and verified
-- [ ] Feature flag configured (if applicable)
-- [ ] Monitoring/alerting in place (if new service)
-
-```
-
 ## Evaluation
 
 | Field | Value |
 |---|---|
 | Verdict | PASS |
-| Score | 10.5/10.5 (100%) |
-| Evaluated | 2026-05-13 |
-| Target duration | 57044 ms |
-| Target cost | $0.1754 |
+| Score | 11.5/11.5 (100%) |
+| Evaluated | 2026-06-15 |
+| Target model | claude-haiku-4-5-20251001 |
+| Judge model | claude-sonnet-4-6 |
+| Target duration | 54306 ms |
+| Target cost | $0.0987 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | After bootstrap, `docs/quality/CLAUDE.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | CLAUDE.md artifact contains 'USER-EDIT-SENTINEL-DO-NOT-STRIP' inside the 'Custom team notes' section, with surrounding user text intact. |
-| c2 | After bootstrap, `docs/quality/CLAUDE.md` contains the safe-merge marker `<!-- Merged from qa-lead bootstrap v0.1.0 -->` — sections missing from the fixture were appended, not silently merged | PASS | CLAUDE.md artifact contains exactly '<!-- Merged from qa-lead bootstrap v0.1.0 -->' after the user-authored section. |
-| c3 | After bootstrap, `docs/quality/CLAUDE.md` contains the appended template sections — at minimum the "Test Pyramid" and "BDD Conventions" headings now appear alongside the preserved user content | PASS | CLAUDE.md artifact contains '## Test Pyramid' and '## BDD Conventions' headings in the appended template sections below the merge marker. |
-| c4 | After bootstrap, all four template files exist: `docs/quality/test-strategy.md`, `docs/quality/definition-of-ready.md`, `docs/quality/definition-of-done.md`, and `docs/quality/quality-gates.md` | PASS | All four files are present as artifacts: test-strategy.md, definition-of-ready.md, definition-of-done.md, and quality-gates.md. |
-| c5 | The created `docs/quality/test-strategy.md` contains the `## 2. Test Levels` heading and references "TestProject" in its title (placeholder was substituted) | PASS | test-strategy.md title is '# Test Strategy — TestProject' and contains '## 2. Test Levels' section. |
-| c6 | The created `docs/quality/quality-gates.md` contains gate definitions — at minimum the "Gate 1: PR Merge" section heading | PASS | quality-gates.md contains '### Gate 1: PR Merge' with a full table of checks and thresholds. |
-| c7 | Chat output includes a manifest summary that distinguishes files created (the four templates) from files merged (`CLAUDE.md`) | PASS | Chat output has '### Files created' listing four files and '### Files merged' listing CLAUDE.md as a distinct section. |
-| c8 | Output names each created and merged file individually — a bare "bootstrap complete" without the per-file manifest is not enough | PASS | Each of the five files is listed individually with a descriptor, e.g. 'docs/quality/test-strategy.md — test strategy template'. |
-| c9 | Output does not claim it overwrote or replaced `docs/quality/CLAUDE.md` — the language reflects merge, not replacement | PASS | Chat says 'existing docs/quality/CLAUDE.md preserved the user-authored section... all missing template sections were appended after it' — merge language throughout. |
-| c10 | Output points the reader at next steps (filling in `test-strategy.md`, customising thresholds in `quality-gates.md`, or using `/qa-lead:test-strategy`) consistent with the skill's documented manifest | PARTIAL | Manifest lists 'Fill in test-strategy.md', 'Customise coverage thresholds in quality-gates.md', and 'Use /qa-lead:test-strategy to elaborate' — all three expected next steps present. |
+| c1 | After bootstrap, `docs/quality/_sections/qa-lead.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | Artifact `work/docs/quality/_sections/qa-lead.md` contains the line `USER-EDIT-SENTINEL-DO-NOT-STRIP` under the `## Custom team notes` section. |
+| c2 | After bootstrap, `docs/quality/_sections/qa-lead.md` contains the safe-merge marker `<!-- Merged from qa-lead bootstrap v0.1.0 -->` — sections missing from the fixture were appended, not silently merged | PASS | Artifact contains the exact line `<!-- Merged from qa-lead bootstrap v0.1.0 -->` immediately after the user-authored section. |
+| c3 | After bootstrap, `docs/quality/_sections/qa-lead.md` contains the appended template sections — at minimum the "Test Pyramid" and "BDD Conventions" headings now appear alongside the preserved user content | PASS | Artifact contains `## Test Pyramid` and `## BDD Conventions` headings alongside the preserved `## Custom team notes` section. |
+| c4 | The qa-lead fragment is authored at H2 and below — it does not introduce a `# Quality Domain` H1 (the coordinator generates that when it assembles `docs/quality/CLAUDE.md`) | PASS | All headings in `_sections/qa-lead.md` artifact are `##` level (`## Custom team notes`, `## Test Pyramid`, `## BDD Conventions`, etc.). No H1 present. |
+| c5 | The skill does NOT write `docs/quality/CLAUDE.md` directly — that file is the coordinator's to assemble from `_sections/` | PASS | No `docs/quality/CLAUDE.md` artifact is listed. Chat output states "The coordinator will assemble `docs/quality/CLAUDE.md` from the `_sections/qa-lead.md` fragment". |
+| c6 | After bootstrap, all four template files exist: `docs/quality/test-strategy.md`, `docs/quality/definition-of-ready.md`, `docs/quality/definition-of-done.md`, and `docs/quality/quality-gates.md` | PASS | All four artifacts are present: `work/docs/quality/test-strategy.md`, `definition-of-ready.md`, `definition-of-done.md`, and `quality-gates.md`. |
+| c7 | The created `docs/quality/test-strategy.md` contains the `## 2. Test Levels` heading and references "TestProject" in its title (placeholder was substituted) | PASS | Artifact title is `# Test Strategy — TestProject` and contains `## 2. Test Levels` heading with a populated table. |
+| c8 | The created `docs/quality/quality-gates.md` contains gate definitions — at minimum the "Gate 1: PR Merge" section heading | PASS | Artifact `quality-gates.md` contains `### Gate 1: PR Merge` with a full table of checks. |
+| c9 | Chat output includes a manifest summary that distinguishes files created (the four templates) from files merged (`_sections/qa-lead.md`) | PASS | Chat output has separate `### Files created` and `### Files merged` sections, clearly distinguishing the four templates from the merged fragment. |
+| c10 | Output names each created and merged file individually — a bare "bootstrap complete" without the per-file manifest is not enough | PASS | Chat output lists all four created files by path and `docs/quality/_sections/qa-lead.md` as the merged file, each on its own bullet. |
+| c11 | Output does not claim it overwrote or replaced `docs/quality/_sections/qa-lead.md` — the language reflects merge, not replacement | PASS | Chat output says "sections appended via safe-merge pattern, user-authored 'Custom team notes' section preserved" — no replacement language. |
+| c12 | Output points the reader at next steps (filling in `test-strategy.md`, customising thresholds in `quality-gates.md`, or using `/qa-lead:test-strategy`) consistent with the skill's documented manifest | PARTIAL | Chat output `### Next steps` lists all three: fill in `test-strategy.md`, customise `quality-gates.md` thresholds, and use `/qa-lead:test-strategy`. |
 
 ### Notes
 
-The skill executed flawlessly: all four template files were created with correct content, CLAUDE.md was merged (not replaced) with both the sentinel and merge marker intact, and the manifest summary correctly distinguished created from merged files. Every criterion passed at its ceiling.
+The skill executed flawlessly across all dimensions: sentinel preservation, merge marker placement, correct heading level, no CLAUDE.md write, all four files created with proper content, and a well-structured manifest. Perfect score constrained only by the PARTIAL ceiling on c12.
