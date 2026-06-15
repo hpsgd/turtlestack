@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.6.0](https://github.com/hpsgd/turtlestack/compare/v3.5.0...v3.6.0) (2026-06-15)
+
+
+### Features
+
+* **bootstrap:** shape-gate tooling defaults and unify the fragment model ([#52](https://github.com/hpsgd/turtlestack/issues/52)) ([e24b4a5](https://github.com/hpsgd/turtlestack/commit/e24b4a506039e0c2882c3c034c33fc31ba7d7263))
+
 ## [3.5.0](https://github.com/hpsgd/turtlestack/compare/v3.4.1...v3.5.0) (2026-06-15)
 
 
