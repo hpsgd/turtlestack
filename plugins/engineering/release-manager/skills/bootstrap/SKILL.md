@@ -1,7 +1,7 @@
 ---
 name: bootstrap
 bootstrap-phase: engineering
-description: "Bootstrap the release documentation structure for a project. Creates docs/release/, generates initial templates and root CHANGELOG.md, and writes domain CLAUDE.md. Idempotent — merges missing sections into existing files without overwriting."
+description: "Bootstrap the release documentation structure for a project. Creates docs/release/, generates initial templates and root CHANGELOG.md, and writes the release-manager fragment of the release domain doc (the coordinator assembles docs/release/CLAUDE.md). Idempotent — merges missing sections into existing files without overwriting."
 argument-hint: "[project name]"
 user-invocable: false
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
@@ -16,7 +16,7 @@ Bootstrap the release documentation structure for **$ARGUMENTS**.
 ### Step 1: Check and create domain directory
 
 ```bash
-mkdir -p docs/release
+mkdir -p docs/release docs/release/_sections
 ```
 
 ### Step 2: Create or merge files
@@ -52,15 +52,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 ```
 
-#### File 2: `docs/release/CLAUDE.md`
+#### Fragment: `docs/release/_sections/release-manager.md`
 
-Create with this content (~100 lines):
+`docs/release/CLAUDE.md` is **assembled by the coordinator** from the fragments in `_sections/` — no plugin
+writes it directly. Write the release-manager's contribution as this fragment. It starts at H2 (the coordinator
+generates the `# Release Domain` H1 and a one-line intro). Create it with this content:
 
 ```markdown
-# Release Domain
-
-This directory contains release management documentation: release process, checklists, and versioning conventions.
-
 ## What This Domain Covers
 
 - **Release process** — how code moves from development to production
@@ -248,7 +246,7 @@ After creating/merging all files, output a summary:
 
 ### Files created
 - `CHANGELOG.md` — Keep a Changelog format (project root)
-- `docs/release/CLAUDE.md` — domain conventions and skill reference
+- `docs/release/_sections/release-manager.md` — release-manager fragment (coordinator assembles `docs/release/CLAUDE.md` from it)
 - `docs/release/release-checklist.md` — release checklist template
 
 ### Files merged

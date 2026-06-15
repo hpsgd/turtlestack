@@ -1,10 +1,10 @@
 # Bootstrap
 
-Scenario: A synthetic project root at `{workspace}/work/` is pre-staged with a partial `docs/ai/CLAUDE.md` containing a user-authored section. The ai-engineer bootstrap skill should preserve that user content while appending the template's missing sections (with a merge marker), and should create the two files the fixture is missing — `prompt-library.md` and `eval-suite-template.md`. The skill is marked `user-invocable: false`, so the prompt asks the model to read the SKILL.md directly and execute its process. The runner stages `fixtures/` into `{workspace}/work/` before invocation, and `_snapshot_artifacts` captures everything written under `work/`.
+Scenario: A synthetic project root at `{workspace}/work/` is pre-staged with a partial `docs/ai/_sections/ai-engineer.md` fragment containing a user-authored section. The ai-engineer bootstrap skill should preserve that user content while appending the template's missing sections (with a merge marker), and should create the two files the fixture is missing — `prompt-library.md` and `eval-suite-template.md`. The ai-engineer never writes `docs/ai/CLAUDE.md` directly — the coordinator assembles it from the fragments in `_sections/`. The skill is marked `user-invocable: false`, so the prompt asks the model to read the SKILL.md directly and execute its process. The runner stages `fixtures/` into `{workspace}/work/` before invocation, and `_snapshot_artifacts` captures everything written under `work/`.
 
 ## Prompt
 
-> The current working directory (`{workspace}/work/`) is the project root for a project called "TestProject". A partial `docs/ai/CLAUDE.md` is already present — it contains a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`.
+> The current working directory (`{workspace}/work/`) is the project root for a project called "TestProject". A partial `docs/ai/_sections/ai-engineer.md` fragment is already present — it contains a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`.
 > 
 > Read the ai-engineer bootstrap skill at `/Users/martin/Projects/turtlestack/plugins/engineering/ai-engineer/skills/bootstrap/SKILL.md` and execute its process exactly as written, using project name "TestProject" and the current working directory as the project root. Apply the safe-merge pattern as documented. Do not pause for confirmation — proceed with all defaults.
 > 
@@ -19,11 +19,12 @@ Captured from a real headless invocation of the skill/agent.
 ## AI Engineer Bootstrap Complete
 
 ### Files created
+- `docs/ai/_sections/ai-engineer.md` — ai-engineer fragment (coordinator assembles `docs/ai/CLAUDE.md` from it)
 - `docs/ai/prompt-library.md` — prompt catalogue template
 - `docs/ai/eval-suite-template.md` — model evaluation suite template
 
 ### Files merged
-- `docs/ai/CLAUDE.md` — domain conventions and skill reference (user-authored "Custom team notes" section preserved; missing sections appended with merge marker)
+- `docs/ai/_sections/ai-engineer.md` — appended bootstrap sections (v0.1.0) while preserving user's "Custom team notes" section with `USER-EDIT-SENTINEL-DO-NOT-STRIP` sentinel
 
 ### Next steps
 - Register production prompts in `prompt-library.md`
@@ -144,12 +145,10 @@ Captured from a real headless invocation of the skill/agent.
 
 ```
 
-#### `work/docs/ai/CLAUDE.md`
+#### `work/docs/ai/_sections/ai-engineer.md`
 
 ```
-# AI Domain
-
-This directory contains AI/ML documentation for the project.
+<!-- ai-engineer fragment of the ai domain doc. Assembled into docs/ai/CLAUDE.md by the coordinator. -->
 
 ## Custom team notes
 
@@ -161,6 +160,7 @@ overwrite or remove user-authored content.
 
 <!-- Merged from ai-engineer bootstrap v0.1.0 -->
 
+<!-- domain-title: AI -->
 ## What This Domain Covers
 
 - **Prompt engineering** — design patterns, versioning, and testing
@@ -277,27 +277,31 @@ Address the [OWASP Top 10 for LLM Applications](https://owasp.org/www-project-to
 | Field | Value |
 |---|---|
 | Verdict | PASS |
-| Score | 9.5/9.5 (100%) |
-| Evaluated | 2026-05-13 |
-| Target duration | 38797 ms |
-| Target cost | $0.1079 |
+| Score | 11.5/11.5 (100%) |
+| Evaluated | 2026-06-15 |
+| Target model | claude-haiku-4-5-20251001 |
+| Judge model | claude-sonnet-4-6 |
+| Target duration | 47800 ms |
+| Target cost | $0.0954 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | After bootstrap, `docs/ai/CLAUDE.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | CLAUDE.md artifact contains `USER-EDIT-SENTINEL-DO-NOT-STRIP` within the preserved '## Custom team notes' section. |
-| c2 | After bootstrap, `docs/ai/CLAUDE.md` contains the safe-merge marker `<!-- Merged from ai-engineer bootstrap v0.1.0 -->` — sections missing from the fixture were appended, not silently merged | PASS | CLAUDE.md artifact contains `<!-- Merged from ai-engineer bootstrap v0.1.0 -->` immediately after the user-authored section. |
-| c3 | After bootstrap, `docs/ai/CLAUDE.md` contains the appended template sections — at minimum the "Prompt Engineering Conventions" and "Model Evaluation" headings now appear alongside the preserved user content | PASS | CLAUDE.md contains `## Prompt Engineering Conventions` and `## Model Evaluation` headings following the merge marker and user content. |
-| c4 | After bootstrap, `docs/ai/prompt-library.md` exists and contains a `## Prompt Registry` heading | PASS | `work/docs/ai/prompt-library.md` artifact exists and contains `## Prompt Registry` heading with a table. |
-| c5 | After bootstrap, `docs/ai/eval-suite-template.md` exists and contains a `## Metrics` heading | PASS | `work/docs/ai/eval-suite-template.md` artifact exists and contains `## Metrics` heading with a metrics table. |
-| c6 | The created `eval-suite-template.md` contains an AI-specific metrics row referencing RAGAS (e.g. `Faithfulness (RAGAS)`) or `## Failure Analysis` | PASS | eval-suite-template.md contains both `Faithfulness (RAGAS)` and `Relevancy (RAGAS)` rows in the Metrics table, plus `## Failure Analysis` section. |
-| c7 | Chat output includes a manifest summary that distinguishes files created (`prompt-library.md`, `eval-suite-template.md`) from files merged (`CLAUDE.md`) | PASS | Chat output has distinct `### Files created` and `### Files merged` sections listing the respective files. |
-| c8 | Output names each created and merged file individually — a bare "bootstrap complete" without the per-file manifest is not enough | PASS | Each file is named individually: `docs/ai/prompt-library.md`, `docs/ai/eval-suite-template.md`, `docs/ai/CLAUDE.md` with per-file descriptions. |
-| c9 | Output does not claim it overwrote or replaced `docs/ai/CLAUDE.md` — the language reflects merge, not replacement | PASS | Output says CLAUDE.md was 'merged' with 'user-authored section preserved; missing sections appended with merge marker' — no overwrite/replace language. |
-| c10 | Output points the reader at next steps (using `/ai-engineer:model-evaluation` or `/ai-engineer:rag-pipeline`) consistent with the skill's documented manifest | PARTIAL | Next steps explicitly mention `/ai-engineer:model-evaluation` and `/ai-engineer:rag-pipeline` as recommended follow-on skills. |
+| c1 | After bootstrap, `docs/ai/_sections/ai-engineer.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | Artifact shows '## Custom team notes\n\nUSER-EDIT-SENTINEL-DO-NOT-STRIP\n\nThis section was written by the team...' intact at top of merged file. |
+| c2 | After bootstrap, `docs/ai/_sections/ai-engineer.md` contains the safe-merge marker `<!-- Merged from ai-engineer bootstrap v0.1.0 -->` — sections missing from the fixture were appended, not silently merged | PASS | Artifact contains exactly '<!-- Merged from ai-engineer bootstrap v0.1.0 -->' between the preserved user section and the appended template content. |
+| c3 | After bootstrap, `docs/ai/_sections/ai-engineer.md` contains the appended template sections — at minimum the "Prompt Engineering Conventions" and "Model Evaluation" headings now appear alongside the preserved user content | PASS | Artifact contains '## Prompt Engineering Conventions' and '## Model Evaluation' headings below the merge marker, alongside the preserved user content. |
+| c4 | The ai-engineer fragment is authored at H2 and below — it does not introduce a `# AI Domain` H1 (the coordinator generates that when it assembles `docs/ai/CLAUDE.md`) | PASS | All headings in the artifact are H2 (`##`). No H1 (`#`) heading is present anywhere in `work/docs/ai/_sections/ai-engineer.md`. |
+| c5 | The skill does NOT write `docs/ai/CLAUDE.md` directly — that file is the coordinator's to assemble from `_sections/` | PASS | Only three artifacts listed: `prompt-library.md`, `eval-suite-template.md`, and `_sections/ai-engineer.md`. No `docs/ai/CLAUDE.md` artifact exists. |
+| c6 | After bootstrap, `docs/ai/prompt-library.md` exists and contains a `## Prompt Registry` heading | PASS | Artifact `work/docs/ai/prompt-library.md` exists and contains '## Prompt Registry' with a table beneath it. |
+| c7 | After bootstrap, `docs/ai/eval-suite-template.md` exists and contains a `## Metrics` heading | PASS | Artifact `work/docs/ai/eval-suite-template.md` exists and contains '## Metrics' with a metrics table beneath it. |
+| c8 | The created `eval-suite-template.md` contains an AI-specific metrics row referencing RAGAS (e.g. `Faithfulness (RAGAS)`) or `## Failure Analysis` | PASS | Artifact contains both '\| Faithfulness (RAGAS) \| >= 0.8 \|' and '\| Relevancy (RAGAS) \| >= 0.8 \|' rows, plus a '## Failure Analysis' section. |
+| c9 | Chat output includes a manifest summary that distinguishes files created (`prompt-library.md`, `eval-suite-template.md`) from files merged (`_sections/ai-engineer.md`) | PASS | Chat output has separate '### Files created' and '### Files merged' sections; merged section explicitly calls out `_sections/ai-engineer.md` with sentinel preservation noted. |
+| c10 | Output names each created and merged file individually — a bare "bootstrap complete" without the per-file manifest is not enough | PASS | Each file is listed individually: `docs/ai/_sections/ai-engineer.md`, `docs/ai/prompt-library.md`, `docs/ai/eval-suite-template.md` with per-file descriptions. |
+| c11 | Output does not claim it overwrote or replaced `docs/ai/_sections/ai-engineer.md` — the language reflects merge, not replacement | PASS | Chat output says 'appended bootstrap sections (v0.1.0) while preserving user's "Custom team notes" section' — no overwrite/replace language used. |
+| c12 | Output points the reader at next steps (using `/ai-engineer:model-evaluation` or `/ai-engineer:rag-pipeline`) consistent with the skill's documented manifest | PARTIAL | Chat output '### Next steps' lists both 'Create eval suites for each prompt using `/ai-engineer:model-evaluation`' and 'Design RAG pipelines using `/ai-engineer:rag-pipeline`'. |
 
 ### Notes
 
-The skill executed flawlessly: sentinel preserved, merge marker present, template sections appended, both missing files created with correct content including RAGAS metrics, and the manifest summary clearly distinguished created vs merged files. All criteria met at ceiling.
+All criteria met cleanly. The minor anomaly of `ai-engineer.md` appearing in both 'Files created' and 'Files merged' sections is slightly redundant but does not obscure the required distinction, and c9 scores PASS since the merge/created separation is unambiguous.

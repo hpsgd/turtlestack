@@ -1,7 +1,7 @@
 ---
 name: bootstrap
 bootstrap-phase: delivery
-description: "Bootstrap the delivery documentation structure for a project. Creates docs/delivery/, generates initial RAID log, dependency map, status report and steering pack templates, and writes a domain CLAUDE.md. Idempotent — merges missing sections into existing files without overwriting."
+description: "Bootstrap the delivery documentation structure for a project. Creates docs/delivery/, generates initial RAID log, dependency map, status report and steering pack templates, and writes the delivery-manager fragment of the delivery domain doc (the coordinator assembles docs/delivery/CLAUDE.md). Idempotent — merges missing sections into existing files without overwriting."
 argument-hint: "[project name]"
 user-invocable: false
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
@@ -15,6 +15,7 @@ Bootstrap the delivery documentation structure for **$ARGUMENTS**. This sets up 
 
 ```bash
 mkdir -p docs/delivery
+mkdir -p docs/delivery/_sections
 ```
 
 Confirm the directory exists before continuing. This is the engagement root for all delivery artifacts.
@@ -26,15 +27,13 @@ For each file below, apply the safe merge pattern:
 - If the file does not exist → create it from the template.
 - If the file exists → read both, find sections in the template missing from the file, and append only the missing sections with a marker comment `<!-- Merged from delivery-manager bootstrap v0.1.0 -->`. Never overwrite existing content.
 
-### File 1: `docs/delivery/CLAUDE.md`
+### File 1: `docs/delivery/_sections/delivery-manager.md`
 
-Create with this content:
+`docs/delivery/CLAUDE.md` is **assembled by the coordinator** from the fragments in `_sections/` — no plugin
+writes it directly. Write the delivery-manager's contribution as this fragment. It starts at H2 (the coordinator
+generates the `# Delivery Domain` H1 and a one-line intro). Create it with this content:
 
 ```markdown
-# Delivery Domain
-
-This directory holds delivery-management artifacts: the RAID log, dependency map, status reports, steering packs, and service-assessment evidence. These are living documents — the delivery-manager maintains them on a weekly cadence, not once.
-
 ## What this domain covers
 
 - RAID log — risks, assumptions, issues, dependencies (governance artifact)
@@ -102,7 +101,7 @@ mkdir -p docs/delivery/status
 
 ## Step 3: Detect the delivery shape
 
-Before finishing, record the delivery shape in `docs/delivery/CLAUDE.md` under a `## This project` heading:
+Before finishing, record the delivery shape in `docs/delivery/_sections/delivery-manager.md` under a `## This project` heading:
 
 1. Single team or multiple streams? Multiple streams need a programme-level RAID view.
 2. GDS-phased (discovery / alpha / beta / live) or continuous product flow? Phased delivery needs `prepare-service-assessment`.
@@ -121,7 +120,7 @@ Before finishing, record the delivery shape in `docs/delivery/CLAUDE.md` under a
 ## Delivery Bootstrap Complete
 
 ### Files created
-- docs/delivery/CLAUDE.md — domain conventions and skill reference
+- docs/delivery/_sections/delivery-manager.md — delivery-manager fragment (coordinator assembles docs/delivery/CLAUDE.md from it)
 - docs/delivery/raid-log.md — RAID log (from template)
 - docs/delivery/dependency-map.md — dependency map (from template)
 - docs/delivery/status-report.md — current-week status report (from template)

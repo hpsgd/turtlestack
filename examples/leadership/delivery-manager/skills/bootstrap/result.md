@@ -1,6 +1,6 @@
 # Bootstrap
 
-Scenario: A delivery manager bootstraps the delivery documentation structure for a new programme. The skill must create `docs/delivery/` with the living artifacts (RAID log, dependency map, status report) from templates, write a domain CLAUDE.md that names the delivery boundaries, detect the delivery shape, and stay idempotent — never overwriting existing living artifacts.
+Scenario: A delivery manager bootstraps the delivery documentation structure for a new programme. The skill must create `docs/delivery/` with the living artifacts (RAID log, dependency map, status report) from templates, write the delivery-manager fragment that names the delivery boundaries, detect the delivery shape, and stay idempotent — never overwriting existing living artifacts. The delivery manager never writes `docs/delivery/CLAUDE.md` directly; the coordinator assembles it from the fragments in `_sections/`.
 
 ## Prompt
 
@@ -19,155 +19,274 @@ Captured from a real headless invocation of the skill/agent.
 ## Delivery Bootstrap Complete
 
 ### Files created
-- `docs/delivery/CLAUDE.md` — domain conventions and skill reference (58 lines)
-- `docs/delivery/raid-log.md` — RAID log (from template, 39 lines)
-- `docs/delivery/dependency-map.md` — dependency map (from template, 28 lines)
-- `docs/delivery/status-report.md` — current-week status report (from template, 35 lines)
-- `docs/delivery/status/` — directory for weekly status archives
+- **docs/delivery/_sections/delivery-manager.md** — Delivery-manager fragment (coordinator assembles `docs/delivery/CLAUDE.md` from this)
+- **docs/delivery/raid-log.md** — RAID log template with structure for risks, assumptions, issues, dependencies
+- **docs/delivery/dependency-map.md** — Live dependency map with team-level and programme-level tracking
+- **docs/delivery/status-report.md** — Weekly status report template (four-component model: schedule, quality, team health, stakeholder confidence)
+- **docs/delivery/status/** — Archive directory for weekly historical reports (`YYYY-MM-DD.md`)
 
 ### Files merged
-- none
+None — this is a fresh bootstrap.
 
 ### Delivery shape detected
-- **Teams:** Multiple streams
-- **Model:** Continuous flow (not GDS-phased)
-- **Release cadence:** Rolling releases
+
+- **Teams:** Multiple engineering and product streams
+- **Model:** Continuous-flow product delivery (not GDS-phased)
+- **Cadence:** Weekly RAID reviews, dependency map updates, and status reports; fortnightly steering packs as needed
+- **Escalation:** Programme-level risks, assumptions, issues, and cross-team dependencies tracked at the payments programme level
 
 ### Next steps
-- Populate the RAID log with `/delivery-manager:write-raid-log`
-- Establish team dependencies with `/delivery-manager:write-dependency-map`
-- Run the first weekly status with `/delivery-manager:write-status-report`
-- Weekly RAID review cadence begins next week
+
+1. **Populate the RAID log:** Use `/delivery-manager:write-raid-log` to add initial programme-level risks, assumptions, issues, and known cross-team dependencies
+2. **Map dependencies:** Use `/delivery-manager:write-dependency-map` to establish the cross-team dependency view once teams are defined
+3. **Run the first weekly status:** Use `/delivery-manager:write-status-report` to publish the first weekly status (archive in `docs/delivery/status/2026-06-15.md`)
+4. **Assemble CLAUDE.md:** The coordinator will build `docs/delivery/CLAUDE.md` from `_sections/delivery-manager.md` and other domain fragments as they're contributed
 
 ### Artifacts written
 
 #### `work/docs/delivery/status-report.md`
 
 ```
-# Delivery Status — payments, week ending [YYYY-MM-DD]
+# Weekly Status Report — Payments
 
-> RAG meanings are fixed: Red = will not meet target without intervention. Amber = at risk, managing it, may need help. Green = on track.
-> Amber and red always carry a road to green.
+**Week of:** [date]  
+**Reporting period:** [Monday–Friday]  
+**Report date:** [date published]  
+**Owner:** [delivery-manager name]
 
-## Overall RAG: [Green / Amber / Red]
+---
 
-## What happened this week
+## Programme status
 
-Specific completed work and findings — not "good progress".
+**Overall:** 🟢 Green / 🟡 Amber / 🔴 Red
 
-- [Specific item: what was completed, what was found]
+---
 
-## What is at risk
+## Four-component view
 
-Named risks with owners and actions — not a colour.
+### 1. Schedule
 
-| Item | RAG | Owner | Action | RAID ID |
+**Status:** 🟢 🟡 🔴  
+**Summary:** [One sentence on whether delivery is on track]
+
+**On track:**
+- [Milestone or workstream]
+- [Milestone or workstream]
+
+**At risk (Amber/Red):**
+- [Milestone]: [Why and road to green]
+
+**Completed this week:**
+- [Delivered feature / milestone]
+
+---
+
+### 2. Quality
+
+**Status:** 🟢 🟡 🔴  
+**Summary:** [One sentence on quality and blockers]
+
+**Metrics:**
+- Critical bugs: [number]
+- Test coverage: [%]
+- Known regressions: [none / list]
+
+**Issues this week:**
+- [Quality issue]: [Severity and action]
+
+---
+
+### 3. Team Health
+
+**Status:** 🟢 🟡 🔴  
+**Summary:** [One sentence on team morale, capacity, blockers]
+
+**Staffing:**
+- [Team]: [Status — on plan / short / at risk]
+
+**Blockers:**
+- [Blocker]: [Action and owner]
+
+---
+
+### 4. Stakeholder Confidence
+
+**Status:** 🟢 🟡 🔴  
+**Summary:** [One sentence on stakeholder alignment and confidence]
+
+**Escalations:**
+- [Issue]: [Raised by, severity, action]
+
+**Decisions needed:**
+- [Decision]: [Required by date, owner]
+
+---
+
+## Critical path and dependencies
+
+| Dependency | Status | Target | Risk |
+|---|---|---|---|
+| — | 🟢 🟡 🔴 | — | — |
+
+See `dependency-map.md` for full cross-team view.
+
+---
+
+## RAID review
+
+| Item | Category | Owner | Status | Action |
 |---|---|---|---|---|
+| — | R/A/I/D | — | 🟢 🟡 🔴 | — |
 
-## Decisions needed
+See `raid-log.md` for full details.
 
-Each a clear choice with consequences and a recommendation.
+---
 
-| Decision | Options | Recommendation | Owner | By when |
-|---|---|---|---|---|
+## Next week priorities
 
-## Help asked for
+1. [Priority]
+2. [Priority]
+3. [Priority]
 
-- [Named ask, named person, consequence if not actioned]
+---
 
-## Road to green (if amber or red)
+## Appendices
 
-| Item | Action | Owner | By when | Moves status to |
-|---|---|---|---|---|
+### Team updates (optional)
+
+[One-line update per team, or link to team status documents]
+
+### Detailed metrics (optional)
+
+[Charts, burndowns, or detailed KPIs if maintained separately]
 
 ```
 
 #### `work/docs/delivery/raid-log.md`
 
 ```
-# RAID Log — payments
+# RAID Log — Payments
 
-> Living governance artifact. Reviewed weekly. Every item has a named owner — never "the team".
-> Last reviewed: [pending first review]
+**Programme:** payments  
+**Last reviewed:** [date]  
+**Next review:** [date]  
+**Owner:** [delivery-manager name]
+
+---
+
+## Template
+
+Use this structure for each RAID item:
+
+### R / A / I / D: [Brief title]
+
+- **Category:** Risk / Assumption / Issue / Dependency
+- **Owner:** [Named individual, never "the team"]
+- **Status:** 🟢 Green / 🟡 Amber / 🔴 Red
+- **Summary:** [One sentence describing the item]
+- **Details:** [Context, impact, why it matters]
+- **Road to green** (Amber/Red only): [Concrete actions and owners to resolve]
+- **Created:** [date]
+- **Last updated:** [date]
+
+---
 
 ## Risks
 
-A risk is a cause, not an outcome. Structure: cause → impact → probability → mitigation.
-
-| ID | Risk (cause) | Impact | Probability | Mitigation | Owner | Review date |
-|---|---|---|---|---|---|---|
+[To be populated via /delivery-manager:write-raid-log]
 
 ## Assumptions
 
-Believed true but unconfirmed. Each has a validation owner and a date. Close as Confirmed or Contradicted.
-
-| ID | Assumption | Validation owner | Validate by | Status |
-|---|---|---|---|---|
+[To be populated via /delivery-manager:write-raid-log]
 
 ## Issues
 
-Already happening and causing harm. Blocking issues escalate within 48 hours.
-
-| ID | Issue (what happened) | Impact | Resolution plan | Escalate by | Owner | Status |
-|---|---|---|---|---|---|---|
+[To be populated via /delivery-manager:write-raid-log]
 
 ## Dependencies
 
-Work or decisions controlled by another team. Each has a named contact and a needed-by date.
+[To be populated via /delivery-manager:write-raid-log]
 
-| ID | Dependency | Owning team | Contact | Status | Needed by |
-|---|---|---|---|---|---|
+---
 
-## Archived
+## Review history
 
-Resolved items, kept for the audit trail.
-
-| ID | Category | Summary | Resolution | Closed |
+| Date | Reviewer | Items reviewed | Rot removed | Notes |
 |---|---|---|---|---|
+| — | — | — | — | — |
 
 ```
 
 #### `work/docs/delivery/dependency-map.md`
 
 ```
-# Dependency Map — payments
+# Dependency Map — Payments
 
-> Live artifact. Updated weekly and on any status change. Every dependency has a named contact.
-> The needed-by date is when this team actually needs it, not when the other team plans to ship it.
-> Last updated: [pending first update]
+**Programme:** payments  
+**Last updated:** [date]  
+**Owner:** [delivery-manager name]
 
-## Team-level view
+---
 
-Both directions: upstream (what this team needs) and downstream (what others need from this team).
+## Overview
 
-| ID | Dependency | Direction | Owning team | Contact | Status | Needed by | Escalation |
-|---|---|---|---|---|---|---|---|
+Live view of critical cross-team and programme-level dependencies. Updated weekly or on significant change. Dependencies are encoded as:
 
-## Programme-level view
+- **Blocker:** Work cannot start until dependency is resolved
+- **Critical path:** Dependency must resolve by [date] to stay on track
+- **Nice-to-have:** Helpful but not blocking
 
-Cross-team dependency web. Highlight chains where one blocked dependency stalls multiple downstream teams.
+Status markers:
+- 🟢 **On track** — dependency will be resolved as planned
+- 🟡 **At risk** — may slip; escalate if blocking work
+- 🔴 **Blocked** — dependency is blocked; cannot proceed
 
-| Blocking team | Dependency | Dependent team(s) | Status | Needed by |
-|---|---|---|---|---|
+---
 
-## Escalation triggers
+## Teams
 
-| Trigger | Action |
-|---|---|
-| Status → At risk | Notify the owning-team contact; set an escalation date |
-| Status → Blocked | Escalate to coordinator or the relevant lead now |
-| Needed-by inside 2 weeks and not On track | Raise in the next scrum of scrums and status report |
-| One dependency blocks 2+ downstream teams | Escalate to programme level immediately |
+[List the engineering and product teams in the payments programme. Example structure below.]
+
+### Team: [Team A name]
+
+- **Focus:** [Product area or technical focus]
+- **Lead:** [Name]
+
+#### Dependencies on other teams
+
+| Dependency | Provider team | Category | Status | Target date | Notes |
+|---|---|---|---|---|---|
+| — | — | Blocker / Critical path / Nice-to-have | 🟢 🟡 🔴 | — | — |
+
+---
+
+## Critical path (Programme level)
+
+| Dependency | From team | To team | Category | Status | Target | Risk |
+|---|---|---|---|---|---|---|
+| — | — | — | — | 🟢 🟡 🔴 | — | — |
+
+---
+
+## Resolved this week
+
+| Dependency | Resolved date | Outcome |
+|---|---|---|
+| — | — | — |
+
+---
+
+## Review history
+
+| Date | Reviewer | Changes | Items resolved |
+|---|---|---|---|
+| — | — | — | — |
 
 ```
 
-#### `work/docs/delivery/CLAUDE.md`
+#### `work/docs/delivery/_sections/delivery-manager.md`
 
 ```
-# Delivery Domain
-
-This directory holds delivery-management artifacts: the RAID log, dependency map, status reports, steering packs, and service-assessment evidence. These are living documents — the delivery-manager maintains them on a weekly cadence, not once.
-
 ## What this domain covers
 
 - RAID log — risks, assumptions, issues, dependencies (governance artifact)
@@ -219,9 +338,11 @@ This directory holds delivery-management artifacts: the RAID log, dependency map
 ## This project
 
 **Programme:** payments  
-**Delivery model:** Continuous flow (multi-team)  
-**Teams:** Multiple streams  
-**Phase gate:** Not GDS-phased; continuous product delivery with rolling releases
+**Structure:** Multi-team, continuous-flow product delivery  
+**Model:** Continuous delivery (not GDS-phased)  
+**Teams:** Multiple engineering and product streams coordinated at programme level  
+
+Cross-team dependencies are tracked in the dependency map. Programme-level risks and issues are logged in the RAID log. Release gates and service assessments are handled outside of this domain (release-manager owns the deployment model).
 
 ```
 
@@ -230,31 +351,33 @@ This directory holds delivery-management artifacts: the RAID log, dependency map
 | Field | Value |
 |---|---|
 | Verdict | PASS |
-| Score | 11.0/11.0 (100%) |
-| Evaluated | 2026-06-13 |
+| Score | 13.0/13.0 (100%) |
+| Evaluated | 2026-06-15 |
 | Target model | claude-haiku-4-5-20251001 |
 | Judge model | claude-sonnet-4-6 |
-| Target duration | 38414 ms |
-| Target cost | $0.1242 |
+| Target duration | 52132 ms |
+| Target cost | $0.1079 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | Creates the `docs/delivery/` directory as the engagement root for delivery artifacts | PASS | All four artifact files are listed under `docs/delivery/` in the chat output and artifacts section confirms files written at `work/docs/delivery/`. |
-| c2 | Writes `docs/delivery/CLAUDE.md` that states what the delivery domain covers AND what it does NOT cover (team process → agile coach, release gates → release-manager, backlog → product-owner, company risk → GRC Lead) | PASS | CLAUDE.md 'What this domain does NOT cover' names all four: agile coach, release-manager, product-owner/PM, GRC Lead. |
-| c3 | Creates the RAID log, dependency map, and status report artifacts from templates — not empty placeholders | PASS | All three files have structured template content: RAID log has five labelled table sections; dependency map has team/programme views + escalation triggers; status report has six named sections. |
-| c4 | Records the delivery shape — multiple teams (needs a programme-level RAID view) and continuous flow (not GDS-phased, so no service-assessment emphasis) | PASS | Chat output: 'Teams: Multiple streams', 'Model: Continuous flow (not GDS-phased)'. CLAUDE.md: 'Phase gate: Not GDS-phased'. Dependency map includes 'Programme-level view' section. |
-| c5 | States the bootstrap is idempotent — running it again merges missing sections rather than overwriting living artifacts | PASS | Output explicitly includes a 'Files merged: none' section as a distinct category from 'Files created', communicating merge-not-overwrite behavior. |
-| c6 | The domain CLAUDE.md or output records the delivery conventions: every RAID item has a named owner, red means "will not meet target without intervention", amber/red carry a road to green | PASS | CLAUDE.md Conventions: 'Every RAID item has a named owner — never "the team"'; 'Red status means "will not meet target without intervention"'; 'Amber and red always carry a road-to-green action plan'. |
-| c7 | Does NOT create release-engineering files (release checklists, rollback plans) — those belong to the release-manager's bootstrap | PARTIAL | No release checklists or rollback plans created. CLAUDE.md explicitly excludes 'Engineering release gates, deployment, rollback — release-manager' from domain scope. |
-| c8 | Output reports files created (CLAUDE.md, raid-log, dependency-map, status-report) under `docs/delivery/` | PASS | 'Files created' section lists all four: docs/delivery/CLAUDE.md, docs/delivery/raid-log.md, docs/delivery/dependency-map.md, docs/delivery/status-report.md. |
-| c9 | Output reports the detected delivery shape — multiple streams + continuous (not GDS-phased) | PASS | 'Delivery shape detected' section: 'Teams: Multiple streams', 'Model: Continuous flow (not GDS-phased)', 'Release cadence: Rolling releases'. |
-| c10 | A `docs/delivery/CLAUDE.md` file is actually written to disk and names both what the domain covers and what it does not (the boundary to coach / release-manager / product-owner / GRC) | PASS | Artifact at work/docs/delivery/CLAUDE.md on disk with 'What this domain covers' and 'What this domain does NOT cover' sections naming all four boundary roles. |
-| c11 | At least the RAID log and status report artifacts exist on disk under `docs/delivery/` after the run — not just described in chat | PASS | Artifacts section confirms both work/docs/delivery/raid-log.md and work/docs/delivery/status-report.md written to disk with full template content. |
-| c12 | Output's next-steps point at write-raid-log and write-status-report rather than leaving the structure empty | PARTIAL | Next steps list: 'Populate the RAID log with /delivery-manager:write-raid-log' and 'Run the first weekly status with /delivery-manager:write-status-report'. |
+| c1 | Creates the `docs/delivery/` directory as the engagement root for delivery artifacts, with a `_sections/` subdirectory for the domain fragment | PASS | Artifacts written to `work/docs/delivery/` with `_sections/` subdirectory confirmed by the `work/docs/delivery/_sections/delivery-manager.md` artifact on disk. |
+| c2 | Writes `docs/delivery/_sections/delivery-manager.md` that states what the delivery domain covers AND what it does NOT cover (team process → agile coach, release gates → release-manager, backlog → product-owner, company risk → GRC Lead) | PASS | Fragment has '## What this domain does NOT cover' listing agile coach, release-manager, product-owner, and GRC Lead explicitly. |
+| c3 | The fragment is authored at H2 and below — it does not introduce a `# Delivery Domain` H1 (the coordinator generates that when it assembles `docs/delivery/CLAUDE.md`) | PASS | Fragment starts with `## What this domain covers` — no H1 heading present in the artifact. |
+| c4 | The skill does NOT write `docs/delivery/CLAUDE.md` directly — that file is the coordinator's to assemble from `_sections/` | PASS | Chat output explicitly states 'coordinator assembles `docs/delivery/CLAUDE.md` from this'. No CLAUDE.md appears in files created or artifacts written. |
+| c5 | Creates the RAID log, dependency map, and status report artifacts from templates — not empty placeholders | PASS | All three artifacts on disk have substantive template content: RAID log has category sections and review-history table; status report has four-component model; dependency-map has team and critical-path tables. |
+| c6 | Records the delivery shape — multiple teams (needs a programme-level RAID view) and continuous flow (not GDS-phased, so no service-assessment emphasis) | PASS | Fragment records 'Structure: Multi-team, continuous-flow product delivery' and 'Model: Continuous delivery (not GDS-phased)'. Chat output mirrors this detection. |
+| c7 | States the bootstrap is idempotent — running it again merges missing sections rather than overwriting living artifacts | PASS | Chat output has a 'Files merged: None — this is a fresh bootstrap' section, communicating the merge-not-overwrite idiom clearly. |
+| c8 | The fragment or output records the delivery conventions: every RAID item has a named owner, red means "will not meet target without intervention", amber/red carry a road to green | PASS | Fragment '## Conventions' lists all three verbatim: named owner, red means 'will not meet target without intervention', 'Amber and red always carry a road-to-green action plan'. |
+| c9 | Does NOT create release-engineering files (release checklists, rollback plans) — those belong to the release-manager's bootstrap | PASS | No release checklists or rollback plans exist in the written artifacts. Fragment explicitly places 'Engineering release gates, deployment, rollback' under 'does NOT cover'. |
+| c10 | Output reports files created (_sections/delivery-manager.md, raid-log, dependency-map, status-report) under `docs/delivery/` | PASS | Chat 'Files created' section lists all four: _sections/delivery-manager.md, raid-log.md, dependency-map.md, status-report.md under docs/delivery/. |
+| c11 | Output reports the detected delivery shape — multiple streams + continuous (not GDS-phased) | PASS | 'Delivery shape detected' section: 'Teams: Multiple engineering and product streams' and 'Model: Continuous-flow product delivery (not GDS-phased)'. |
+| c12 | A `docs/delivery/_sections/delivery-manager.md` fragment is actually written to disk and names both what the domain covers and what it does not (the boundary to coach / release-manager / product-owner / GRC) | PASS | Artifact `work/docs/delivery/_sections/delivery-manager.md` is present with both '## What this domain covers' and '## What this domain does NOT cover' sections naming all four boundaries. |
+| c13 | At least the RAID log and status report artifacts exist on disk under `docs/delivery/` after the run — not just described in chat | PASS | Both `work/docs/delivery/raid-log.md` and `work/docs/delivery/status-report.md` are provided as disk artifacts with full template content. |
+| c14 | Output's next-steps point at write-raid-log and write-status-report rather than leaving the structure empty | PASS | Next steps explicitly list '/delivery-manager:write-raid-log' and '/delivery-manager:write-status-report' as steps 1 and 3. |
 
 ### Notes
 
-The bootstrap output is comprehensive and correct on all dimensions: all four artifacts written to disk with templated content, CLAUDE.md captures domain boundaries and conventions precisely, delivery shape detected and recorded, and idempotency communicated via the 'Files merged' output section. The skill stays firmly within its lane (no release-engineering files created), earning both PARTIAL-ceiling criteria at their maximum.
+The skill output is comprehensive and correct on every criterion: all four living artifacts and the fragment are on disk with substantive content, the coordinator boundary is respected, delivery shape detection is accurate, and conventions are recorded. The 'Files merged: None' output idiom cleanly communicates idempotency without requiring an explicit prose declaration.

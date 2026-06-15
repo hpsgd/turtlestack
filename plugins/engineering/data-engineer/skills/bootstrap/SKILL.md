@@ -1,7 +1,7 @@
 ---
 name: bootstrap
 bootstrap-phase: stack
-description: "Bootstrap the data documentation structure for a project. Creates docs/data/, generates initial templates, and writes domain CLAUDE.md. Idempotent — merges missing sections into existing files without overwriting."
+description: "Bootstrap the data documentation structure for a project. Creates docs/data/, generates initial templates, and writes the data-engineer fragment of the data domain doc (the coordinator assembles docs/data/CLAUDE.md). Idempotent — merges missing sections into existing files without overwriting."
 argument-hint: "[project name]"
 user-invocable: false
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
@@ -16,7 +16,7 @@ Bootstrap the data documentation structure for **$ARGUMENTS**.
 ### Step 1: Check and create domain directory
 
 ```bash
-mkdir -p docs/data
+mkdir -p docs/data docs/data/_sections
 ```
 
 ### Step 2: Create or merge files
@@ -25,15 +25,13 @@ For each file below, apply the safe merge pattern:
 - If file does not exist -> create from template
 - If file exists -> read both, find sections in template missing from file, append missing sections with `<!-- Merged from data-engineer bootstrap v0.1.0 -->`
 
-#### File 1: `docs/data/CLAUDE.md`
+#### Fragment: `docs/data/_sections/data-engineer.md`
 
-Create with this content (~100 lines):
+`docs/data/CLAUDE.md` is **assembled by the coordinator** from the fragments in `_sections/` — no plugin writes
+it directly. Write the data-engineer's contribution as this fragment. It starts at H2 (the coordinator generates
+the `# Data Domain` H1 and a one-line intro). Create it with this content:
 
 ```markdown
-# Data Domain
-
-This directory contains data documentation: data models, event tracking specifications, data dictionaries, and query conventions.
-
 ## What This Domain Covers
 
 - **Data models** — dbt models, schema design, entity relationships
@@ -220,7 +218,7 @@ After creating/merging all files, output a summary:
 ## Data Engineer Bootstrap Complete
 
 ### Files created
-- `docs/data/CLAUDE.md` — domain conventions and skill reference
+- `docs/data/_sections/data-engineer.md` — data-engineer fragment (coordinator assembles `docs/data/CLAUDE.md` from it)
 - `docs/data/event-tracking-spec.md` — event tracking specification template
 - `docs/data/data-dictionary.md` — data dictionary template
 

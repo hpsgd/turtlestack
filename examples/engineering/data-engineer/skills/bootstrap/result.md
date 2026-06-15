@@ -1,10 +1,10 @@
 # Bootstrap
 
-Scenario: A synthetic project root at `{workspace}/work/` is pre-staged with a partial `docs/data/CLAUDE.md` containing a user-authored section. The data-engineer bootstrap skill should preserve that user content while appending the template's missing sections (with a merge marker), and should create the two files the fixture is missing — `event-tracking-spec.md` and `data-dictionary.md`. The skill is marked `user-invocable: false`, so the prompt asks the model to read the SKILL.md directly and execute its process. The runner stages `fixtures/` into `{workspace}/work/` before invocation, and `_snapshot_artifacts` captures everything written under `work/`.
+Scenario: A synthetic project root at `{workspace}/work/` is pre-staged with a partial `docs/data/_sections/data-engineer.md` fragment containing a user-authored section. The data-engineer bootstrap skill should preserve that user content while appending the template's missing sections (with a merge marker), and should create the two files the fixture is missing — `event-tracking-spec.md` and `data-dictionary.md`. The data-engineer never writes `docs/data/CLAUDE.md` directly — the coordinator assembles it from the fragments in `_sections/`. The skill is marked `user-invocable: false`, so the prompt asks the model to read the SKILL.md directly and execute its process. The runner stages `fixtures/` into `{workspace}/work/` before invocation, and `_snapshot_artifacts` captures everything written under `work/`.
 
 ## Prompt
 
-> The current working directory (`{workspace}/work/`) is the project root for a project called "TestProject". A partial `docs/data/CLAUDE.md` is already present — it contains a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`.
+> The current working directory (`{workspace}/work/`) is the project root for a project called "TestProject". A partial `docs/data/_sections/data-engineer.md` fragment is already present — it contains a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`.
 > 
 > Read the data-engineer bootstrap skill at `/Users/martin/Projects/turtlestack/plugins/engineering/data-engineer/skills/bootstrap/SKILL.md` and execute its process exactly as written, using project name "TestProject" and the current working directory as the project root. Apply the safe-merge pattern as documented. Do not pause for confirmation — proceed with all defaults.
 > 
@@ -19,11 +19,12 @@ Captured from a real headless invocation of the skill/agent.
 ## Data Engineer Bootstrap Complete
 
 ### Files created
+- `docs/data/_sections/data-engineer.md` — data-engineer fragment (coordinator assembles `docs/data/CLAUDE.md` from it)
 - `docs/data/event-tracking-spec.md` — event tracking specification template
 - `docs/data/data-dictionary.md` — data dictionary template
 
 ### Files merged
-- `docs/data/CLAUDE.md` — domain conventions and skill reference (preserved user-authored "Custom team notes" section with sentinel)
+- `docs/data/_sections/data-engineer.md` — appended missing sections (dbt style guide, event tracking process, data quality, metric definitions, tooling, available skills, conventions) while preserving user-authored "Custom team notes" section with sentinel
 
 ### Next steps
 - Define initial data models using `/data-engineer:data-model`
@@ -105,12 +106,10 @@ For each event, define the schema:
 
 ```
 
-#### `work/docs/data/CLAUDE.md`
+#### `work/docs/data/_sections/data-engineer.md`
 
 ```
-# Data Domain
-
-This directory contains data documentation for the project.
+<!-- data-engineer fragment of the data domain doc. Assembled into docs/data/CLAUDE.md by the coordinator. -->
 
 ## Custom team notes
 
@@ -231,26 +230,30 @@ All business metrics must have a single canonical definition:
 | Field | Value |
 |---|---|
 | Verdict | PASS |
-| Score | 8.5/8.5 (100%) |
-| Evaluated | 2026-05-13 |
-| Target duration | 41889 ms |
-| Target cost | $0.1575 |
+| Score | 10.5/10.5 (100%) |
+| Evaluated | 2026-06-15 |
+| Target model | claude-haiku-4-5-20251001 |
+| Judge model | claude-sonnet-4-6 |
+| Target duration | 41720 ms |
+| Target cost | $0.0867 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | After bootstrap, `docs/data/CLAUDE.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | Artifact shows: '## Custom team notes\n\nUSER-EDIT-SENTINEL-DO-NOT-STRIP\n\nThis section was written by the team...' |
-| c2 | After bootstrap, `docs/data/CLAUDE.md` contains the safe-merge marker `<!-- Merged from data-engineer bootstrap v0.1.0 -->` — sections missing from the fixture were appended, not silently merged | PASS | Artifact contains verbatim: '<!-- Merged from data-engineer bootstrap v0.1.0 -->' |
-| c3 | After bootstrap, `docs/data/CLAUDE.md` contains the appended template sections — at minimum the "dbt Style Guide" and "Event Tracking Process" headings now appear alongside the preserved user content | PASS | Artifact contains '## dbt Style Guide' and '## Event Tracking Process' headings below the merge marker, alongside preserved user content. |
-| c4 | After bootstrap, `docs/data/event-tracking-spec.md` exists and was created from the skill's template (contains `## Event Catalogue` and `### Naming Rules` sections) | PASS | Artifact work/docs/data/event-tracking-spec.md contains '## Event Catalogue' and '### Naming Rules'. |
-| c5 | After bootstrap, `docs/data/data-dictionary.md` exists and was created from the skill's template (contains `## Entities`, `## Standard Fields`, and `## Business Metrics` sections) | PASS | Artifact work/docs/data/data-dictionary.md contains '## Entities', '## Standard Fields', and '## Business Metrics'. |
-| c6 | Chat output includes a manifest summary that distinguishes files created (`event-tracking-spec.md`, `data-dictionary.md`) from files merged (`CLAUDE.md`) | PASS | Chat output has '### Files created' listing both spec and dictionary files, and '### Files merged' listing CLAUDE.md separately. |
-| c7 | Output names each created and merged file individually — a bare "bootstrap complete" without the per-file manifest is not enough | PASS | All three files named individually: event-tracking-spec.md, data-dictionary.md, and CLAUDE.md under their respective headings. |
-| c8 | Output does not claim it overwrote or replaced `docs/data/CLAUDE.md` — the language reflects merge, not replacement | PASS | Chat uses '### Files merged' and notes 'preserved user-authored "Custom team notes" section with sentinel' — no overwrite language. |
-| c9 | Output points the reader at next steps (using `/data-engineer:data-model`, `/data-engineer:event-tracking-plan`, and populating the data dictionary) consistent with the skill's documented manifest | PARTIAL | Chat lists all three: 'Define initial data models using `/data-engineer:data-model`', 'Create event tracking plan using `/data-engineer:event-tracking-plan`', 'Populate the data dictionary'. |
+| c1 | After bootstrap, `docs/data/_sections/data-engineer.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | Artifact shows '## Custom team notes\n\nUSER-EDIT-SENTINEL-DO-NOT-STRIP\n\nThis section was written by the team...' intact at top of file. |
+| c2 | After bootstrap, `docs/data/_sections/data-engineer.md` contains the safe-merge marker `<!-- Merged from data-engineer bootstrap v0.1.0 -->` — sections missing from the fixture were appended, not silently merged | PASS | Artifact contains '<!-- Merged from data-engineer bootstrap v0.1.0 -->' on its own line between user content and appended template sections. |
+| c3 | After bootstrap, `docs/data/_sections/data-engineer.md` contains the appended template sections — at minimum the "dbt Style Guide" and "Event Tracking Process" headings now appear alongside the preserved user content | PASS | Artifact contains '## dbt Style Guide' and '## Event Tracking Process' headings alongside the preserved '## Custom team notes' section. |
+| c4 | The data-engineer fragment is authored at H2 and below — it does not introduce a `# Data Domain` H1 (the coordinator generates that when it assembles `docs/data/CLAUDE.md`) | PASS | Artifact starts with an HTML comment then '## Custom team notes' — no H1 heading anywhere in the file; all headings are ## or ###. |
+| c5 | The skill does NOT write `docs/data/CLAUDE.md` directly — that file is the coordinator's to assemble from `_sections/` | PASS | Artifacts listed are only: data-dictionary.md, event-tracking-spec.md, and _sections/data-engineer.md. No docs/data/CLAUDE.md artifact present. |
+| c6 | After bootstrap, `docs/data/event-tracking-spec.md` exists and was created from the skill's template (contains `## Event Catalogue` and `### Naming Rules` sections) | PASS | Artifact work/docs/data/event-tracking-spec.md contains '## Event Catalogue' table and '### Naming Rules' section with snake_case conventions. |
+| c7 | After bootstrap, `docs/data/data-dictionary.md` exists and was created from the skill's template (contains `## Entities`, `## Standard Fields`, and `## Business Metrics` sections) | PASS | Artifact work/docs/data/data-dictionary.md contains all three: '## Entities', '## Standard Fields', and '## Business Metrics' sections with tables. |
+| c8 | Chat output includes a manifest summary that distinguishes files created (`event-tracking-spec.md`, `data-dictionary.md`) from files merged (`_sections/data-engineer.md`) | PASS | Chat output has distinct '### Files created' and '### Files merged' sections; event-tracking-spec.md and data-dictionary.md under created; _sections/data-engineer.md under merged. |
+| c9 | Output names each created and merged file individually — a bare "bootstrap complete" without the per-file manifest is not enough | PASS | Each file is listed individually with a description: 3 files under created, 1 under merged, each on its own bullet with per-file explanation. |
+| c10 | Output does not claim it overwrote or replaced `docs/data/_sections/data-engineer.md` — the language reflects merge, not replacement | PASS | Merged entry reads 'appended missing sections... while preserving user-authored "Custom team notes" section with sentinel' — no overwrite/replace language. |
+| c11 | Output points the reader at next steps (using `/data-engineer:data-model`, `/data-engineer:event-tracking-plan`, and populating the data dictionary) consistent with the skill's documented manifest | PARTIAL | Next steps section lists all three: '/data-engineer:data-model', '/data-engineer:event-tracking-plan', and 'Populate the data dictionary with core business entities'. |
 
 ### Notes
 
-The skill execution was flawless — all three artifacts written correctly, the safe-merge pattern applied exactly (sentinel preserved, merge marker added, template sections appended), and the manifest summary clearly distinguishes created from merged files. The only limit on the score is the PARTIAL ceiling on c9, which the output fully satisfied.
+The skill executed flawlessly: sentinel preserved, merge marker present, template sections appended, no H1 introduced, CLAUDE.md not written, both new files created with correct structure, and the manifest correctly distinguishes created from merged files. All ten PASS-ceiling criteria are fully satisfied, and the PARTIAL-ceiling next-steps criterion is maximally satisfied at its 0.5 ceiling.

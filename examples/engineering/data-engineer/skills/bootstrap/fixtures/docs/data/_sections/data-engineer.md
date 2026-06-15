@@ -1,6 +1,4 @@
-# Governance Domain
-
-This directory contains governance, risk, and compliance documentation.
+<!-- data-engineer fragment of the data domain doc. Assembled into docs/data/CLAUDE.md by the coordinator. -->
 
 ## Custom team notes
 

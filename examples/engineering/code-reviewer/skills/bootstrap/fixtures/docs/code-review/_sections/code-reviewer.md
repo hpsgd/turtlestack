@@ -1,6 +1,4 @@
-# Release Domain
-
-This directory contains release documentation for the project.
+<!-- code-reviewer fragment of the code-review domain doc. Assembled into docs/code-review/CLAUDE.md by the coordinator. -->
 
 ## Custom team notes
 

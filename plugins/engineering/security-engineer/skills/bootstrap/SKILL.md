@@ -1,7 +1,7 @@
 ---
 name: bootstrap
 bootstrap-phase: engineering
-description: "Bootstrap the security documentation structure for a project. Creates docs/security/, generates initial templates and root SECURITY.md, and writes domain CLAUDE.md. Idempotent — merges missing sections into existing files without overwriting."
+description: "Bootstrap the security documentation structure for a project. Creates docs/security/, generates initial templates and root SECURITY.md, and writes the security-engineer fragment of the security domain doc (the coordinator assembles docs/security/CLAUDE.md). Idempotent — merges missing sections into existing files without overwriting."
 argument-hint: "[project name]"
 user-invocable: false
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
@@ -16,7 +16,7 @@ Bootstrap the security documentation structure for **$ARGUMENTS**.
 ### Step 1: Check and create domain directory
 
 ```bash
-mkdir -p docs/security
+mkdir -p docs/security docs/security/_sections
 ```
 
 ### Step 2: Create or merge files
@@ -63,15 +63,13 @@ If you discover a security vulnerability, please report it responsibly.
 See `docs/security/CLAUDE.md` for detailed security conventions and processes.
 ```
 
-#### File 2: `docs/security/CLAUDE.md`
+#### Fragment: `docs/security/_sections/security-engineer.md`
 
-Create with this content (~110 lines):
+`docs/security/CLAUDE.md` is **assembled by the coordinator** from the fragments in `_sections/` — no plugin
+writes it directly. Write the security-engineer's contribution as this fragment. It starts at H2 (the
+coordinator generates the `# Security Domain` H1 and a one-line intro). Create it with this content:
 
 ```markdown
-# Security Domain
-
-This directory contains security documentation: threat models, security review records, and security conventions.
-
 ## What This Domain Covers
 
 - **Threat modelling** — STRIDE-based analysis of system threats
@@ -316,7 +314,7 @@ After creating/merging all files, output a summary:
 
 ### Files created
 - `SECURITY.md` — public vulnerability reporting policy (project root)
-- `docs/security/CLAUDE.md` — domain conventions and skill reference
+- `docs/security/_sections/security-engineer.md` — security-engineer fragment (coordinator assembles `docs/security/CLAUDE.md` from it)
 - `docs/security/threat-model-template.md` — STRIDE threat model template
 - `docs/security/security-review-template.md` — security review checklist
 

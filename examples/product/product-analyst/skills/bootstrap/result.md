@@ -1,6 +1,6 @@
 # Bootstrap
 
-Scenario: A contributor sets up product-analytics documentation for a new project. The skill must create `docs/analytics/` with a domain CLAUDE.md, a metric-tree template, and an instrumentation-spec template, leave empty placeholder rows rather than inventing metric values, and return a manifest — without overwriting any existing file.
+Scenario: A contributor sets up product-analytics documentation for a new project. The skill must create `docs/analytics/` with the product-analyst fragment, a metric-tree template, and an instrumentation-spec template, leave empty placeholder rows rather than inventing metric values, and return a manifest — without overwriting any existing file. The product-analyst never writes `docs/analytics/CLAUDE.md` directly; the coordinator assembles it from the fragments in `_sections/`.
 
 ## Prompt
 
@@ -17,12 +17,12 @@ Captured from a real headless invocation of the skill/agent.
 ## Product Analytics Bootstrap Complete
 
 ### Files created
-- `docs/analytics/CLAUDE.md` — domain conventions and skill reference
+- `docs/analytics/_sections/product-analyst.md` — product-analyst fragment (coordinator assembles `docs/analytics/CLAUDE.md` from it)
 - `docs/analytics/metric-tree.md` — North Star and metric-hierarchy template
 - `docs/analytics/instrumentation-spec.md` — data-engineer hand-off template
 
 ### Files merged
-- None (fresh bootstrap)
+- (none — this is a fresh bootstrap)
 
 ### Next steps
 - Define the North Star with `/product-analyst:define-north-star`
@@ -34,162 +34,186 @@ Captured from a real headless invocation of the skill/agent.
 #### `work/docs/analytics/instrumentation-spec.md`
 
 ```
-# Cadence Instrumentation Specification
+# Cadence Instrumentation Spec
 
-Instrumentation specification for the data-engineer. Defines all events, properties, identity model, and attribution logic needed to measure the metrics in `metric-tree.md`.
+**Audience:** Data Engineer  
+**Owner:** Product Analyst  
+**Status:** Draft
 
 ## Overview
 
-This spec is the hand-off contract between product analytics and the data-engineer. It specifies:
-- Every event to be tracked
-- Event properties and payload schema
-- User identity model (pseudonymous / identified / account-level)
-- Session and user ID handling
-- Attribution logic (first-touch / last-touch / linear)
-- Data quality rules and validation
+This spec defines the events, properties, and identity model required to measure Cadence's success metrics (see `metric-tree.md`).
 
 ## Identity Model
 
-- **User ID source**: (how do we identify users?)
-- **Session ID**: (how do we identify sessions?)
-- **Account ID**: (if applicable)
-- **Anonymous handling**: (how do we handle unidentified visitors?)
+| Entity | Identifier | Properties |
+|--------|-----------|-----------|
+| User | | |
+| Session | | |
+| Account | | |
 
-## Events
+## Event Taxonomy
 
-Core events to be instrumented. For each event, specify:
-- Event name
-- Trigger (when is it fired?)
-- Properties (data payload)
-- Cardinality constraints (how often per user/session?)
-- Mandatory fields (user_id, session_id, timestamp, etc.)
+### Event Categories
 
-| Event Name | Trigger | Key Properties | Cardinality | Notes |
-|------------|---------|-----------------|-------------|-------|
-| (event name) | (when) | (properties) | (frequency) | (validation rules) |
-| (event name) | (when) | (properties) | (frequency) | (validation rules) |
+- **User Actions** — Direct user interactions (clicks, submissions, navigations)
+- **System Events** — App state changes (errors, feature flags, deployments)
+- **Business Events** — Transactions and outcomes (payments, conversions, churn)
 
-## Property Dictionary
+## Events Table
 
-Standard properties sent with every event.
+| Event Name | Trigger | Properties | Metric(s) Fed |
+|------------|---------|-----------|---------------|
+| | | | |
+| | | | |
+| | | | |
 
-| Property | Type | Description | Example |
-|----------|------|-------------|---------|
-| `timestamp` | ISO 8601 | Event time (UTC) | `2026-06-13T14:30:00Z` |
-| `user_id` | string | Identified user | `user_12345` |
-| `session_id` | string | Session token | `sess_abc123` |
-| `app_version` | string | Client version | `1.2.3` |
-| `platform` | enum | Device platform | `web` / `ios` / `android` |
+## Property Standards
+
+### User Properties
+
+| Property | Type | Values | Use |
+|----------|------|--------|-----|
+| | | | |
+| | | | |
+
+### Session Properties
+
+| Property | Type | Values | Use |
+|----------|------|--------|-----|
+| | | | |
+| | | | |
+
+### Event Properties
+
+| Property | Type | Values | Use |
+|----------|------|--------|-----|
+| | | | |
+| | | | |
 
 ## Attribution Model
 
-How do we attribute conversions to campaigns, features, or user journeys?
+Describe how events are attributed to users, cohorts, and campaigns:
 
-- **Attribution type**: (first-touch / last-touch / linear / time-decay)
-- **Touch window**: (how many days between first and conversion?)
-- **Channel mapping**: (how do we classify traffic sources?)
+- **Attribution window:** (e.g., last-click, 30-day lookback)
+- **Cohort assignment:** (e.g., by signup date, feature flag cohort)
+- **Campaign tagging:** (e.g., utm_source, utm_medium)
 
-## Data Quality
+## Test Accounts & Filters
 
-Quality gates and validation rules applied by the data warehouse.
+List accounts and conditions to exclude from metrics:
 
-| Rule | Check | Action if Failed |
-|------|-------|------------------|
-| (rule name) | (validation) | (reject event / flag / alert) |
-| (rule name) | (validation) | (reject event / flag / alert) |
+- Internal test accounts: `[list IDs or emails]`
+- Bot detection rule: 
+- Feature flag filters:
 
-## Handoff Checklist
+## Sampling & Granularity
 
-Before handing this spec to the data-engineer:
+- **Sampling rate:** (e.g., 100% for all users, 10% for high-volume events)
+- **Granularity:** (e.g., per-session vs per-user roll-up)
 
-- [ ] All events in the instrumentation spec are tied to metrics in `metric-tree.md`
-- [ ] Identity model is unambiguous (no circular deps between user/session/account)
-- [ ] Property dictionary covers all mandatory and optional fields
-- [ ] Attribution logic is defined (or documented as "no attribution needed")
-- [ ] Data quality rules are explicitly stated
-- [ ] The data-engineer has signed off on feasibility and timeline
+## Retention & Warehousing
+
+- **Event retention:** (e.g., 13 months)
+- **Warehouse destination:** (e.g., Snowflake, BigQuery, Redshift)
+- **Partitioning:** (e.g., by date, by user_id)
+
+## Sign-Off
+
+- **Analyst:** _____ (Date: _____)
+- **Data Engineer:** _____ (Date: _____)
 
 ```
 
 #### `work/docs/analytics/metric-tree.md`
 
 ```
-# Cadence North Star and Metric Hierarchy
+# Cadence Metric Tree
 
 ## North Star Metric
 
-The single measure of delivered customer value for Cadence.
-
 | Field | Value |
 |-------|-------|
-| **Metric** | (to be defined) |
-| **Definition** | (precise and unambiguous) |
-| **Calculation** | (exact formula or query logic) |
-| **Granularity** | (per user / session / account / cohort) |
-| **Time window** | (rolling 7d / calendar month / since signup) |
-| **Goodhart risk** | (how it could be gamed and who it would hurt) |
-| **Owner** | (who approves a definition change) |
+| **Metric** | |
+| **Definition** | |
+| **Question it answers** | |
+| **Granularity** | |
+| **Time window** | |
+| **Owner** | |
 
-## Metric Hierarchy
+## Input Metrics (HEART / AARRR)
 
-Input metrics that drive the North Star. Choose HEART or AARRR framework.
+### Happiness
 
-### HEART Framework
+| Metric | Definition | Owner |
+|--------|-----------|-------|
+| | | |
+| | | |
 
-- **Happiness** — user sentiment and satisfaction
-- **Engagement** — interaction frequency and depth
-- **Adoption** — new user acquisition and onboarding
-- **Retention** — return rates and churn
-- **Task success** — completion rates and error frequency
+### Engagement
 
-| Input Metric | Definition | Target | Owner |
-|--------------|-----------|--------|-------|
-| (metric name) | (definition) | (target value) | (owner) |
-| (metric name) | (definition) | (target value) | (owner) |
-| (metric name) | (definition) | (target value) | (owner) |
+| Metric | Definition | Owner |
+|--------|-----------|-------|
+| | | |
+| | | |
 
-### AARRR Framework
+### Adoption
 
-- **Awareness** — top-of-funnel discovery
-- **Acquisition** — sign-up conversion
-- **Activation** — aha-moment completion
-- **Revenue** — monetization conversion
-- **Retention** — repeat purchase / churn
+| Metric | Definition | Owner |
+|--------|-----------|-------|
+| | | |
+| | | |
 
-| Input Metric | Definition | Target | Owner |
-|--------------|-----------|--------|-------|
-| (metric name) | (definition) | (target value) | (owner) |
-| (metric name) | (definition) | (target value) | (owner) |
-| (metric name) | (definition) | (target value) | (owner) |
+### Retention
 
-## OKR Alignment
+| Metric | Definition | Owner |
+|--------|-----------|-------|
+| | | |
+| | | |
 
-Link each input metric to the OKRs it supports.
+### Task Success
 
-| OKR | Supporting Metrics |
-|-----|-------------------|
-| (OKR statement) | (metric names) |
-| (OKR statement) | (metric names) |
+| Metric | Definition | Owner |
+|--------|-----------|-------|
+| | | |
+| | | |
 
-## Goodhart Check
+## Metric Relationship Map
 
-For each metric, document the gaming risk:
+```
+[North Star]
+    |
+    +-- [Happiness]
+    |       +-- [Sub-metric]
+    |       +-- [Sub-metric]
+    |
+    +-- [Engagement]
+    |       +-- [Sub-metric]
+    |       +-- [Sub-metric]
+    |
+    +-- [Retention]
+            +-- [Sub-metric]
+            +-- [Sub-metric]
+```
 
-| Metric | Gaming Risk | Mitigations |
-|--------|------------|-------------|
-| (metric name) | (how it could be gamed) | (how we'd detect / prevent) |
-| (metric name) | (how it could be gamed) | (how we'd detect / prevent) |
+## Goodhart Checks
+
+For each input metric, document the gaming risk:
+
+| Metric | Goodhart Risk | Mitigation |
+|--------|---------------|-----------|
+| | | |
+| | | |
+
+## Related OKRs
+
+Link to the OKRs this metric tree serves (product-manager domain).
 
 ```
 
-#### `work/docs/analytics/CLAUDE.md`
+#### `work/docs/analytics/_sections/product-analyst.md`
 
 ```
-# Product Analytics Domain
-
-This directory contains product analytics: the North Star Metric, the metric hierarchy,
-instrumentation specs, cohort analyses, and experiment designs.
-
 ## What this domain covers
 
 - **North Star Metric** — the single number capturing delivered customer value
@@ -243,31 +267,33 @@ Every metric carries a definition block before implementation:
 | Field | Value |
 |---|---|
 | Verdict | PASS |
-| Score | 11.5/11.5 (100%) |
-| Evaluated | 2026-06-13 |
+| Score | 13.5/13.5 (100%) |
+| Evaluated | 2026-06-15 |
 | Target model | claude-haiku-4-5-20251001 |
 | Judge model | claude-sonnet-4-6 |
-| Target duration | 40032 ms |
-| Target cost | $0.1147 |
+| Target duration | 48213 ms |
+| Target cost | $0.0967 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | Creates the `docs/analytics/` directory (the one canonical path — not `docs/product-analytics/` or a variant) | PASS | Artifacts written to `work/docs/analytics/CLAUDE.md`, `work/docs/analytics/metric-tree.md`, `work/docs/analytics/instrumentation-spec.md` — canonical path used. |
-| c2 | Writes `docs/analytics/CLAUDE.md` as the domain file | PASS | Artifact `work/docs/analytics/CLAUDE.md` exists and is confirmed written. |
-| c3 | Writes `docs/analytics/metric-tree.md` (North Star + metric-hierarchy template) and `docs/analytics/instrumentation-spec.md` (data-engineer hand-off template) | PASS | Both artifact files `work/docs/analytics/metric-tree.md` and `work/docs/analytics/instrumentation-spec.md` are present and written. |
-| c4 | The domain CLAUDE.md states the ownership boundary — the product-analyst defines what to measure and why; the data-engineer builds how data flows (pipelines, warehouse, dashboards) | PASS | CLAUDE.md: "The product-analyst defines *what* to measure and *why*. The data-engineer builds *how* data flows (pipelines, warehouse, dashboards)." |
-| c5 | The domain CLAUDE.md states the metric-definition standard (question it answers, definition, calculation, granularity, filters, time window, Goodhart risk, owner) | PASS | CLAUDE.md "Metric definition standard" lists all 8 elements: question it answers, definition, calculation, granularity, filters, time window, Goodhart risk, owner. |
-| c6 | The domain CLAUDE.md states conventions — North Star measures customer value not company revenue, Goodhart check on every metric, vanity/cumulative totals are never a North Star | PASS | CLAUDE.md Conventions: "North Star measures customer value, never company revenue directly"; "Run the Goodhart check on every metric"; "Vanity metrics (cumulative totals) are never a North Star or an input". |
-| c7 | Does not invent metric values during bootstrap — templates ship with empty placeholder rows, not fabricated North Star or input metrics for "Cadence" | PASS | metric-tree.md uses "(to be defined)", "(metric name)", "(target value)"; instrumentation-spec.md uses "(event name)", "(when)". No fabricated Cadence-specific values. |
-| c8 | Returns a manifest listing files created, files merged (or "none"), and next steps — not arbitrary prose | PASS | Chat response has structured sections: "Files created" (3 entries), "Files merged" ("None (fresh bootstrap)"), "Next steps" (2 items). |
-| c9 | `docs/analytics/CLAUDE.md` exists and lists the available product-analyst skills (define-north-star, design-metric-hierarchy, write-instrumentation-spec, cohort-analysis, design-experiment) | PASS | CLAUDE.md "Available skills" table lists all 5 skills: define-north-star, design-metric-hierarchy, write-instrumentation-spec, cohort-analysis, design-experiment. |
-| c10 | `docs/analytics/metric-tree.md` and `docs/analytics/instrumentation-spec.md` exist with template structure and empty placeholder rows, not invented data | PASS | Both files confirmed written with placeholder rows only (e.g., "(metric name)", "(event name)") — no Cadence-specific invented data. |
-| c11 | The manifest names the created files and a "Next steps" section pointing at define-north-star and design-metric-hierarchy | PASS | Manifest lists all 3 created files; Next steps: "Define the North Star with `/product-analyst:define-north-star`" and "Build the metric hierarchy with `/product-analyst:design-metric-hierarchy`". |
-| c12 | The manifest reports a "Files merged" line as "none" given a clean project (idempotency awareness) | PARTIAL | Manifest has "Files merged: None (fresh bootstrap)" — explicit acknowledgment of idempotency context. |
+| c1 | Creates the `docs/analytics/` directory (the one canonical path — not `docs/product-analytics/` or a variant) with a `_sections/` subdirectory for the domain fragment | PASS | Artifacts at `work/docs/analytics/_sections/product-analyst.md`, `work/docs/analytics/metric-tree.md`, `work/docs/analytics/instrumentation-spec.md` confirm canonical path. |
+| c2 | Writes `docs/analytics/_sections/product-analyst.md` as the domain fragment | PASS | Artifact `work/docs/analytics/_sections/product-analyst.md` is present and contains the full domain fragment. |
+| c3 | The fragment is authored at H2 and below — it does not introduce a `# Analytics Domain` H1 (the coordinator generates that when it assembles `docs/analytics/CLAUDE.md`) | PASS | Fragment starts with `## What this domain covers` — no H1 present anywhere in the file. |
+| c4 | The skill does NOT write `docs/analytics/CLAUDE.md` directly — that file is the coordinator's to assemble from `_sections/` | PASS | No `CLAUDE.md` appears in the artifacts. Chat response explicitly notes "coordinator assembles `docs/analytics/CLAUDE.md` from it". |
+| c5 | Writes `docs/analytics/metric-tree.md` (North Star + metric-hierarchy template) and `docs/analytics/instrumentation-spec.md` (data-engineer hand-off template) | PASS | Both `work/docs/analytics/metric-tree.md` and `work/docs/analytics/instrumentation-spec.md` are present in artifacts. |
+| c6 | The fragment states the ownership boundary — the product-analyst defines what to measure and why; the data-engineer builds how data flows (pipelines, warehouse, dashboards) | PASS | "## Ownership boundary" section: "The product-analyst defines *what* to measure and *why*. The data-engineer builds *how* data flows (pipelines, warehouse, dashboards)." |
+| c7 | The fragment states the metric-definition standard (question it answers, definition, calculation, granularity, filters, time window, Goodhart risk, owner) | PASS | "## Metric definition standard" lists all 8 required fields: question it answers, definition, calculation, granularity, filters, time window, Goodhart risk, owner. |
+| c8 | The fragment states conventions — North Star measures customer value not company revenue, Goodhart check on every metric, vanity/cumulative totals are never a North Star | PASS | "## Conventions": "North Star measures customer value, never company revenue directly", "Run the Goodhart check on every metric", "Vanity metrics (cumulative totals) are never a North Star or an input". |
+| c9 | Does not invent metric values during bootstrap — templates ship with empty placeholder rows, not fabricated North Star or input metrics for "Cadence" | PASS | `metric-tree.md` North Star table has empty Value cells; HEART tables have empty rows. `instrumentation-spec.md` Events Table and Property tables all contain empty rows. |
+| c10 | Returns a manifest listing files created, files merged (or "none"), and next steps — not arbitrary prose | PASS | Chat response has structured sections: "### Files created", "### Files merged" (with "none — fresh bootstrap"), "### Next steps". |
+| c11 | `docs/analytics/_sections/product-analyst.md` exists and lists the available product-analyst skills (define-north-star, design-metric-hierarchy, write-instrumentation-spec, cohort-analysis, design-experiment) | PASS | "## Available skills" table lists all 5 skills: define-north-star, design-metric-hierarchy, write-instrumentation-spec, cohort-analysis, design-experiment. |
+| c12 | `docs/analytics/metric-tree.md` and `docs/analytics/instrumentation-spec.md` exist with template structure and empty placeholder rows, not invented data | PASS | Both files present with full template structure (headers, tables, sections) and empty rows — no fabricated metric names or values for "Cadence". |
+| c13 | The manifest names the created files and a "Next steps" section pointing at define-north-star and design-metric-hierarchy | PASS | Manifest lists 3 files created; "### Next steps" cites "/product-analyst:define-north-star" and "/product-analyst:design-metric-hierarchy" explicitly. |
+| c14 | The manifest reports a "Files merged" line as "none" given a clean project (idempotency awareness) | PARTIAL | "### Files merged" section present with "(none — this is a fresh bootstrap)" — explicit idempotency awareness shown. |
 
 ### Notes
 
-The skill executed flawlessly: all three files written to the canonical path with placeholder-only content, CLAUDE.md covers all required sections (ownership, metric standard, conventions, skills), and the manifest is structured with all required sections. No fabricated Cadence-specific data anywhere.
+The skill produced a perfect bootstrap: all three files created at correct canonical paths, fragment correctly scoped to H2+, CLAUDE.md not written directly, all template content uses empty placeholder rows, and the manifest is properly structured. No gaps found across any criterion.

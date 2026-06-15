@@ -1,7 +1,7 @@
 ---
 name: bootstrap
 bootstrap-phase: engineering
-description: "Bootstrap the performance documentation structure for a project. Creates docs/performance/, generates initial templates, and writes domain CLAUDE.md. Idempotent — merges missing sections into existing files without overwriting."
+description: "Bootstrap the performance documentation structure for a project. Creates docs/performance/, generates initial templates, and writes the performance-engineer fragment of the performance domain doc (the coordinator assembles docs/performance/CLAUDE.md). Idempotent — merges missing sections into existing files without overwriting."
 argument-hint: "[project name]"
 user-invocable: false
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
@@ -16,7 +16,7 @@ Bootstrap the performance documentation structure for **$ARGUMENTS**.
 ### Step 1: Check and create domain directory
 
 ```bash
-mkdir -p docs/performance
+mkdir -p docs/performance docs/performance/_sections
 ```
 
 ### Step 2: Create or merge files
@@ -25,15 +25,13 @@ For each file below, apply the safe merge pattern:
 - If file does not exist → create from template
 - If file exists → read both, find sections in template missing from file, append missing sections with `<!-- Merged from performance-engineer bootstrap v0.1.0 -->`
 
-#### File 1: `docs/performance/CLAUDE.md`
+#### Fragment: `docs/performance/_sections/performance-engineer.md`
 
-Create with this content (~90 lines):
+`docs/performance/CLAUDE.md` is **assembled by the coordinator** from the fragments in `_sections/` — no plugin
+writes it directly. Write the performance-engineer's contribution as this fragment. It starts at H2 (the
+coordinator generates the `# Performance Domain` H1 and a one-line intro). Create it with this content:
 
 ```markdown
-# Performance Domain
-
-This directory contains performance documentation: budgets, profiling results, load test plans, and capacity planning.
-
 ## What This Domain Covers
 
 - **Performance budgets** — thresholds for Core Web Vitals and API response times
@@ -211,7 +209,7 @@ After creating/merging all files, output a summary:
 ## Performance Bootstrap Complete
 
 ### Files created
-- `docs/performance/CLAUDE.md` — domain conventions and skill reference
+- `docs/performance/_sections/performance-engineer.md` — performance-engineer fragment (coordinator assembles `docs/performance/CLAUDE.md` from it)
 - `docs/performance/performance-budget.md` — performance budget template
 
 ### Files merged

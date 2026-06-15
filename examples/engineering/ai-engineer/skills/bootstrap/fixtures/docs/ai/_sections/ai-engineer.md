@@ -1,6 +1,4 @@
-# GTM Domain
-
-This directory contains go-to-market documentation for the project.
+<!-- ai-engineer fragment of the ai domain doc. Assembled into docs/ai/CLAUDE.md by the coordinator. -->
 
 ## Custom team notes
 

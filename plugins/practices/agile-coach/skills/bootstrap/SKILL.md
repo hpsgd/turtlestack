@@ -1,7 +1,7 @@
 ---
 name: bootstrap
 bootstrap-phase: delivery
-description: "Bootstrap the agile-coaching documentation structure for a project. Creates docs/coaching/, generates initial working-agreements and retrospective templates, and writes a domain CLAUDE.md. Idempotent — merges missing sections into existing files without overwriting."
+description: "Bootstrap the agile-coaching documentation structure for a project. Creates docs/coaching/, generates initial working-agreements and retrospective templates, and writes the agile-coach fragment of the coaching domain doc (the coordinator assembles docs/coaching/CLAUDE.md). Idempotent — merges missing sections into existing files without overwriting."
 argument-hint: "[team or project name]"
 user-invocable: false
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
@@ -16,6 +16,7 @@ Bootstrap the agile-coaching documentation structure for **$ARGUMENTS**.
 ```bash
 mkdir -p docs/coaching/retrospectives
 mkdir -p docs/coaching/health
+mkdir -p docs/coaching/_sections
 ```
 
 `docs/coaching/` holds the team's process artifacts: working agreements, Definition of Done, retrospective
@@ -29,16 +30,13 @@ For each file below, apply the safe merge pattern:
 - If the file exists → read both, find sections in the template missing from the file, append the missing
   sections with a `<!-- Merged from agile-coach bootstrap v0.1.0 -->` marker. Never overwrite existing content.
 
-### File 1: `docs/coaching/CLAUDE.md`
+### File 1: `docs/coaching/_sections/agile-coach.md`
 
-Create with this content:
+`docs/coaching/CLAUDE.md` is **assembled by the coordinator** from the fragments in `_sections/` — no plugin
+writes it directly. Write the agile coach's contribution as this fragment. It starts at H2 (the coordinator
+generates the `# Coaching Domain` H1 and a one-line intro). Create it with this content:
 
 ```markdown
-# Coaching Domain
-
-This directory holds the team's process artifacts: working agreements, Definition of Done, retrospective
-outputs, and team-health scans. The agile coach owns the structure; the team owns the content.
-
 ## What this domain covers
 
 - **Working agreements** — how the team operates (norms, communication, meeting behaviour)
@@ -127,7 +125,7 @@ After creating or merging all files, output a summary:
 ## Coaching Bootstrap Complete
 
 ### Files created
-- `docs/coaching/CLAUDE.md` — domain conventions and skill reference
+- `docs/coaching/_sections/agile-coach.md` — agile-coach fragment (coordinator assembles `docs/coaching/CLAUDE.md` from it)
 - `docs/coaching/working-agreements.md` — working-agreements starter
 - `docs/coaching/definition-of-done.md` — DoD starter
 
@@ -137,7 +135,7 @@ After creating or merging all files, output a summary:
 ### Next steps
 - Run `/agile-coach:design-working-agreements` to facilitate the team authoring its agreements
 - Run `/agile-coach:team-health-scan` to establish a safety baseline
-- Record the team's method in `docs/coaching/CLAUDE.md`
+- Record the team's method in the `docs/coaching/_sections/agile-coach.md` fragment
 ```
 
 ## Rules

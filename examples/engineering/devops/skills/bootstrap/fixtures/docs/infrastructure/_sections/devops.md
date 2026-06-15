@@ -1,6 +1,4 @@
-# Quality Domain
-
-This directory contains quality assurance documentation for the project.
+<!-- devops fragment of the infrastructure domain doc. Assembled into docs/infrastructure/CLAUDE.md by the coordinator. -->
 
 ## Custom team notes
 

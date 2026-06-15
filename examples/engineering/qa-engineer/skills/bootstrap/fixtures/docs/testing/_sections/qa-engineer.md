@@ -1,6 +1,4 @@
-# Security Domain
-
-This directory contains security documentation for the project.
+<!-- qa-engineer fragment of the testing domain doc. Assembled into docs/testing/CLAUDE.md by the coordinator. -->
 
 ## Custom team notes
 

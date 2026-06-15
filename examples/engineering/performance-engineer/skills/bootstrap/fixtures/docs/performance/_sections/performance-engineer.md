@@ -1,6 +1,4 @@
-# Support Domain
-
-This directory contains support documentation for the project.
+<!-- performance-engineer fragment of the performance domain doc. Assembled into docs/performance/CLAUDE.md by the coordinator. -->
 
 ## Custom team notes
 

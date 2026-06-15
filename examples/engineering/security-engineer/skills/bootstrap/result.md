@@ -1,10 +1,10 @@
 # Bootstrap
 
-Scenario: A synthetic project root at `{workspace}/work/` is pre-staged with a partial `docs/security/CLAUDE.md` containing a user-authored section. The security-engineer bootstrap skill should preserve that user content while appending the template's missing sections (with a merge marker), and should create the three files the fixture is missing — `SECURITY.md`, `docs/security/threat-model-template.md`, and `docs/security/security-review-template.md`. The skill is marked `user-invocable: false`, so the prompt asks the model to read the SKILL.md directly and execute its process. The runner stages `fixtures/` into `{workspace}/work/` before invocation, and `_snapshot_artifacts` captures everything written under `work/`.
+Scenario: A synthetic project root at `{workspace}/work/` is pre-staged with a partial `docs/security/_sections/security-engineer.md` fragment containing a user-authored section. The security-engineer bootstrap skill should preserve that user content while appending the template's missing sections (with a merge marker), and should create the three files the fixture is missing — `SECURITY.md`, `docs/security/threat-model-template.md`, and `docs/security/security-review-template.md`. The security-engineer never writes `docs/security/CLAUDE.md` directly — the coordinator assembles it from the fragments in `_sections/`. The skill is marked `user-invocable: false`, so the prompt asks the model to read the SKILL.md directly and execute its process. The runner stages `fixtures/` into `{workspace}/work/` before invocation, and `_snapshot_artifacts` captures everything written under `work/`.
 
 ## Prompt
 
-> The current working directory (`{workspace}/work/`) is the project root for a project called "TestProject". A partial `docs/security/CLAUDE.md` is already present — it contains a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`.
+> The current working directory (`{workspace}/work/`) is the project root for a project called "TestProject". A partial `docs/security/_sections/security-engineer.md` fragment is already present — it contains a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`.
 > 
 > Read the security-engineer bootstrap skill at `/Users/martin/Projects/turtlestack/plugins/engineering/security-engineer/skills/bootstrap/SKILL.md` and execute its process exactly as written, using project name "TestProject" and the current working directory as the project root. Apply the safe-merge pattern as documented. Do not pause for confirmation — proceed with all defaults.
 > 
@@ -16,8 +16,6 @@ Captured from a real headless invocation of the skill/agent.
 
 ### Chat response
 
-Perfect! Bootstrap complete. Here's the manifest summary:
-
 ## Security Bootstrap Complete
 
 ### Files created
@@ -26,12 +24,13 @@ Perfect! Bootstrap complete. Here's the manifest summary:
 - `docs/security/security-review-template.md` — security review checklist
 
 ### Files merged
-- `docs/security/CLAUDE.md` — appended 9 missing sections (What This Domain Covers, STRIDE Threat Modelling, OWASP ASVS Levels, CVSS Scoring, Security Review Process, Secure Coding Practices, Tooling, Available Skills, Conventions) while preserving the existing "Custom team notes" section with USER-EDIT-SENTINEL-DO-NOT-STRIP intact
+- `docs/security/_sections/security-engineer.md` — appended template sections while preserving user's "Custom team notes" (marked with `USER-EDIT-SENTINEL-DO-NOT-STRIP`)
 
 ### Next steps
 - Update `SECURITY.md` with actual security contact email
 - Use `/security-engineer:threat-model` for new services
 - Configure SonarCloud security rules and Dependabot
+- Coordinator will assemble `docs/security/CLAUDE.md` from `docs/security/_sections/security-engineer.md` fragment
 
 ### Artifacts written
 
@@ -209,12 +208,10 @@ flowchart LR
 
 ```
 
-#### `work/docs/security/CLAUDE.md`
+#### `work/docs/security/_sections/security-engineer.md`
 
 ```
-# Security Domain
-
-This directory contains security documentation for the project.
+<!-- security-engineer fragment of the security domain doc. Assembled into docs/security/CLAUDE.md by the coordinator. -->
 
 ## Custom team notes
 
@@ -329,24 +326,28 @@ Use [CVSS v3.1](https://www.first.org/cvss/calculator/3.1) for vulnerability sev
 |---|---|
 | Verdict | PASS |
 | Score | 9.5/9.5 (100%) |
-| Evaluated | 2026-05-13 |
-| Target duration | 47445 ms |
-| Target cost | $0.1235 |
+| Evaluated | 2026-06-15 |
+| Target model | claude-haiku-4-5-20251001 |
+| Judge model | claude-sonnet-4-6 |
+| Target duration | 53273 ms |
+| Target cost | $0.1073 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | After bootstrap, `docs/security/CLAUDE.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | Artifact `work/docs/security/CLAUDE.md` contains the literal line `USER-EDIT-SENTINEL-DO-NOT-STRIP` and the surrounding user-authored paragraph intact. |
-| c2 | After bootstrap, `docs/security/CLAUDE.md` contains the safe-merge marker `<!-- Merged from security-engineer bootstrap v0.1.0 -->` and the "STRIDE Threat Modelling" heading was appended | PASS | Artifact contains `<!-- Merged from security-engineer bootstrap v0.1.0 -->` and `## STRIDE Threat Modelling` heading in the appended section. |
-| c3 | After bootstrap, `SECURITY.md` exists at the project root and contains a "Reporting a Vulnerability" heading | PASS | Artifact `work/SECURITY.md` present with `## Reporting a Vulnerability` heading. |
-| c4 | After bootstrap, `docs/security/threat-model-template.md` exists and contains a "STRIDE Analysis" heading | PASS | Artifact `work/docs/security/threat-model-template.md` present with `## STRIDE Analysis` heading. |
-| c5 | After bootstrap, `docs/security/security-review-template.md` exists and contains a "Checklist" heading | PASS | Artifact `work/docs/security/security-review-template.md` present with `## Checklist` heading. |
-| c6 | Chat output individually lists files created and any files merged — a bare "bootstrap complete" without the per-file list is not enough | PASS | Chat response has distinct "### Files created" section listing 3 files and "### Files merged" section listing `docs/security/CLAUDE.md`. |
-| c7 | Output does not claim it overwrote or replaced `docs/security/CLAUDE.md` — the language reflects merge, not replacement | PASS | Chat says "Files merged" and "appended 9 missing sections ... while preserving the existing ... section" — no overwrite/replace language used. |
-| c8 | Output points the reader at next steps (updating `SECURITY.md` with a contact email, using `/security-engineer:threat-model`) consistent with the skill's documented manifest | PARTIAL | Next steps include "Update `SECURITY.md` with actual security contact email" and "Use `/security-engineer:threat-model` for new services" — both expected items present. |
+| c1 | After bootstrap, `docs/security/_sections/security-engineer.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | Artifact shows '## Custom team notes\n\nUSER-EDIT-SENTINEL-DO-NOT-STRIP\n\nThis section was written by the team...' intact at top of file. |
+| c2 | After bootstrap, `docs/security/_sections/security-engineer.md` contains the safe-merge marker `<!-- Merged from security-engineer bootstrap v0.1.0 -->` and the "STRIDE Threat Modelling" heading was appended | PASS | Artifact contains '<!-- Merged from security-engineer bootstrap v0.1.0 -->' followed immediately by '## STRIDE Threat Modelling' section. |
+| c3 | The security-engineer fragment is authored at H2 and below — it does not introduce a `# Security Domain` H1 (the coordinator generates that when it assembles `docs/security/CLAUDE.md`) | PASS | All headings in the artifact use '##' or deeper. No '# ...' H1 appears anywhere in the file. |
+| c4 | The skill does NOT write `docs/security/CLAUDE.md` directly — that file is the coordinator's to assemble from `_sections/` | PASS | No `docs/security/CLAUDE.md` artifact listed. Chat output states 'Coordinator will assemble docs/security/CLAUDE.md from the fragment.' |
+| c5 | After bootstrap, `SECURITY.md` exists at the project root and contains a "Reporting a Vulnerability" heading | PASS | Artifact `work/SECURITY.md` exists and contains '## Reporting a Vulnerability' heading. |
+| c6 | After bootstrap, `docs/security/threat-model-template.md` exists and contains a "STRIDE Analysis" heading | PASS | Artifact `work/docs/security/threat-model-template.md` exists and contains '## STRIDE Analysis' section. |
+| c7 | After bootstrap, `docs/security/security-review-template.md` exists and contains a "Checklist" heading | PASS | Artifact `work/docs/security/security-review-template.md` exists and contains '## Checklist' heading. |
+| c8 | Chat output individually lists files created and any files merged — a bare "bootstrap complete" without the per-file list is not enough | PASS | Chat output has '### Files created' listing 3 files individually and '### Files merged' listing the security-engineer fragment with description. |
+| c9 | Output does not claim it overwrote or replaced `docs/security/_sections/security-engineer.md` — the language reflects merge, not replacement | PASS | Chat output uses 'Files merged' section with 'appended template sections while preserving user's Custom team notes' — no overwrite language. |
+| c10 | Output points the reader at next steps (updating `SECURITY.md` with a contact email, using `/security-engineer:threat-model`) consistent with the skill's documented manifest | PARTIAL | Chat output '### Next steps' includes 'Update SECURITY.md with actual security contact email' and 'Use /security-engineer:threat-model for new services'. |
 
 ### Notes
 
-All criteria met cleanly. The safe-merge pattern was correctly applied: sentinel preserved, merge marker added, three new files created with required headings, and the manifest summary matches the skill's documented output format exactly.
+All ten criteria are fully met. The safe-merge contract was executed correctly: sentinel preserved, merge marker inserted, H2-only structure maintained, CLAUDE.md not written, and all three new files created with required headings.

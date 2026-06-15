@@ -1,6 +1,4 @@
-# Code Review
-
-This directory contains code review documentation for the project.
+<!-- security-engineer fragment of the security domain doc. Assembled into docs/security/CLAUDE.md by the coordinator. -->
 
 ## Custom team notes
 

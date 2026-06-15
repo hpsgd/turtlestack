@@ -1,7 +1,7 @@
 ---
 name: bootstrap
 bootstrap-phase: product
-description: "Bootstrap the product analytics documentation structure for a project. Creates docs/analytics/, generates initial metric-tree and instrumentation templates, and writes domain CLAUDE.md. Idempotent — merges missing sections into existing files without overwriting."
+description: "Bootstrap the product analytics documentation structure for a project. Creates docs/analytics/, generates initial metric-tree and instrumentation templates, and writes the product-analyst fragment of the analytics domain doc (the coordinator assembles docs/analytics/CLAUDE.md). Idempotent — merges missing sections into existing files without overwriting."
 argument-hint: "[project name]"
 user-invocable: false
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
@@ -14,7 +14,7 @@ Bootstrap the product analytics documentation structure for **$ARGUMENTS**. This
 ## Step 1: Check and create domain directory
 
 ```bash
-mkdir -p docs/analytics
+mkdir -p docs/analytics docs/analytics/_sections
 ```
 
 ## Step 2: Create or merge files
@@ -26,16 +26,13 @@ For each file below, apply the safe merge pattern:
 
 Never overwrite existing content. Bootstrap is idempotent — running it twice changes nothing the second time.
 
-### File 1: `docs/analytics/CLAUDE.md`
+### File 1: `docs/analytics/_sections/product-analyst.md`
 
-Create with this content:
+`docs/analytics/CLAUDE.md` is **assembled by the coordinator** from the fragments in `_sections/` — no plugin
+writes it directly. Write the product-analyst's contribution as this fragment. It starts at H2 (the coordinator
+generates the `# Analytics Domain` H1 and a one-line intro). Create it with this content:
 
 ```markdown
-# Product Analytics Domain
-
-This directory contains product analytics: the North Star Metric, the metric hierarchy,
-instrumentation specs, cohort analyses, and experiment designs.
-
 ## What this domain covers
 
 - **North Star Metric** — the single number capturing delivered customer value
@@ -103,7 +100,7 @@ After creating or merging all files, output a summary:
 ## Product Analytics Bootstrap Complete
 
 ### Files created
-- `docs/analytics/CLAUDE.md` — domain conventions and skill reference
+- `docs/analytics/_sections/product-analyst.md` — product-analyst fragment (coordinator assembles `docs/analytics/CLAUDE.md` from it)
 - `docs/analytics/metric-tree.md` — North Star and metric-hierarchy template
 - `docs/analytics/instrumentation-spec.md` — data-engineer hand-off template
 

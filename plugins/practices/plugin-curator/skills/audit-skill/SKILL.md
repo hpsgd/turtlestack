@@ -128,17 +128,18 @@ Only applies when the skill is named `bootstrap` (i.e. `skills/bootstrap/SKILL.m
 | Present but unrecognised value | ⚠️ Runs in the default slot — confirm the phase is intended |
 | Missing | ❌ Add `bootstrap-phase` so the coordinator can order it |
 
-**Criterion 14: No shared-file writes (bootstrap skills only)**
+**Criterion 14: Writes a domain fragment, never the domain `CLAUDE.md` (bootstrap skills only)**
 
-Only applies to `bootstrap` skills; N/A otherwise. A bootstrap skill must write only paths it exclusively owns. If it contributes to a domain doc that another plugin also contributes to, it must write a fragment at `docs/<domain>/_sections/<plugin>.md`, not the shared `docs/<domain>/CLAUDE.md` directly. Check the skill's file-write instructions:
-- Does it create or append a `docs/<domain>/CLAUDE.md` that another plugin's bootstrap also writes? (Cross-check the shared domains: `product`, `design`, `content`, `architecture`.)
-- Or does it correctly write a fragment under `_sections/`?
+Only applies to `bootstrap` skills; N/A otherwise. A bootstrap skill must never write a domain `CLAUDE.md` directly — the coordinator assembles every one from fragments. The skill writes its contribution as a fragment at `docs/<domain>/_sections/<plugin>.md` (H2 and below, no H1), whether the domain has one contributing plugin or several. A sole owner is not an exception: a single-plugin domain is just a domain with one fragment. Check the skill's file-write instructions:
+- Does it create or append any `docs/<domain>/CLAUDE.md`? That is the defect — even for a domain no other plugin touches.
+- Does it correctly write a fragment under `_sections/` and refer to the domain `CLAUDE.md` only as the coordinator-assembled output?
+
+Writing the project-root `SECURITY.md` or `CHANGELOG.md` is fine — those are not domain docs. A `See docs/<domain>/CLAUDE.md` pointer is fine — that references the assembled file, it doesn't write it.
 
 | State | Score |
 |---|---|
-| Writes only owned paths / a `_sections/` fragment for shared domains | ✅ |
-| Writes a `docs/<domain>/CLAUDE.md` no other plugin touches | ✅ (sole owner — fine) |
-| Creates or appends a domain `CLAUDE.md` that another plugin also writes | ❌ Convert to a `_sections/<plugin>.md` fragment |
+| Writes a `_sections/<plugin>.md` fragment; refers to the domain `CLAUDE.md` only as coordinator-assembled | ✅ |
+| Creates or appends any domain `docs/<domain>/CLAUDE.md` directly (even as sole owner) | ❌ Convert to a `_sections/<plugin>.md` fragment |
 
 ### Step 4: Classify findings
 

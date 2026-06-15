@@ -1,10 +1,10 @@
 # Bootstrap
 
-Scenario: A synthetic project root at `{workspace}/work/` is pre-staged with a partial `docs/governance/CLAUDE.md` containing a user-authored section. The grc-lead bootstrap skill should preserve that user content while appending the template's missing sections (with a merge marker), and should create the three files the fixture is missing — `risk-register.md`, `compliance-checklist.md`, and `ai-governance-policy.md`. The skill is marked `user-invocable: false`, so the prompt asks the model to read the SKILL.md directly and execute its process. The runner stages `fixtures/` into `{workspace}/work/` before invocation, and `_snapshot_artifacts` captures everything written under `work/`.
+Scenario: A synthetic project root at `{workspace}/work/` is pre-staged with a partial `docs/governance/_sections/grc-lead.md` fragment containing a user-authored section. The grc-lead bootstrap skill should preserve that user content while appending the template's missing sections (with a merge marker), and should create the three files the fixture is missing — `risk-register.md`, `compliance-checklist.md`, and `ai-governance-policy.md`. The grc-lead never writes `docs/governance/CLAUDE.md` directly — the coordinator assembles it from the fragments in `_sections/`. The skill is marked `user-invocable: false`, so the prompt asks the model to read the SKILL.md directly and execute its process. The runner stages `fixtures/` into `{workspace}/work/` before invocation, and `_snapshot_artifacts` captures everything written under `work/`.
 
 ## Prompt
 
-> The current working directory (`{workspace}/work/`) is the project root for a project called "TestProject". A partial `docs/governance/CLAUDE.md` is already present — it contains a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`.
+> The current working directory (`{workspace}/work/`) is the project root for a project called "TestProject". A partial `docs/governance/_sections/grc-lead.md` fragment is already present — it contains a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`.
 > 
 > Read the grc-lead bootstrap skill at `/Users/martin/Projects/turtlestack/plugins/leadership/grc-lead/skills/bootstrap/SKILL.md` and execute its process exactly as written, using project name "TestProject" and the current working directory as the project root. Apply the safe-merge pattern as documented. Do not pause for confirmation — proceed with all defaults.
 > 
@@ -24,7 +24,7 @@ Captured from a real headless invocation of the skill/agent.
 - `docs/governance/ai-governance-policy.md` — AI governance policy template
 
 ### Files merged
-- `docs/governance/CLAUDE.md` — appended missing sections (What This Domain Covers, Risk Management, Compliance Frameworks, AI Governance, DPIA Process, Audit Readiness, Tooling, Available Skills, Conventions) while preserving user-authored "Custom team notes" section with sentinel
+- `docs/governance/_sections/grc-lead.md` — merged missing sections from template while preserving user-authored "Custom team notes" section (USER-EDIT-SENTINEL-DO-NOT-STRIP)
 
 ### Next steps
 - Conduct initial risk assessment using `/grc-lead:risk-assessment`
@@ -149,12 +149,10 @@ AI-specific incidents (harmful output, bias detected, data leak via AI):
 
 ```
 
-#### `work/docs/governance/CLAUDE.md`
+#### `work/docs/governance/_sections/grc-lead.md`
 
 ```
-# Governance Domain
-
-This directory contains governance, risk, and compliance documentation: risk registers, compliance checklists, AI governance policies, and audit artefacts.
+<!-- grc-lead fragment of the governance domain doc. Assembled into docs/governance/CLAUDE.md by the coordinator. -->
 
 ## Custom team notes
 
@@ -296,27 +294,31 @@ Conduct a Data Protection Impact Assessment when processing is likely to result 
 | Field | Value |
 |---|---|
 | Verdict | PASS |
-| Score | 9.5/9.5 (100%) |
-| Evaluated | 2026-05-13 |
-| Target duration | 49202 ms |
-| Target cost | $0.1597 |
+| Score | 11.5/11.5 (100%) |
+| Evaluated | 2026-06-15 |
+| Target model | claude-haiku-4-5-20251001 |
+| Judge model | claude-sonnet-4-6 |
+| Target duration | 55820 ms |
+| Target cost | $0.1095 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | After bootstrap, `docs/governance/CLAUDE.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | work/docs/governance/CLAUDE.md contains '## Custom team notes\n\nUSER-EDIT-SENTINEL-DO-NOT-STRIP' with full surrounding text intact |
-| c2 | After bootstrap, `docs/governance/CLAUDE.md` contains the safe-merge marker `<!-- Merged from grc-lead bootstrap v0.1.0 -->` — sections missing from the fixture were appended, not silently merged | PASS | Artifact contains exactly '<!-- Merged from grc-lead bootstrap v0.1.0 -->' between the user section and the appended template sections |
-| c3 | After bootstrap, `docs/governance/CLAUDE.md` contains the appended template sections — at minimum the "Risk Management (ISO 31000)" and "Compliance Frameworks" headings now appear alongside the preserved user content | PASS | '## Risk Management (ISO 31000)' and '## Compliance Frameworks' both present in CLAUDE.md artifact, following the merge marker |
-| c4 | After bootstrap, `docs/governance/risk-register.md` exists and was created from the skill's template (contains an "Active Risks" table with column headers) | PASS | work/docs/governance/risk-register.md exists with '## Active Risks' and table headers: ID, Risk Description, Category, Likelihood, Consequence, Rating, Treatment, Owner, Review Date |
-| c5 | After bootstrap, `docs/governance/compliance-checklist.md` exists and was created from the skill's template (contains a "Framework Applicability" table) | PASS | work/docs/governance/compliance-checklist.md exists with '## Framework Applicability' table listing SOC 2, ISO 27001, GDPR, Essential Eight, NIST CSF 2.0 |
-| c6 | After bootstrap, `docs/governance/ai-governance-policy.md` exists and was created from the skill's template (contains an "AI System Inventory" table and "Principles" section) | PASS | work/docs/governance/ai-governance-policy.md contains '## AI System Inventory' table and '## Principles' section with 5 numbered principles |
-| c7 | Chat output includes a manifest summary headed `## GRC Lead Bootstrap Complete` that distinguishes files created from files merged | PASS | Chat response opens with '## GRC Lead Bootstrap Complete' and contains distinct '### Files created' and '### Files merged' subsections |
-| c8 | Output names each created and merged file individually — a bare "bootstrap complete" without the per-file manifest is not enough | PASS | Each file listed by path: risk-register.md, compliance-checklist.md, ai-governance-policy.md under created; CLAUDE.md under merged with per-section detail |
-| c9 | Output does not claim it overwrote or replaced `docs/governance/CLAUDE.md` — the language reflects merge, not replacement | PASS | Output says 'appended missing sections...while preserving user-authored "Custom team notes" section with sentinel' — merge language throughout, no replacement claim |
-| c10 | Output points the reader at next steps (conducting a risk assessment, determining applicable compliance frameworks, classifying AI systems) consistent with the skill's documented manifest | PARTIAL | Next steps section lists: risk-assessment skill, compliance-checklist.md for frameworks, ai-governance-review skill, and write-dpia skill — all three specified items present |
+| c1 | After bootstrap, `docs/governance/_sections/grc-lead.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | Artifact shows 'USER-EDIT-SENTINEL-DO-NOT-STRIP' on its own line under '## Custom team notes', with surrounding user content intact. |
+| c2 | After bootstrap, `docs/governance/_sections/grc-lead.md` contains the safe-merge marker `<!-- Merged from grc-lead bootstrap v0.1.0 -->` — sections missing from the fixture were appended, not silently merged | PASS | Artifact contains '<!-- Merged from grc-lead bootstrap v0.1.0 -->' between the user-authored section and the appended template sections. |
+| c3 | After bootstrap, `docs/governance/_sections/grc-lead.md` contains the appended template sections — at minimum the "Risk Management (ISO 31000)" and "Compliance Frameworks" headings now appear alongside the preserved user content | PASS | Artifact contains '## Risk Management (ISO 31000)' and '## Compliance Frameworks' headings following the merge marker and user content. |
+| c4 | The grc-lead fragment is authored at H2 and below — it does not introduce a `# Governance Domain` H1 (the coordinator generates that when it assembles `docs/governance/CLAUDE.md`) | PASS | Artifact's grc-lead.md begins with a comment then '## Custom team notes' — no H1 heading appears anywhere in the file. |
+| c5 | The skill does NOT write `docs/governance/CLAUDE.md` directly — that file is the coordinator's to assemble from `_sections/` | PASS | Artifacts written list only risk-register.md, compliance-checklist.md, ai-governance-policy.md, and _sections/grc-lead.md — no CLAUDE.md. |
+| c6 | After bootstrap, `docs/governance/risk-register.md` exists and was created from the skill's template (contains an "Active Risks" table with column headers) | PASS | Artifact risk-register.md contains '## Active Risks' and table with headers 'ID \| Risk Description \| Category \| Likelihood \| Consequence \| Rating \| Treatment \| Owner \| Review Date'. |
+| c7 | After bootstrap, `docs/governance/compliance-checklist.md` exists and was created from the skill's template (contains a "Framework Applicability" table) | PASS | Artifact compliance-checklist.md contains '## Framework Applicability' with a table listing SOC 2, ISO 27001, GDPR, Essential Eight, NIST CSF 2.0. |
+| c8 | After bootstrap, `docs/governance/ai-governance-policy.md` exists and was created from the skill's template (contains an "AI System Inventory" table and "Principles" section) | PASS | Artifact ai-governance-policy.md contains '## AI System Inventory' table and '## Principles' with 5 numbered principles. |
+| c9 | Chat output includes a manifest summary headed `## GRC Lead Bootstrap Complete` that distinguishes files created from files merged | PASS | Chat output opens with '## GRC Lead Bootstrap Complete' and contains distinct '### Files created' and '### Files merged' subsections. |
+| c10 | Output names each created and merged file individually — a bare "bootstrap complete" without the per-file manifest is not enough | PASS | Chat output lists each file by path: risk-register.md, compliance-checklist.md, ai-governance-policy.md under created; _sections/grc-lead.md under merged. |
+| c11 | Output does not claim it overwrote or replaced `docs/governance/_sections/grc-lead.md` — the language reflects merge, not replacement | PASS | Chat output states 'merged missing sections from template while preserving user-authored "Custom team notes" section' — no replacement language used. |
+| c12 | Output points the reader at next steps (conducting a risk assessment, determining applicable compliance frameworks, classifying AI systems) consistent with the skill's documented manifest | PARTIAL | Chat output '### Next steps' lists risk assessment, compliance frameworks, AI system classification, and DPIA — all three expected topics covered. |
 
 ### Notes
 
-All ten criteria are fully met. The safe-merge contract was executed correctly: sentinel preserved, merge marker present, template sections appended, three new files created with correct structure, and chat manifest is complete and accurate.
+All 12 criteria pass at or above their ceiling. The safe-merge contract is fully honoured: sentinel preserved, merge marker present, template sections appended, CLAUDE.md untouched, and the manifest summary is complete and accurate.

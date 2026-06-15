@@ -1,6 +1,4 @@
-# AI Domain
-
-This directory contains AI/ML documentation for the project.
+<!-- qa-lead fragment of the quality domain doc. Assembled into docs/quality/CLAUDE.md by the coordinator. -->
 
 ## Custom team notes
 

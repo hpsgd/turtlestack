@@ -1,7 +1,7 @@
 ---
 name: bootstrap
 bootstrap-phase: engineering
-description: "Bootstrap the testing documentation structure for a project. Creates docs/testing/, generates initial templates, and writes domain CLAUDE.md. Idempotent — merges missing sections into existing files without overwriting."
+description: "Bootstrap the testing documentation structure for a project. Creates docs/testing/, generates initial templates, and writes the qa-engineer fragment of the testing domain doc (the coordinator assembles docs/testing/CLAUDE.md). Idempotent — merges missing sections into existing files without overwriting."
 argument-hint: "[project name]"
 user-invocable: false
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
@@ -28,7 +28,7 @@ If ambiguous, list what was found and ask the user. Set `$LANGS` to detected lan
 ### Step 1: Create domain directory
 
 ```bash
-mkdir -p docs/testing
+mkdir -p docs/testing docs/testing/_sections
 ```
 
 ### Step 2: Create or merge files
@@ -38,13 +38,15 @@ For each file, apply the safe merge pattern:
 - If file does not exist -> create from template
 - If file exists -> read both, find missing sections, append with `<!-- Merged from qa-engineer bootstrap v0.1.0 -->`
 
-#### File 1: `docs/testing/CLAUDE.md`
+#### Fragment: `docs/testing/_sections/qa-engineer.md`
+
+`docs/testing/CLAUDE.md` is **assembled by the coordinator** from the fragments in `_sections/` — no plugin
+writes it directly. Write the qa-engineer's contribution as this fragment. It starts at H2 (the coordinator
+generates the `# Testing Domain` H1 and a one-line intro). This domain covers test infrastructure, framework
+configuration, and CI test integration — test strategy, quality gates, DoR, and DoD live in `docs/quality/`
+(owned by qa-lead). Create it with this content:
 
 ```markdown
-# Testing Domain
-
-This directory covers test infrastructure, framework configuration, and CI test integration. Test strategy, quality gates, DoR, and DoD live in `docs/quality/` (owned by qa-lead).
-
 ## What this domain covers
 
 - Test framework setup and configuration per language
@@ -329,7 +331,7 @@ After creating/merging all files, output a summary:
 - (list detected languages and how they were detected)
 
 ### Files created
-- `docs/testing/CLAUDE.md` — domain conventions, framework reference, evidence requirements
+- `docs/testing/_sections/qa-engineer.md` — qa-engineer fragment (coordinator assembles `docs/testing/CLAUDE.md` from it)
 - `docs/testing/test-config.md` — framework config templates (filtered to detected languages)
 - `docs/testing/ci-test-jobs.md` — GitHub Actions job templates (filtered to detected languages)
 

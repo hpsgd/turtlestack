@@ -1,10 +1,10 @@
 # Bootstrap
 
-Scenario: A synthetic project root at `{workspace}/work/` is pre-staged with a partial `docs/infrastructure/CLAUDE.md` containing a user-authored section. The devops bootstrap skill should preserve that user content while appending the template's missing sections (with a merge marker), and should create the two files the fixture is missing — `slo-definition.md` and `runbook-template.md`. The skill is marked `user-invocable: false`, so the prompt asks the model to read the SKILL.md directly and execute its process. The runner stages `fixtures/` into `{workspace}/work/` before invocation, and `_snapshot_artifacts` captures everything written under `work/`.
+Scenario: A synthetic project root at `{workspace}/work/` is pre-staged with a partial `docs/infrastructure/_sections/devops.md` fragment containing a user-authored section. The devops bootstrap skill should preserve that user content while appending the template's missing sections (with a merge marker), and should create the two files the fixture is missing — `slo-definition.md` and `runbook-template.md`. The devops skill never writes `docs/infrastructure/CLAUDE.md` directly — the coordinator assembles it from the fragments in `_sections/`. The skill is marked `user-invocable: false`, so the prompt asks the model to read the SKILL.md directly and execute its process. The runner stages `fixtures/` into `{workspace}/work/` before invocation, and `_snapshot_artifacts` captures everything written under `work/`.
 
 ## Prompt
 
-> The current working directory (`{workspace}/work/`) is the project root for a project called "TestProject". A partial `docs/infrastructure/CLAUDE.md` is already present — it contains a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`.
+> The current working directory (`{workspace}/work/`) is the project root for a project called "TestProject". A partial `docs/infrastructure/_sections/devops.md` fragment is already present — it contains a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`.
 > 
 > Read the devops bootstrap skill at `/Users/martin/Projects/turtlestack/plugins/engineering/devops/skills/bootstrap/SKILL.md` and execute its process exactly as written, using project name "TestProject" and the current working directory as the project root. Apply the safe-merge pattern as documented. Do not pause for confirmation — proceed with all defaults.
 > 
@@ -23,7 +23,7 @@ Captured from a real headless invocation of the skill/agent.
 - `docs/infrastructure/runbook-template.md` — runbook template
 
 ### Files merged
-- `docs/infrastructure/CLAUDE.md` — merged template sections while preserving user-authored "Custom team notes"
+- `docs/infrastructure/_sections/devops.md` — appended all template sections after user-authored "Custom team notes" section (marked with `<!-- Merged from devops bootstrap v0.1.0 -->`)
 
 ### Next steps
 - Create SLO definitions per service using `/devops:write-slo`
@@ -161,12 +161,20 @@ Captured from a real headless invocation of the skill/agent.
 
 ```
 
-#### `work/docs/infrastructure/CLAUDE.md`
+#### `work/docs/infrastructure/_sections/devops.md`
 
 ```
-# Infrastructure Domain
+<!-- devops fragment of the infrastructure domain doc. Assembled into docs/infrastructure/CLAUDE.md by the coordinator. -->
 
-This directory contains infrastructure and operations documentation: SLO definitions, pipeline standards, runbooks, and deployment conventions.
+## Custom team notes
+
+USER-EDIT-SENTINEL-DO-NOT-STRIP
+
+This section was written by the team and must survive any bootstrap re-run.
+It exists to test the safe-merge contract: the bootstrap skill must not
+overwrite or remove user-authored content.
+
+<!-- Merged from devops bootstrap v0.1.0 -->
 
 ## What This Domain Covers
 
@@ -279,16 +287,6 @@ Every runbook must include:
 - Runbooks are tested during game days (at least quarterly)
 - Container images are scanned for vulnerabilities before deployment
 
-<!-- Merged from devops bootstrap v0.1.0 -->
-
-## Custom team notes
-
-USER-EDIT-SENTINEL-DO-NOT-STRIP
-
-This section was written by the team and must survive any bootstrap re-run.
-It exists to test the safe-merge contract: the bootstrap skill must not
-overwrite or remove user-authored content.
-
 ```
 
 ## Evaluation
@@ -296,26 +294,30 @@ overwrite or remove user-authored content.
 | Field | Value |
 |---|---|
 | Verdict | PASS |
-| Score | 8.5/8.5 (100%) |
-| Evaluated | 2026-05-13 |
-| Target duration | 50055 ms |
-| Target cost | $0.1554 |
+| Score | 10.5/10.5 (100%) |
+| Evaluated | 2026-06-15 |
+| Target model | claude-haiku-4-5-20251001 |
+| Judge model | claude-sonnet-4-6 |
+| Target duration | 63614 ms |
+| Target cost | $0.1214 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | After bootstrap, `docs/infrastructure/CLAUDE.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | Artifact shows '## Custom team notes\n\nUSER-EDIT-SENTINEL-DO-NOT-STRIP' intact at bottom of CLAUDE.md |
-| c2 | After bootstrap, `docs/infrastructure/CLAUDE.md` contains the safe-merge marker `<!-- Merged from devops bootstrap v0.1.0 -->` — sections missing from the fixture were appended, not silently merged | PASS | Artifact contains '<!-- Merged from devops bootstrap v0.1.0 -->' directly before the preserved user section |
-| c3 | After bootstrap, `docs/infrastructure/CLAUDE.md` contains the appended template sections — at minimum the "SLO/SLI Conventions" and "GitHub Actions Pipeline Standards" headings now appear alongside the preserved user content | PASS | Artifact shows '## SLO/SLI Conventions' and '## GitHub Actions Pipeline Standards' both present in CLAUDE.md alongside user content |
-| c4 | After bootstrap, `docs/infrastructure/slo-definition.md` exists and was created from the skill's template (contains a `## SLIs and SLOs` heading) | PASS | Artifact work/docs/infrastructure/slo-definition.md contains '## SLIs and SLOs' heading |
-| c5 | After bootstrap, `docs/infrastructure/runbook-template.md` exists and was created from the skill's template (contains a `## Symptoms` heading and a `## Resolution` heading) | PASS | Artifact work/docs/infrastructure/runbook-template.md contains both '## Symptoms' and '## Resolution' headings |
-| c6 | Chat output includes a manifest summary that distinguishes files created (`slo-definition.md`, `runbook-template.md`) from files merged (`CLAUDE.md`) | PASS | Chat response has distinct '### Files created' and '### Files merged' sections listing the correct files under each |
-| c7 | Output names each created and merged file individually — a bare "bootstrap complete" without the per-file manifest is not enough | PASS | Chat lists slo-definition.md, runbook-template.md under created, and CLAUDE.md under merged — all three files named individually |
-| c8 | Output does not claim it overwrote or replaced `docs/infrastructure/CLAUDE.md` — the language reflects merge, not replacement | PASS | Chat says 'merged template sections while preserving user-authored "Custom team notes"' under '### Files merged' — no replacement language |
-| c9 | Output points the reader at next steps (creating SLO definitions per service using `/devops:write-slo`, setting up pipelines using `/devops:write-pipeline`) consistent with the skill's documented manifest | PARTIAL | Chat '### Next steps' lists '/devops:write-slo' and '/devops:write-pipeline' explicitly, plus a third item about runbooks |
+| c1 | After bootstrap, `docs/infrastructure/_sections/devops.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | Artifact `work/docs/infrastructure/_sections/devops.md` contains `USER-EDIT-SENTINEL-DO-NOT-STRIP` under `## Custom team notes`. |
+| c2 | After bootstrap, `docs/infrastructure/_sections/devops.md` contains the safe-merge marker `<!-- Merged from devops bootstrap v0.1.0 -->` — sections missing from the fixture were appended, not silently merged | PASS | Artifact contains `<!-- Merged from devops bootstrap v0.1.0 -->` placed between the user section and the appended template sections. |
+| c3 | After bootstrap, `docs/infrastructure/_sections/devops.md` contains the appended template sections — at minimum the "SLO/SLI Conventions" and "GitHub Actions Pipeline Standards" headings now appear alongside the preserved user content | PASS | Artifact contains `## SLO/SLI Conventions` and `## GitHub Actions Pipeline Standards` headings after the merge marker. |
+| c4 | The devops fragment is authored at H2 and below — it does not introduce a `# Infrastructure Domain` H1 (the coordinator generates that when it assembles `docs/infrastructure/CLAUDE.md`) | PASS | All headings in `_sections/devops.md` artifact start with `##` or lower; no `#` H1 heading appears. |
+| c5 | The skill does NOT write `docs/infrastructure/CLAUDE.md` directly — that file is the coordinator's to assemble from `_sections/` | PASS | Only three artifact files listed: `runbook-template.md`, `slo-definition.md`, `_sections/devops.md`. `CLAUDE.md` is absent. |
+| c6 | After bootstrap, `docs/infrastructure/slo-definition.md` exists and was created from the skill's template (contains a `## SLIs and SLOs` heading) | PASS | Artifact `work/docs/infrastructure/slo-definition.md` exists and contains `## SLIs and SLOs` heading. |
+| c7 | After bootstrap, `docs/infrastructure/runbook-template.md` exists and was created from the skill's template (contains a `## Symptoms` heading and a `## Resolution` heading) | PASS | Artifact `work/docs/infrastructure/runbook-template.md` contains both `## Symptoms` and `## Resolution` headings. |
+| c8 | Chat output includes a manifest summary that distinguishes files created (`slo-definition.md`, `runbook-template.md`) from files merged (`_sections/devops.md`) | PASS | Chat output has distinct `### Files created` and `### Files merged` sections with correct file assignments. |
+| c9 | Output names each created and merged file individually — a bare "bootstrap complete" without the per-file manifest is not enough | PASS | Each of the three files is individually named with description under its respective manifest section. |
+| c10 | Output does not claim it overwrote or replaced `docs/infrastructure/_sections/devops.md` — the language reflects merge, not replacement | PASS | Chat output says "appended all template sections after user-authored 'Custom team notes' section" — merge language, no overwrite claim. |
+| c11 | Output points the reader at next steps (creating SLO definitions per service using `/devops:write-slo`, setting up pipelines using `/devops:write-pipeline`) consistent with the skill's documented manifest | PARTIAL | ### Next steps lists both `/devops:write-slo` and `/devops:write-pipeline` explicitly, plus a third runbook step. |
 
 ### Notes
 
-The skill execution was flawless: all three files were correctly produced, the sentinel was preserved, the merge marker was inserted, template sections were appended, and the manifest summary used precise merge/create language. All criteria met at or above threshold.
+The skill executed flawlessly: all three file artifacts are correct, the safe-merge contract is upheld with sentinel and merge marker preserved, and the manifest summary is well-structured. All criteria met at ceiling.
