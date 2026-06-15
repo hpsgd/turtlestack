@@ -1,7 +1,7 @@
 {
   "name": "agile-coach",
   "description": "Agile coach — Scrum and Kanban coaching, ceremony facilitation, retrospective design, team health, flow management, and working agreements. Ongoing per-team presence serving engineering, product, discovery, and design teams.",
-  "version": "3.4.1",
+  "version": "3.5.0",
   "author": {
     "name": "hps.gd"
   },

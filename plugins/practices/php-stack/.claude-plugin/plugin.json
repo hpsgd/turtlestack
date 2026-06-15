@@ -1,7 +1,7 @@
 {
   "name": "php-stack",
   "description": "Framework-specific conventions for PHP — EventSauce event sourcing, symfony/messenger buses, Doctrine read models",
-  "version": "3.4.1",
+  "version": "3.5.0",
   "author": {
     "name": "hps.gd"
   },
