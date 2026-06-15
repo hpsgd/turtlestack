@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.5.0](https://github.com/hpsgd/turtlestack/compare/v3.4.1...v3.5.0) (2026-06-15)
+
+
+### Features
+
+* **bootstrap:** data-driven phase ordering and fragment domain docs ([#50](https://github.com/hpsgd/turtlestack/issues/50)) ([322017e](https://github.com/hpsgd/turtlestack/commit/322017e7d4a6ba35d3ba6db3016fe304bdf65a44))
+
 ## [3.4.1](https://github.com/hpsgd/turtlestack/compare/v3.4.0...v3.4.1) (2026-06-14)
 
 
