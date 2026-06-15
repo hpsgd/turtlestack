@@ -29,7 +29,7 @@ Otherwise, locate the specific skill by name or agent.
 
 ### Step 3: Evaluate each quality criterion
 
-For EACH skill, check all 12 criteria. Score as ✅ (met), ⚠️ (partially met — explain why), or ❌ (missing).
+For EACH skill, check all applicable criteria — 12 that apply to every skill, plus criterion 13 which applies only to `bootstrap` skills (N/A otherwise). Score as ✅ (met), ⚠️ (partially met — explain why), ❌ (missing), or N/A (not applicable).
 
 **Criterion 1: Line count (100–500 lines)**
 
@@ -115,6 +115,30 @@ The `argument-hint` frontmatter field tells the user what to provide. Check:
 The frontmatter `description` is the primary matching signal. Check:
 - Would Claude match this description to the right user intent?
 - Is it distinguishable from sibling skills?
+
+**Criterion 13: Bootstrap phase declared (bootstrap skills only)**
+
+Only applies when the skill is named `bootstrap` (i.e. `skills/bootstrap/SKILL.md`). For every other skill, mark this criterion N/A and skip it. A bootstrap skill must declare `bootstrap-phase` in its frontmatter — `/coordinator:bootstrap-project` reads it to sequence the project bootstrap, and a missing value forces it into a default slot with a warning. Check:
+- Is `bootstrap-phase` present in the frontmatter?
+- Is the value one of: `foundations`, `delivery`, `engineering`, `stack`, `product`, `content`, `market`, `governance`?
+
+| State | Score |
+|---|---|
+| Present and a recognised phase | ✅ |
+| Present but unrecognised value | ⚠️ Runs in the default slot — confirm the phase is intended |
+| Missing | ❌ Add `bootstrap-phase` so the coordinator can order it |
+
+**Criterion 14: No shared-file writes (bootstrap skills only)**
+
+Only applies to `bootstrap` skills; N/A otherwise. A bootstrap skill must write only paths it exclusively owns. If it contributes to a domain doc that another plugin also contributes to, it must write a fragment at `docs/<domain>/_sections/<plugin>.md`, not the shared `docs/<domain>/CLAUDE.md` directly. Check the skill's file-write instructions:
+- Does it create or append a `docs/<domain>/CLAUDE.md` that another plugin's bootstrap also writes? (Cross-check the shared domains: `product`, `design`, `content`, `architecture`.)
+- Or does it correctly write a fragment under `_sections/`?
+
+| State | Score |
+|---|---|
+| Writes only owned paths / a `_sections/` fragment for shared domains | ✅ |
+| Writes a `docs/<domain>/CLAUDE.md` no other plugin touches | ✅ (sole owner — fine) |
+| Creates or appends a domain `CLAUDE.md` that another plugin also writes | ❌ Convert to a `_sections/<plugin>.md` fragment |
 
 ### Step 4: Classify findings
 

@@ -1,5 +1,6 @@
 ---
 name: bootstrap
+bootstrap-phase: market
 description: "Bootstrap the go-to-market documentation structure for a project. Creates docs/gtm/, generates initial templates, and writes domain CLAUDE.md. Idempotent — merges missing sections into existing files without overwriting."
 argument-hint: "[project name]"
 user-invocable: false

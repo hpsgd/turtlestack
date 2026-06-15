@@ -1,10 +1,10 @@
 # Bootstrap
 
-Scenario: A synthetic project root at `{workspace}/work/` is pre-staged with a partial `docs/design/CLAUDE.md` containing a user-authored section. The ux-researcher bootstrap skill should preserve that user content while appending the UX research conventions (with a merge marker), and should create the two template files the fixture is missing — `persona-template.md` and `journey-map-template.md`. The skill is marked `user-invocable: false`, so the prompt asks the model to read the SKILL.md directly and execute its process. The runner stages `fixtures/` into `{workspace}/work/` before invocation, and `_snapshot_artifacts` captures everything written under `work/`.
+Scenario: A synthetic project root at `{workspace}/work/` is pre-staged with a partial `docs/design/_sections/ux-researcher.md` fragment containing a user-authored section. The ux-researcher bootstrap skill should preserve that user content while appending the UX research conventions (with a merge marker), and should create the two template files the fixture is missing — `persona-template.md` and `journey-map-template.md`. `docs/design/CLAUDE.md` itself is assembled by the coordinator from the fragments in `_sections/`, so this skill never writes it. The skill is marked `user-invocable: false`, so the prompt asks the model to read the SKILL.md directly and execute its process. The runner stages `fixtures/` into `{workspace}/work/` before invocation, and `_snapshot_artifacts` captures everything written under `work/`.
 
 ## Prompt
 
-> The current working directory (`{workspace}/work/`) is the project root for a project called "TestProject". A partial `docs/design/CLAUDE.md` is already present — it contains a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`.
+> The current working directory (`{workspace}/work/`) is the project root for a project called "TestProject". A partial `docs/design/_sections/ux-researcher.md` fragment is already present — it contains a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`.
 > 
 > Read the ux-researcher bootstrap skill at `/Users/martin/Projects/turtlestack/plugins/product/ux-researcher/skills/bootstrap/SKILL.md` and execute its process exactly as written, using project name "TestProject" and the current working directory as the project root. Apply the safe-merge pattern as documented. Do not pause for confirmation — proceed with all defaults.
 > 
@@ -19,11 +19,12 @@ Captured from a real headless invocation of the skill/agent.
 ## UX Research Bootstrap Complete
 
 ### Files created
+- `docs/design/_sections/ux-researcher.md` — ux-researcher's fragment of the design domain doc (assembled into `docs/design/CLAUDE.md` by the coordinator)
 - `docs/design/persona-template.md` — persona card template
 - `docs/design/journey-map-template.md` — journey map template
 
 ### Files merged
-- `docs/design/CLAUDE.md` — appended UX research conventions (preserved existing custom team notes with sentinel)
+- `docs/design/_sections/ux-researcher.md` — preserved existing user-authored "Custom team notes" section and appended UX Research methodology, persona format, heuristics, journey mapping process, tooling, and conventions (marked with `<!-- Merged from ux-researcher bootstrap v0.1.0 -->`)
 
 ### Next steps
 - Create initial personas using `/ux-researcher:persona-definition`
@@ -238,13 +239,9 @@ Captured from a real headless invocation of the skill/agent.
 
 ```
 
-#### `work/docs/design/CLAUDE.md`
+#### `work/docs/design/_sections/ux-researcher.md`
 
 ```
-# Design Domain
-
-This directory contains design and UX research documentation.
-
 ## Custom team notes
 
 USER-EDIT-SENTINEL-DO-NOT-STRIP
@@ -358,26 +355,29 @@ Rate findings: **Critical** (blocks task) / **Major** (significant friction) / *
 | Field | Value |
 |---|---|
 | Verdict | PASS |
-| Score | 8.5/8.5 (100%) |
-| Evaluated | 2026-05-13 |
-| Target duration | 55292 ms |
-| Target cost | $0.1197 |
+| Score | 9.5/9.5 (100%) |
+| Evaluated | 2026-06-15 |
+| Target model | claude-haiku-4-5-20251001 |
+| Judge model | claude-sonnet-4-6 |
+| Target duration | 53675 ms |
+| Target cost | $0.1083 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | After bootstrap, `docs/design/CLAUDE.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | CLAUDE.md artifact contains 'USER-EDIT-SENTINEL-DO-NOT-STRIP' inside the '## Custom team notes' section, with the surrounding text intact. |
-| c2 | After bootstrap, `docs/design/CLAUDE.md` contains the merge marker `<!-- Merged from ux-researcher bootstrap v0.1.0 -->` — sections missing from the fixture were appended, not silently merged | PASS | CLAUDE.md artifact contains the exact line '<!-- Merged from ux-researcher bootstrap v0.1.0 -->' between the user section and the appended UX content. |
-| c3 | After bootstrap, `docs/design/CLAUDE.md` contains the appended UX research sections — at minimum the `## UX Research` heading and `### Persona Format` heading now appear alongside the preserved user content | PASS | CLAUDE.md artifact contains '## UX Research' and '### Persona Format' headings in the appended section, alongside the preserved user content above. |
-| c4 | After bootstrap, `docs/design/persona-template.md` exists and was copied from the plugin template (contains `# Persona Card` heading and `## Evidence base` section) | PASS | persona-template.md artifact starts with '# Persona Card — {{archetype_name}}' and includes '## Evidence base' section with sources table. |
-| c5 | After bootstrap, `docs/design/journey-map-template.md` exists and was copied from the plugin template (contains `# Journey Map` heading and `## Scope` section) | PASS | journey-map-template.md artifact starts with '# Journey Map — {{journey_name}}' and includes '## Scope' section with dimension table. |
-| c6 | Chat output includes a manifest summary that distinguishes files created (`persona-template.md`, `journey-map-template.md`) from files merged (`CLAUDE.md`) | PASS | Chat output has separate '### Files created' and '### Files merged' sections; persona/journey templates under created, CLAUDE.md under merged. |
-| c7 | Output names each created and merged file individually — a bare "bootstrap complete" without the per-file manifest is not enough | PASS | Each file is listed individually: 'docs/design/persona-template.md', 'docs/design/journey-map-template.md', 'docs/design/CLAUDE.md' with descriptions. |
-| c8 | Output does not claim it overwrote or replaced `docs/design/CLAUDE.md` — the language reflects merge or append, not replacement | PASS | Chat output says 'appended UX research conventions (preserved existing custom team notes with sentinel)' — no overwrite language used. |
-| c9 | Output points the reader at next steps (using persona-definition and journey-map skills) consistent with the skill's documented manifest | PARTIAL | Chat output '### Next steps' lists '/ux-researcher:persona-definition', '/ux-researcher:journey-map', and '/ux-researcher:usability-review' — all consistent with skill manifest. |
+| c1 | After bootstrap, `docs/design/_sections/ux-researcher.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | Artifact shows 'USER-EDIT-SENTINEL-DO-NOT-STRIP' on its own line in the '## Custom team notes' section, plus the full paragraph below it. |
+| c2 | After bootstrap, `docs/design/_sections/ux-researcher.md` contains the merge marker `<!-- Merged from ux-researcher bootstrap v0.1.0 -->` — sections missing from the fixture were appended, not silently merged | PASS | Artifact contains '<!-- Merged from ux-researcher bootstrap v0.1.0 -->' between the user section and the appended UX Research content. |
+| c3 | After bootstrap, `docs/design/_sections/ux-researcher.md` contains the appended UX research sections — at minimum the `## UX Research` heading and `### Persona Format` heading now appear alongside the preserved user content | PASS | Artifact shows '## UX Research' and '### Persona Format' headings appear after the merge marker, alongside the preserved user content. |
+| c4 | The fragment `docs/design/_sections/ux-researcher.md` starts at an H2 (`##`) heading — it carries no `# Design Domain` H1, since the coordinator generates that when assembling `docs/design/CLAUDE.md` | PASS | Artifact begins with '## Custom team notes' (H2), no H1 heading present in the file. |
+| c5 | After bootstrap, `docs/design/persona-template.md` exists and was copied from the plugin template (contains `# Persona Card` heading and `## Evidence base` section) | PASS | Artifact 'work/docs/design/persona-template.md' starts with '# Persona Card — {{archetype_name}}' and contains '## Evidence base' section. |
+| c6 | After bootstrap, `docs/design/journey-map-template.md` exists and was copied from the plugin template (contains `# Journey Map` heading and `## Scope` section) | PASS | Artifact 'work/docs/design/journey-map-template.md' starts with '# Journey Map — {{journey_name}}' and contains '## Scope' section. |
+| c7 | Chat output includes a manifest summary that distinguishes files created (`persona-template.md`, `journey-map-template.md`, `_sections/ux-researcher.md`) from files merged | PASS | Chat output has distinct '### Files created' and '### Files merged' sections, listing all three files appropriately. |
+| c8 | Output names each created and merged file individually — a bare "bootstrap complete" without the per-file manifest is not enough | PASS | Each file is listed individually under its section: 'docs/design/_sections/ux-researcher.md', 'docs/design/persona-template.md', 'docs/design/journey-map-template.md'. |
+| c9 | Output does not claim it overwrote or replaced the `docs/design/_sections/ux-researcher.md` fragment — the language reflects merge or append, not replacement | PASS | Output says 'preserved existing user-authored...section and appended UX Research methodology' — merge language, not replace/overwrite. |
+| c10 | Output points the reader at next steps (using persona-definition and journey-map skills) consistent with the skill's documented manifest | PARTIAL | Chat output lists '### Next steps' with '/ux-researcher:persona-definition', '/ux-researcher:journey-map', and '/ux-researcher:usability-review' — matches expected next steps. |
 
 ### Notes
 
-The skill executed flawlessly: the sentinel was preserved, the merge marker was inserted, the UX sections were appended, and both template files were created with the required headings. The manifest summary was well-structured with clear created/merged distinctions and next-step skill references.
+The output perfectly satisfies all criteria. The safe-merge pattern was correctly applied: sentinel preserved, merge marker inserted, UX content appended, both templates created, and the manifest clearly distinguishes created from merged files.

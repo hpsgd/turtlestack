@@ -25,10 +25,13 @@ For each enabled plugin:
 1. Locate its plugin directory via the marketplace source path in settings.
 2. Check for a `skills/bootstrap/SKILL.md` within that plugin. Only plugins with a bootstrap skill participate.
 3. Read `.claude-plugin/plugin.json` to get `name` and `version`.
+4. Read the bootstrap skill's frontmatter and extract its `bootstrap-phase` value (see Step 4). Record it now — this is what slots the plugin into the right execution phase without this skill knowing the plugin exists.
 
-Build the **installed agents list**: `{ name, version, hasBootstrap }`.
+Build the **installed agents list**: `{ name, version, hasBootstrap, bootstrapPhase }`.
 
-**Output:** Table of installed plugins, their versions, and whether they have a bootstrap skill. Clearly separate "will bootstrap" from "installed but no bootstrap skill".
+This discovery is marketplace-agnostic. Any enabled plugin with a bootstrap skill participates — whether it ships in this marketplace or a downstream one (e.g. tortoisestack). Phase comes from the skill's own frontmatter, never from a list held here.
+
+**Output:** Table of installed plugins, their versions, declared phase, and whether they have a bootstrap skill. Clearly separate "will bootstrap" from "installed but no bootstrap skill".
 
 ## Step 2: Read or Initialise Manifest
 
@@ -73,6 +76,7 @@ Use this lookup table to derive defaults from installed language/framework agent
 | react-developer | TypeScript | Vitest | ESLint, Prettier | TypeScript strict | Next.js, Tailwind |
 | python-developer | Python | pytest | Ruff | mypy strict | Pydantic |
 | dotnet-developer | C# | xUnit | CSharpier | Roslyn analysers | Wolverine, Marten |
+| php-developer | PHP | Pest | PHP-CS-Fixer | PHPStan | — |
 | ai-engineer | (adds to above) | + LLM eval tests | — | — | OpenRouter |
 | data-engineer | (adds to above) | + data pipeline tests | — | — | — |
 
@@ -170,19 +174,46 @@ If the user says **adjust**, ask what to change in the tech context table. Use t
 
 ## Step 4: Delegate to Agent Bootstraps
 
-Invoke each agent's `bootstrap` skill in dependency order. Groups execute sequentially; agents within a group may execute in any order.
+Invoke each agent's `bootstrap` skill grouped by its declared **bootstrap phase**. Phases execute in sequence; agents within a phase may execute in any order.
 
-### Dependency Order
+### Phase is declared, not hardcoded
 
-| Group | Agents | Rationale |
+Every bootstrap skill declares which phase it belongs to in its frontmatter:
+
+```yaml
+---
+name: bootstrap
+bootstrap-phase: product
+---
+```
+
+You already captured each plugin's `bootstrap-phase` in Step 1. Group the work plan by that value. **Never maintain a plugin→phase list in this skill.** A plugin — from this marketplace or a downstream one — controls its own placement through its frontmatter. This is the whole reason a new plugin (or a new marketplace like tortoisestack) needs no edit here to bootstrap correctly.
+
+### Canonical phase order
+
+This ordered list is the single source of sequencing truth. It names phases, not plugins:
+
+| Order | Phase | Rationale |
 |---|---|---|
-| **1 — Foundations** | coding-standards, architect | Standards and architecture inform everything else |
-| **2 — Engineering domains** | qa-lead, qa-engineer, security-engineer, devops, release-manager, performance-engineer, code-reviewer | Core engineering practices depend on foundations |
-| **3 — Stack-specific** | python-developer, dotnet-developer, react-developer, data-engineer, ai-engineer | Stack implementations depend on standards and practices |
-| **4 — Product domains** | product-owner, ui-designer, ux-researcher | Product work builds on the engineering foundation |
-| **5 — Content** | developer-docs-writer, user-docs-writer, internal-docs-writer | Documentation follows product and engineering decisions |
-| **6 — Market & customer** | gtm, support, customer-success | Go-to-market and support build on product definition |
-| **7 — Governance** | grc-lead | Governance wraps around everything else |
+| 1 | `foundations` | Standards and architecture inform everything else |
+| 2 | `delivery` | Delivery and agile process scaffolding (RAID, ceremonies, working agreements) |
+| 3 | `engineering` | Core engineering practices depend on foundations |
+| 4 | `stack` | Language/framework implementations depend on standards and practices |
+| 5 | `product` | Product work builds on the engineering foundation |
+| 6 | `content` | Documentation follows product and engineering decisions |
+| 7 | `market` | Go-to-market and support build on product definition |
+| 8 | `governance` | Governance wraps around everything else |
+
+Sort the work plan by each agent's phase rank. Run phase 1 fully, then phase 2, and so on.
+
+### Undeclared or unknown phases (fail visibly, never drop)
+
+A plugin must never be silently skipped because its phase is missing or unrecognised — that is the exact drift this mechanism exists to prevent. Two cases, both run, both warn:
+
+- **No `bootstrap-phase` declared** (an older or downstream bootstrap skill predating this convention): run it in a default slot ranked **between `market` and `governance`** (so it still follows the main build and precedes governance), and print: `⚠ <plugin>: bootstrap skill declares no bootstrap-phase — running in the default slot. Add 'bootstrap-phase:' to its frontmatter to control ordering.`
+- **Unrecognised `bootstrap-phase`** (declares a phase not in the canonical list — e.g. a downstream marketplace added one): run it in that same default slot, ordered alphabetically among other unknowns, and print: `⚠ <plugin>: unknown bootstrap-phase '<value>' — running in the default slot. Add '<value>' to the canonical phase order in /coordinator:bootstrap-project to place it.`
+
+`governance` always runs last, after the default slot. The warnings are the signal that the canonical list needs a maintainer's attention — a downstream phase should be promoted into the table above.
 
 ### Passing tech context
 
@@ -198,18 +229,65 @@ Agents that don't use tech context (most domain bootstraps) will ignore it. Agen
 
 ### Invoking bootstraps
 
-For each agent that needs bootstrapping:
+No two bootstraps write the same file — that is the design, not a thing the coordinator has to police.
+Where several plugins contribute to one domain doc (`docs/product/CLAUDE.md`, `docs/design/CLAUDE.md`,
+`docs/content/CLAUDE.md`, `docs/architecture/CLAUDE.md`), each plugin writes only its **own fragment** at
+`docs/<domain>/_sections/<plugin>.md`. Those paths are disjoint, so there is no collision to coordinate and
+no ordering constraint within a phase. The coordinator assembles the domain `CLAUDE.md` from the fragments
+afterwards (see Step 4.5). Running sequentially is still fine and is the simplest default, but it is no
+longer load-bearing for correctness.
+
+For each agent that needs bootstrapping, in phase order:
 
 1. **Skip** agents classified as "Current" or "No bootstrap".
-2. **New agents:** Invoke the agent's `bootstrap` skill with the tech context. The agent creates its domain directory under `docs/` and writes its own `CLAUDE.md` and domain-specific files.
-3. **Updated agents (merge mode):** Invoke the agent's `bootstrap` skill with the tech context and a merge instruction. The agent must:
-   - Read existing files in its domain directory.
-   - Compare with its current template.
-   - Add missing sections or files.
-   - **Never overwrite or delete** existing content — only append or create new files.
-4. After each agent completes, record the files it created or modified (use `Glob` to diff before/after if needed).
+2. **New agents:** Invoke the agent's `bootstrap` skill with the tech context. The agent writes only paths
+   it exclusively owns — its own domain files, and, for a shared domain, its single fragment under
+   `docs/<domain>/_sections/`. It never writes another plugin's file or the assembled domain `CLAUDE.md`.
+3. **Updated agents (merge mode):** Invoke the agent's `bootstrap` skill with the tech context and a merge
+   instruction. The agent reads its own files, adds missing sections, and **never overwrites or deletes**
+   existing content — only appends or creates files it owns.
+4. After each agent completes, record the files it created or modified (use `Glob` to diff before/after).
 
-**Output:** Per-group progress log showing which agents ran and what files they produced.
+**Output:** Per-phase progress log showing which agents ran and what files they produced.
+
+## Step 4.5: Assemble Shared Domain Docs
+
+For every domain directory that contains a `_sections/` subdirectory, assemble its `CLAUDE.md` from the
+fragments. This is the same pattern as the top-level `docs/CLAUDE.md` index (Step 5a) — disjoint pieces
+combined by the coordinator — applied one level down, so no plugin ever has to own or merge a shared file.
+
+For each `docs/<domain>/_sections/` found with `Glob`:
+
+1. List the fragment files (`docs/<domain>/_sections/*.md`), sorted by filename. A numeric prefix
+   (`10-architect.md`, `20-python-developer.md`) gives a deliberate order; plain `<plugin>.md` sorts
+   alphabetically, which is fine when order does not matter.
+2. **Before writing, guard against clobbering a hand-authored or directly-written file.** If
+   `docs/<domain>/CLAUDE.md` already exists and does **not** contain the generated marker
+   (`<!-- Generated by bootstrap-project from`), it was written by hand or by a plugin (possibly from another
+   marketplace) that doesn't follow the fragment convention. Do not overwrite it. Print
+   `⚠ <domain>: docs/<domain>/CLAUDE.md exists without the generated marker and was NOT assembled — a plugin or a person writes it directly. Resolve the conflict: convert that writer to a _sections/ fragment, or move its content into a fragment.` and skip assembly for this domain. This keeps a mixed local/downstream domain failing loudly instead of losing content.
+3. Otherwise write `docs/<domain>/CLAUDE.md` as: the generated marker, a generated `# <Domain> Domain` H1 and
+   one-line intro, then each fragment's contents in order (fragments are authored at H2 and below — they never
+   carry their own H1). Overwriting a file that already carries the marker is expected — it is a regenerate.
+4. The assembled file is generated output. Customisation goes in the fragments, not here.
+
+```markdown
+<!-- Generated by bootstrap-project from docs/<domain>/_sections/. Edit the fragments, not this file. -->
+# Product Domain
+
+Domain conventions contributed by the installed product plugins. Each section below comes from one
+plugin's bootstrap fragment in `_sections/`.
+
+<!-- contents of _sections/product-owner.md -->
+
+<!-- contents of _sections/product-manager.md -->
+```
+
+A domain with a single fragment assembles to that one fragment under the generated header — no special
+case. A new plugin joining a shared domain just drops another fragment into `_sections/`; re-running
+bootstrap picks it up with no coordinator change.
+
+**Output:** List of assembled domain docs and the fragments each was built from.
 
 ## Step 5: Generate Shared Artifacts
 
@@ -378,12 +456,12 @@ Present the final summary:
 
 ### Agent Execution
 
-| Agent | Group | Action | Files Created | Files Merged |
+| Agent | Phase | Action | Files Created | Files Merged |
 |---|---|---|---|---|
-| coding-standards | 1 — Foundations | Bootstrapped | 3 | 0 |
-| architect | 1 — Foundations | Merge update | 0 | 2 |
-| qa-lead | 2 — Engineering | Skipped (current) | — | — |
-| security-engineer | 2 — Engineering | Bootstrapped | 4 | 0 |
+| coding-standards | foundations | Bootstrapped | 3 | 0 |
+| architect | foundations | Merge update | 0 | 2 |
+| qa-lead | engineering | Skipped (current) | — | — |
+| security-engineer | engineering | Bootstrapped | 4 | 0 |
 | ... | ... | ... | ... | ... |
 
 ### Shared Artifacts
@@ -417,7 +495,9 @@ Present the final summary:
 - **Idempotent by default.** The manifest tracks what has been done. Re-runs only process new or updated agents. Use `--force` to re-run everything. Never duplicate work.
 - **Safe merge, never overwrite.** When updating existing files, review existing content and merge in missing sections. Never clobber existing files. Existing content represents decisions already made.
 - **Every coordinator-generated file gets the marker comment.** `<!-- Generated by bootstrap-project. Review and customize. -->` at the top. Agent-generated files follow their own conventions.
-- **Respect dependency order.** Foundations before engineering domains. Engineering domains before stack-specific. Stack-specific before product. Content after product. Governance last. This ensures later agents can reference artifacts from earlier ones.
+- **Respect phase order, read it from the skill.** Sequence by each bootstrap skill's declared `bootstrap-phase`, ordered by the canonical phase list in Step 4. Foundations first, governance last, so later agents can reference earlier artifacts. Never hardcode which plugin belongs to which phase — that membership lives in the plugin's own frontmatter, which is what keeps downstream marketplaces working without editing this skill.
+- **Never silently skip a bootstrap.** A plugin with a missing or unknown `bootstrap-phase` still runs (in the default slot before governance) and emits a warning. Absence of a phase is a prompt to fix the frontmatter, not a reason to drop the plugin.
+- **No plugin writes a shared file; collisions cannot happen.** Where a domain doc is contributed to by several plugins, each writes only its own fragment under `docs/<domain>/_sections/<plugin>.md` — disjoint paths. The coordinator assembles the domain `CLAUDE.md` from the fragments in Step 4.5. There is no shared write to race on, so bootstraps need no ownership rules, no sequencing for safety, and no after-the-fact content merge. Adding a plugin to a domain is just one more fragment.
 - **CHANGELOG.md uses [Keep a Changelog](https://keepachangelog.com/) format.** Sections: Added, Changed, Deprecated, Removed, Fixed, Security. Start with `## [Unreleased]`.
 - **SECURITY.md follows [GitHub conventions](https://docs.github.com/en/code-security/getting-started/adding-a-security-policy-to-your-repository).** Include supported versions, reporting process, and expected response time.
 - **Always confirm the work plan.** Present the classified agent table and wait for user confirmation before executing. This prevents unexpected changes.
@@ -428,7 +508,7 @@ Present the final summary:
 1. Installed plugins table (Step 1).
 2. Tech context table derived from installed agents and project files (Step 2.5).
 3. Combined tech context + work plan — wait for user confirmation (Step 3).
-4. Per-group execution log (Step 4).
+4. Per-phase execution log (Step 4).
 5. Summary table of all files created/merged, agent execution results, and numbered next steps (Step 7).
 
 ## Related Skills

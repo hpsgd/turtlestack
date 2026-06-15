@@ -1,10 +1,10 @@
 # Bootstrap
 
-Scenario: A synthetic project root at `{workspace}/work/` is pre-staged with a partial `docs/content/CLAUDE.md` containing a user-authored section. The developer-docs-writer bootstrap skill should preserve that user content while appending the template's missing sections (with a merge marker). Unlike the architect bootstrap, this skill creates only one file — the CLAUDE.md domain guide. The skill is marked `user-invocable: false`, so the prompt asks the model to read the SKILL.md directly and execute its process. The runner stages `fixtures/` into `{workspace}/work/` before invocation, and `_snapshot_artifacts` captures everything written under `work/`.
+Scenario: A synthetic project root at `{workspace}/work/` is pre-staged with a partial `docs/content/_sections/developer-docs-writer.md` fragment containing a user-authored section. The developer-docs-writer bootstrap skill should preserve that user content while appending the template's missing sections (with a merge marker). The skill writes only its own fragment under `docs/content/_sections/` — `docs/content/CLAUDE.md` is assembled later by the coordinator, so the three content writers never collide on it. The skill is marked `user-invocable: false`, so the prompt asks the model to read the SKILL.md directly and execute its process. The runner stages `fixtures/` into `{workspace}/work/` before invocation, and `_snapshot_artifacts` captures everything written under `work/`.
 
 ## Prompt
 
-> The current working directory (`{workspace}/work/`) is the project root for a project called "TestProject". A partial `docs/content/CLAUDE.md` is already present — it contains a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`.
+> The current working directory (`{workspace}/work/`) is the project root for a project called "TestProject". A partial `docs/content/_sections/developer-docs-writer.md` fragment is already present — it contains a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`.
 > 
 > Read the developer-docs-writer bootstrap skill at `/Users/martin/Projects/turtlestack/plugins/product/developer-docs-writer/skills/bootstrap/SKILL.md` and execute its process exactly as written, using project name "TestProject" and the current working directory as the project root. Apply the safe-merge pattern as documented. Do not pause for confirmation — proceed with all defaults.
 > 
@@ -16,36 +16,33 @@ Captured from a real headless invocation of the skill/agent.
 
 ### Chat response
 
-Bootstrap complete. Here's the manifest summary:
-
 ## Content Bootstrap Complete
 
 ### Files created
-- (none — `docs/content/` directory already existed)
+- (none — file already existed)
 
 ### Files merged
-- `docs/content/CLAUDE.md` — enhanced with Diataxis framework guidelines, API documentation standards, SDK guide format, docs-as-code practices, tooling recommendations, available developer-docs-writer skills, and developer documentation conventions. User-authored "Custom team notes" section with `USER-EDIT-SENTINEL-DO-NOT-STRIP` sentinel preserved intact. Missing sections appended after the sentinel with merge marker `<!-- Merged from developer-docs-writer bootstrap v0.1.0 -->`.
+- `docs/content/_sections/developer-docs-writer.md` — merged 8 missing sections from bootstrap template:
+  - What This Domain Covers
+  - Diataxis Framework
+  - API Documentation Standards
+  - SDK Guide Format
+  - Docs-as-Code Practices
+  - Tooling
+  - Available Developer Docs Skills
+  - Developer Docs Conventions
+  - User-authored "Custom team notes" section preserved ✓
 
 ### Next steps
 - Write API reference docs using `/developer-docs-writer:write-api-docs`
 - Create SDK guides using `/developer-docs-writer:write-sdk-guide`
-- Set up doc linting and link checking in CI (if not already configured)
+- Set up doc linting and link checking in CI
 
 ### Artifacts written
 
-#### `work/docs/content/CLAUDE.md`
+#### `work/docs/content/_sections/developer-docs-writer.md`
 
 ```
-# Content Domain
-
-This directory contains documentation conventions: Diataxis framework, API docs standards, SDK guide format, and docs-as-code practices.
-
-## What This Domain Covers
-
-- **Developer documentation** — API references, SDK guides, integration guides, migration guides
-- **User documentation** — user guides, onboarding content, KB articles
-- **Internal documentation** — architecture docs, runbooks, changelogs, post-mortems
-
 ## Custom team notes
 
 USER-EDIT-SENTINEL-DO-NOT-STRIP
@@ -55,6 +52,12 @@ It exists to test the safe-merge contract: the bootstrap skill must not
 overwrite or remove user-authored content.
 
 <!-- Merged from developer-docs-writer bootstrap v0.1.0 -->
+
+## What This Domain Covers
+
+- **Developer documentation** — API references, SDK guides, integration guides, migration guides
+- **User documentation** — user guides, onboarding content, KB articles
+- **Internal documentation** — architecture docs, runbooks, changelogs, post-mortems
 
 ## Diataxis Framework
 
@@ -142,25 +145,28 @@ SDK guides follow a standard structure:
 | Field | Value |
 |---|---|
 | Verdict | PASS |
-| Score | 7.5/7.5 (100%) |
-| Evaluated | 2026-05-13 |
-| Target duration | 33639 ms |
-| Target cost | $0.1305 |
+| Score | 9.5/9.5 (100%) |
+| Evaluated | 2026-06-15 |
+| Target model | claude-haiku-4-5-20251001 |
+| Judge model | claude-sonnet-4-6 |
+| Target duration | 28102 ms |
+| Target cost | $0.0802 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | After bootstrap, `docs/content/CLAUDE.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | Artifact contains the exact line `USER-EDIT-SENTINEL-DO-NOT-STRIP` with surrounding user-authored paragraph intact. |
-| c2 | After bootstrap, `docs/content/CLAUDE.md` contains the safe-merge marker `<!-- Merged from developer-docs-writer bootstrap v0.1.0 -->` — sections missing from the fixture were appended, not silently merged | PASS | Artifact contains `<!-- Merged from developer-docs-writer bootstrap v0.1.0 -->` placed immediately after the sentinel section. |
-| c3 | After bootstrap, `docs/content/CLAUDE.md` contains the appended template sections — at minimum the "Diataxis Framework" and "API Documentation Standards" headings now appear alongside the preserved user content | PASS | Artifact contains `## Diataxis Framework` and `## API Documentation Standards` sections appended after the merge marker. |
-| c4 | After bootstrap, `docs/content/CLAUDE.md` contains the "Available Developer Docs Skills" section listing at least one `/developer-docs-writer:` skill invocation path | PASS | Artifact has `## Available Developer Docs Skills` table listing `/developer-docs-writer:write-api-docs`, `/developer-docs-writer:write-sdk-guide`, etc. |
-| c5 | Chat output includes a manifest summary that lists `docs/content/CLAUDE.md` under "Files merged" (not "Files created") since the file already existed | PASS | Chat output shows `### Files created: (none)` and `### Files merged: docs/content/CLAUDE.md — enhanced with...` |
-| c6 | Output names the merged file individually — a bare "bootstrap complete" without the per-file manifest is not enough | PASS | Chat output explicitly names `docs/content/CLAUDE.md` with a detailed description of what was merged under the Files merged heading. |
-| c7 | Output does not claim it overwrote or replaced `docs/content/CLAUDE.md` — the language reflects merge, not replacement | PASS | Chat uses "enhanced with", "preserved intact", and "Missing sections appended after the sentinel" — no overwrite/replace language. |
-| c8 | Output points the reader at next steps consistent with the skill's documented manifest (writing API docs, SDK guides, or setting up CI doc linting) | PARTIAL | Chat lists next steps: `/developer-docs-writer:write-api-docs`, `/developer-docs-writer:write-sdk-guide`, and CI doc linting setup. |
+| c1 | PASS: After bootstrap, `docs/content/_sections/developer-docs-writer.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | The artifact file contains 'USER-EDIT-SENTINEL-DO-NOT-STRIP' on its own line, with the full 'Custom team notes' section intact above the merge marker. |
+| c2 | PASS: After bootstrap, `docs/content/_sections/developer-docs-writer.md` contains the safe-merge marker `<!-- Merged from developer-docs-writer bootstrap v0.1.0 -->` — sections missing from the fixture were appended, not silently merged | PASS | Artifact contains exactly '<!-- Merged from developer-docs-writer bootstrap v0.1.0 -->' between the user content and the appended template sections. |
+| c3 | PASS: After bootstrap, `docs/content/_sections/developer-docs-writer.md` contains the appended template sections — at minimum the "Diataxis Framework" and "API Documentation Standards" headings now appear alongside the preserved user content | PASS | Artifact contains '## Diataxis Framework' and '## API Documentation Standards' headings with full content, appearing after the user section. |
+| c4 | PASS: After bootstrap, `docs/content/_sections/developer-docs-writer.md` contains the "Available Developer Docs Skills" section listing at least one `/developer-docs-writer:` skill invocation path | PASS | Artifact contains '## Available Developer Docs Skills' section with '/developer-docs-writer:write-api-docs', '/developer-docs-writer:write-sdk-guide', and two more skill paths. |
+| c5 | PASS: The skill did not create or write `docs/content/CLAUDE.md` — that file is the coordinator's to assemble from the `_sections/` fragments | PASS | No artifact for 'docs/content/CLAUDE.md' appears in the written files. Only 'work/docs/content/_sections/developer-docs-writer.md' was written. |
+| c6 | PASS: Chat output includes a manifest summary that lists `docs/content/_sections/developer-docs-writer.md` under "Files merged" (not "Files created") since the fragment already existed | PASS | Chat output shows '### Files merged' section listing 'docs/content/_sections/developer-docs-writer.md' and '### Files created' shows '(none — file already existed)'. |
+| c7 | PASS: Output names the merged fragment individually — a bare "bootstrap complete" without the per-file manifest is not enough | PASS | Chat output lists 'docs/content/_sections/developer-docs-writer.md' explicitly under Files merged with 8 named sections enumerated. |
+| c8 | PASS: Output does not claim it overwrote or replaced the fragment — the language reflects merge, not replacement | PASS | Output uses 'merged 8 missing sections from bootstrap template' and 'User-authored "Custom team notes" section preserved ✓' — no overwrite/replace language. |
+| c9 | PARTIAL: Output points the reader at next steps consistent with the skill's documented manifest (writing API docs, SDK guides, or setting up CI doc linting) | PARTIAL | Chat output '### Next steps' lists writing API reference docs, SDK guides, and setting up doc linting/link checking in CI — all consistent with the skill manifest. |
 
 ### Notes
 
-All criteria fully satisfied. The skill correctly executed the safe-merge pattern: user content and sentinel preserved verbatim, merge marker inserted, template sections appended, and the manifest accurately reflected 'merged' rather than 'created'.
+The skill executed flawlessly: user content preserved with sentinel intact, merge marker present, all template sections appended, no CLAUDE.md created, and the manifest summary correctly categorized the file as merged not created. All criteria met at their maximum possible score.

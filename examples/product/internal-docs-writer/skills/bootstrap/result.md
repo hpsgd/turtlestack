@@ -1,14 +1,14 @@
 # Bootstrap
 
-Scenario: A synthetic project root at `{workspace}/work/` is pre-staged with a partial `docs/content/CLAUDE.md` containing a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`. The internal-docs-writer bootstrap skill should preserve that user content while appending the template's internal documentation sections (with a merge marker), and output a manifest listing the merged file and next steps. The skill is marked `user-invocable: false`, so the prompt asks the model to read the SKILL.md directly and execute its process. The runner stages `fixtures/` into `{workspace}/work/` before invocation, and `_snapshot_artifacts` captures everything written under `work/`.
+Scenario: A synthetic project root at `{workspace}/work/` is pre-staged with a partial `docs/content/_sections/internal-docs-writer.md` fragment containing a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`. The internal-docs-writer bootstrap skill should preserve that user content while appending the template's internal documentation sections (with a merge marker), and output a manifest listing the fragment and next steps. The skill writes only its own fragment under `docs/content/_sections/` — `docs/content/CLAUDE.md` is assembled later by the coordinator, so the three content writers never collide on it. The skill is marked `user-invocable: false`, so the prompt asks the model to read the SKILL.md directly and execute its process. The runner stages `fixtures/` into `{workspace}/work/` before invocation, and `_snapshot_artifacts` captures everything written under `work/`.
 
 ## Prompt
 
-> The current working directory (`{workspace}/work/`) is the project root for a project called "TestProject". A partial `docs/content/CLAUDE.md` is already present — it contains a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`.
+> The current working directory (`{workspace}/work/`) is the project root for a project called "TestProject". A partial `docs/content/_sections/internal-docs-writer.md` fragment is already present — it contains a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`.
 > 
 > Read the internal-docs-writer bootstrap skill at `/Users/martin/Projects/turtlestack/plugins/product/internal-docs-writer/skills/bootstrap/SKILL.md` and execute its process exactly as written, using project name "TestProject" and the current working directory as the project root. Apply the safe-merge pattern as documented. Do not pause for confirmation — proceed with all defaults.
 > 
-> After the bootstrap completes, output the manifest summary the skill defines (files merged, next steps).
+> After the bootstrap completes, output the manifest summary the skill defines (files created, files merged, next steps).
 
 ## Output
 
@@ -18,13 +18,11 @@ Captured from a real headless invocation of the skill/agent.
 
 ## Internal Docs Bootstrap Complete
 
-### Files merged
-- `docs/content/CLAUDE.md` — appended internal documentation conventions
+### Files created
+- (none)
 
-**Merge details:**
-- Existing user-authored "Custom team notes" section preserved intact
-- Missing "Internal Documentation" section appended with merge marker
-- Safe-merge pattern applied: no user content overwritten
+### Files merged
+- `docs/content/_sections/internal-docs-writer.md` — internal-docs-writer's fragment of the content domain doc (assembled into `docs/content/CLAUDE.md` by the coordinator); preserved custom team notes and appended missing template sections
 
 ### Next steps
 - Write architecture documentation using `/internal-docs-writer:write-architecture-doc`
@@ -33,13 +31,9 @@ Captured from a real headless invocation of the skill/agent.
 
 ### Artifacts written
 
-#### `work/docs/content/CLAUDE.md`
+#### `work/docs/content/_sections/internal-docs-writer.md`
 
 ```
-# Content Domain
-
-This directory contains documentation conventions and content standards.
-
 ## Custom team notes
 
 USER-EDIT-SENTINEL-DO-NOT-STRIP
@@ -171,25 +165,28 @@ Post-mortems are blameless and follow this structure:
 | Field | Value |
 |---|---|
 | Verdict | PASS |
-| Score | 7.5/7.5 (100%) |
-| Evaluated | 2026-05-13 |
-| Target duration | 29902 ms |
-| Target cost | $0.0779 |
+| Score | 9.5/9.5 (100%) |
+| Evaluated | 2026-06-15 |
+| Target model | claude-haiku-4-5-20251001 |
+| Judge model | claude-sonnet-4-6 |
+| Target duration | 31506 ms |
+| Target cost | $0.0708 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | After bootstrap, `docs/content/CLAUDE.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | Artifact contains the exact line `USER-EDIT-SENTINEL-DO-NOT-STRIP` under the 'Custom team notes' section, with surrounding user-authored text intact. |
-| c2 | After bootstrap, `docs/content/CLAUDE.md` contains the safe-merge marker `<!-- Merged from internal-docs-writer bootstrap v0.1.0 -->` — missing sections were appended, not silently merged | PASS | Artifact contains the exact string `<!-- Merged from internal-docs-writer bootstrap v0.1.0 -->` placed between user content and appended template sections. |
-| c3 | After bootstrap, `docs/content/CLAUDE.md` contains the appended template sections — at minimum the "Runbook Conventions" and "Post-Mortem Template" headings now appear alongside the preserved user content | PASS | Artifact contains both `### Runbook Conventions` and `### Post-Mortem Template` headings with full content appended after the merge marker. |
-| c4 | After bootstrap, `docs/content/CLAUDE.md` contains the "Internal Docs Conventions" section — confirming the full template was appended, not just a partial fragment | PASS | Artifact contains `### Internal Docs Conventions` section near the end with bullet points about doc update policy, runbooks, changelogs, and post-mortems. |
-| c5 | Chat output includes a manifest that names `docs/content/CLAUDE.md` as a merged file, consistent with the skill's documented manifest shape | PASS | Chat response has '### Files merged' section listing `- \`docs/content/CLAUDE.md\` — appended internal documentation conventions'. |
-| c6 | Output names `docs/content/CLAUDE.md` individually — a bare "bootstrap complete" without the per-file listing is not enough | PASS | The file path `docs/content/CLAUDE.md` is explicitly named in the manifest under 'Files merged', not buried in a generic completion message. |
-| c7 | Output does not claim it overwrote or replaced `docs/content/CLAUDE.md` — the language reflects merge or append, not replacement | PASS | Chat says 'appended internal documentation conventions', 'preserved intact', 'appended with merge marker', 'Safe-merge pattern applied: no user content overwritten'. |
-| c8 | Output points the reader at next steps referencing at least one `/internal-docs-writer:*` skill, consistent with the skill's documented manifest | PARTIAL | Next steps list three skills: `/internal-docs-writer:write-architecture-doc`, `/internal-docs-writer:write-runbook`, `/internal-docs-writer:write-changelog`. |
+| c1 | PASS: After bootstrap, `docs/content/_sections/internal-docs-writer.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | Artifact contains 'USER-EDIT-SENTINEL-DO-NOT-STRIP' on its own line, plus the full 'Custom team notes' section text unchanged. |
+| c2 | PASS: After bootstrap, `docs/content/_sections/internal-docs-writer.md` contains the safe-merge marker `<!-- Merged from internal-docs-writer bootstrap v0.1.0 -->` — missing sections were appended, not silently merged | PASS | Artifact contains exact marker: '<!-- Merged from internal-docs-writer bootstrap v0.1.0 -->' between the user section and appended template sections. |
+| c3 | PASS: After bootstrap, `docs/content/_sections/internal-docs-writer.md` contains the appended template sections — at minimum the "Runbook Conventions" and "Post-Mortem Template" headings now appear alongside the preserved user content | PASS | Artifact contains '### Runbook Conventions' and '### Post-Mortem Template' headings after the merge marker. |
+| c4 | PASS: After bootstrap, `docs/content/_sections/internal-docs-writer.md` contains the "Internal Docs Conventions" section — confirming the full template was appended, not just a partial fragment | PASS | Artifact contains '### Internal Docs Conventions' section with multiple bullet points about architecture docs, runbooks, changelogs, post-mortems. |
+| c5 | PASS: The skill did not create or write `docs/content/CLAUDE.md` — that file is the coordinator's to assemble from the `_sections/` fragments | PASS | Artifacts only show `work/docs/content/_sections/internal-docs-writer.md`. No `docs/content/CLAUDE.md` artifact appears. |
+| c6 | PASS: Chat output includes a manifest that names `docs/content/_sections/internal-docs-writer.md`, consistent with the skill's documented manifest shape | PASS | Chat response 'Files merged' section explicitly names '`docs/content/_sections/internal-docs-writer.md`'. |
+| c7 | PASS: Output names `docs/content/_sections/internal-docs-writer.md` individually — a bare "bootstrap complete" without the per-file listing is not enough | PASS | The manifest lists the file individually under 'Files merged' with a description, not just a generic completion notice. |
+| c8 | PASS: Output does not claim it overwrote or replaced the fragment — the language reflects merge or append, not replacement | PASS | Chat says 'preserved custom team notes and appended missing template sections' — merge/append language, no overwrite/replace claim. |
+| c9 | PARTIAL: Output points the reader at next steps referencing at least one `/internal-docs-writer:*` skill, consistent with the skill's documented manifest | PARTIAL | Next steps list three `/internal-docs-writer:*` skills: write-architecture-doc, write-runbook, write-changelog. |
 
 ### Notes
 
-The skill executed flawlessly: sentinel preserved, merge marker present, full template appended, and manifest correctly structured. All criteria met at ceiling.
+All criteria passed fully. The artifact perfectly demonstrates the safe-merge pattern: sentinel line preserved, merge marker present, full template appended, CLAUDE.md untouched, and the chat manifest accurately reflects the merge operation with correct next-step skill references.

@@ -1,7 +1,3 @@
-# Product Domain
-
-This directory contains product documentation for the project.
-
 ## Custom team notes
 
 USER-EDIT-SENTINEL-DO-NOT-STRIP

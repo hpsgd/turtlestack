@@ -1,5 +1,6 @@
 ---
 name: bootstrap
+bootstrap-phase: product
 description: "Bootstrap the product analytics documentation structure for a project. Creates docs/analytics/, generates initial metric-tree and instrumentation templates, and writes domain CLAUDE.md. Idempotent — merges missing sections into existing files without overwriting."
 argument-hint: "[project name]"
 user-invocable: false

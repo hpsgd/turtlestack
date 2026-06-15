@@ -1,5 +1,6 @@
 ---
 name: bootstrap
+bootstrap-phase: delivery
 description: "Bootstrap the delivery documentation structure for a project. Creates docs/delivery/, generates initial RAID log, dependency map, status report and steering pack templates, and writes a domain CLAUDE.md. Idempotent — merges missing sections into existing files without overwriting."
 argument-hint: "[project name]"
 user-invocable: false

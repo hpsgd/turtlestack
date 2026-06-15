@@ -1,14 +1,14 @@
 # Bootstrap
 
-Scenario: A synthetic project root at `{workspace}/work/` is pre-staged with a `docs/architecture/CLAUDE.md` that already contains architecture conventions and a user-authored "Custom team notes" section with a sentinel line. The python-developer bootstrap skill should detect the existing file, append the "Python Conventions" section (with a merge marker), and leave the user-authored content untouched. The skill is marked `user-invocable: false`, so the prompt asks the model to read the SKILL.md directly and execute its process. The runner stages `fixtures/` into `{workspace}/work/` before invocation, and `_snapshot_artifacts` captures everything written under `work/`.
+Scenario: A synthetic project root at `{workspace}/work/` is pre-staged with a `docs/architecture/_sections/python-developer.md` fragment that already contains a user-authored "Custom team notes" section with a sentinel line. The python-developer bootstrap skill should detect the existing fragment, append the "Python Conventions" section (with a merge marker), and leave the user-authored content untouched. It writes only its own fragment — `docs/architecture/CLAUDE.md` is assembled by the coordinator from the fragments in `_sections/`, so this skill never touches it. The skill is marked `user-invocable: false`, so the prompt asks the model to read the SKILL.md directly and execute its process. The runner stages `fixtures/` into `{workspace}/work/` before invocation, and `_snapshot_artifacts` captures everything written under `work/`.
 
 ## Prompt
 
-> The current working directory (`{workspace}/work/`) is the project root for a project called "TestProject". A `docs/architecture/CLAUDE.md` already exists — it contains architecture conventions from a prior architect bootstrap and a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`.
+> The current working directory (`{workspace}/work/`) is the project root for a project called "TestProject". A `docs/architecture/_sections/python-developer.md` fragment already exists — it contains a user-authored "Custom team notes" section with the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP`.
 > 
 > Read the python-developer bootstrap skill at `/Users/martin/Projects/turtlestack/plugins/engineering/python-developer/skills/bootstrap/SKILL.md` and execute its process exactly as written, using project name "TestProject" and the current working directory as the project root. Do not pause for confirmation — proceed with all defaults.
 > 
-> After the bootstrap completes, output the manifest summary the skill defines (files updated, files merged, next steps).
+> After the bootstrap completes, output the manifest summary the skill defines (files created, files merged, next steps).
 
 ## Output
 
@@ -18,8 +18,11 @@ Captured from a real headless invocation of the skill/agent.
 
 ## Python Developer Bootstrap Complete
 
+### Files created
+- None (the fragment already existed)
+
 ### Files merged
-- `docs/architecture/CLAUDE.md` — appended Python Conventions section
+- `docs/architecture/_sections/python-developer.md` — appended missing Python Conventions sections (Typing, Linting and Formatting, Testing, Pydantic, Project Structure, Python Tooling, Available Skills) while preserving the existing "Custom team notes" user-authored section
 
 ### Next steps
 - Configure mypy strict mode in `pyproject.toml`
@@ -29,22 +32,18 @@ Captured from a real headless invocation of the skill/agent.
 
 ### Artifacts written
 
-#### `work/docs/architecture/CLAUDE.md`
+#### `work/docs/architecture/_sections/python-developer.md`
 
 ```
-# Architecture Domain
+<!-- python-developer fragment of the architecture domain doc. Assembled into docs/architecture/CLAUDE.md by the coordinator. -->
 
-This directory contains architecture documentation for the project: decision records, system design artefacts, and API design guidelines.
+## Custom team notes
 
-## What This Domain Covers
+USER-EDIT-SENTINEL-DO-NOT-STRIP
 
-- **Architecture Decision Records (ADRs)** — capturing significant technical decisions
-- **System design** — C4 model diagrams, arc42 documentation, component relationships
-- **API design** — REST/GraphQL/gRPC contract guidelines
-
-## ADR Conventions
-
-We use **MADR** (Markdown Any Decision Records) v3.0 format. Store ADRs in `docs/architecture/adr/`.
+This section was written by the team and must survive any bootstrap re-run.
+It exists to test the safe-merge contract: the bootstrap skill must not
+overwrite or remove user-authored content.
 
 <!-- Added by python-developer bootstrap v0.1.0 -->
 ## Python Conventions
@@ -111,14 +110,6 @@ tests/
 | `/python-developer:write-feature-spec` | Write a BDD feature specification |
 | `/python-developer:write-schema` | Write a Pydantic schema |
 
-## Custom team notes
-
-USER-EDIT-SENTINEL-DO-NOT-STRIP
-
-This section was written by the team and must survive any bootstrap re-run.
-It exists to test the safe-merge contract: the bootstrap skill must not
-overwrite or remove user-authored content.
-
 ```
 
 ## Evaluation
@@ -126,27 +117,30 @@ overwrite or remove user-authored content.
 | Field | Value |
 |---|---|
 | Verdict | PASS |
-| Score | 9.5/9.5 (100%) |
-| Evaluated | 2026-05-13 |
-| Target duration | 21285 ms |
-| Target cost | $0.0724 |
+| Score | 10.5/10.5 (100%) |
+| Evaluated | 2026-06-15 |
+| Target model | claude-haiku-4-5-20251001 |
+| Judge model | claude-sonnet-4-6 |
+| Target duration | 29726 ms |
+| Target cost | $0.0693 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | After bootstrap, `docs/architecture/CLAUDE.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | Artifact contains 'USER-EDIT-SENTINEL-DO-NOT-STRIP' in the 'Custom team notes' section at the bottom of the file, with surrounding text intact. |
-| c2 | After bootstrap, `docs/architecture/CLAUDE.md` contains the merge marker `<!-- Added by python-developer bootstrap v0.1.0 -->` — the Python Conventions section was appended with the correct marker | PASS | Artifact contains exactly '<!-- Added by python-developer bootstrap v0.1.0 -->' immediately before the '## Python Conventions' heading. |
-| c3 | After bootstrap, `docs/architecture/CLAUDE.md` contains a `## Python Conventions` heading — the conventions block was appended | PASS | Artifact contains '## Python Conventions' as a second-level heading after the existing architecture content. |
-| c4 | After bootstrap, `docs/architecture/CLAUDE.md` contains the `### Typing` subsection — strict typing requirements are present | PASS | Artifact contains '### Typing' subsection with mypy strict mode, type annotations, and 'No `Any`' requirements. |
-| c5 | After bootstrap, `docs/architecture/CLAUDE.md` contains the `### Linting and Formatting` subsection — Ruff configuration guidance is present | PASS | Artifact contains '### Linting and Formatting' subsection with Ruff rule set, line length 120, and CI gate requirements. |
-| c6 | After bootstrap, `docs/architecture/CLAUDE.md` contains the `### Testing (BDD)` subsection — pytest-bdd test conventions are present | PASS | Artifact contains '### Testing (BDD)' subsection with pytest-bdd, feature files location, fixture conventions, and naming patterns. |
-| c7 | Chat output includes a manifest summary listing `docs/architecture/CLAUDE.md` as updated or merged | PASS | Chat output has '### Files merged' section listing '`docs/architecture/CLAUDE.md` — appended Python Conventions section'. |
-| c8 | Output names `docs/architecture/CLAUDE.md` as the file that was updated — a bare 'bootstrap complete' without the per-file manifest is not enough | PASS | Output explicitly names '`docs/architecture/CLAUDE.md`' under the 'Files merged' section with specific description of what changed. |
-| c9 | Output does not claim it overwrote or replaced `docs/architecture/CLAUDE.md` — the language reflects append or merge, not replacement | PASS | Output uses 'merged' in heading and 'appended Python Conventions section' in the file entry — no overwrite or replacement language. |
-| c10 | Output points the reader at next steps (configuring mypy, Ruff, or using `/python-developer:write-feature-spec`) consistent with the skill's documented manifest | PARTIAL | Next steps lists mypy strict mode, Ruff rules, '/python-developer:write-feature-spec', and '/python-developer:write-schema' — all skill-relevant items. |
+| c1 | After bootstrap, `docs/architecture/_sections/python-developer.md` still contains the sentinel line `USER-EDIT-SENTINEL-DO-NOT-STRIP` — the user-authored section was preserved verbatim | PASS | Artifact file contains 'USER-EDIT-SENTINEL-DO-NOT-STRIP' in the ## Custom team notes section, verbatim. |
+| c2 | After bootstrap, `docs/architecture/_sections/python-developer.md` contains the merge marker `<!-- Added by python-developer bootstrap v0.1.0 -->` — the Python Conventions section was appended with the correct marker | PASS | Artifact contains '<!-- Added by python-developer bootstrap v0.1.0 -->' immediately before '## Python Conventions'. |
+| c3 | After bootstrap, `docs/architecture/_sections/python-developer.md` contains a `## Python Conventions` heading — the conventions block was appended | PASS | Artifact contains '## Python Conventions' heading after the user-authored section. |
+| c4 | After bootstrap, `docs/architecture/_sections/python-developer.md` contains the `### Typing` subsection — strict typing requirements are present | PASS | Artifact contains '### Typing' with content including 'Strict typing required', mypy strict mode, TypeAlias, and no Any. |
+| c5 | After bootstrap, `docs/architecture/_sections/python-developer.md` contains the `### Linting and Formatting` subsection — Ruff configuration guidance is present | PASS | Artifact contains '### Linting and Formatting' with Ruff details including rule set and 120-char line length. |
+| c6 | After bootstrap, `docs/architecture/_sections/python-developer.md` contains the `### Testing (BDD)` subsection — pytest-bdd test conventions are present | PASS | Artifact contains '### Testing (BDD)' with pytest-bdd, feature files location, and naming conventions. |
+| c7 | The skill did NOT write `docs/architecture/CLAUDE.md` — that file is coordinator-assembled, and the skill writes only its own fragment | PASS | No artifact for docs/architecture/CLAUDE.md is listed; only the _sections/python-developer.md file appears in artifacts written. |
+| c8 | Chat output includes a manifest summary listing `docs/architecture/_sections/python-developer.md` as created or merged | PASS | Chat output '### Files merged' section lists 'docs/architecture/_sections/python-developer.md — appended missing Python Conventions sections'. |
+| c9 | Output names `docs/architecture/_sections/python-developer.md` as the file that was written — a bare "bootstrap complete" without the per-file manifest is not enough | PASS | Output explicitly names 'docs/architecture/_sections/python-developer.md' in the Files merged section with per-file detail. |
+| c10 | Output does not claim it overwrote or replaced `docs/architecture/_sections/python-developer.md` — the language reflects append or merge, not replacement | PASS | Output uses 'appended missing Python Conventions sections... while preserving the existing... user-authored section' — no overwrite/replace language. |
+| c11 | Output points the reader at next steps (configuring mypy, Ruff, or using `/python-developer:write-feature-spec`) consistent with the skill's documented manifest | PARTIAL | Chat output '### Next steps' lists mypy strict mode, Ruff config, /python-developer:write-feature-spec and /python-developer:write-schema. |
 
 ### Notes
 
-The skill executed flawlessly: user-authored content preserved, merge marker correct, all convention subsections present, and manifest output well-formed. The score is 100% of achievable points with c10 capped at PARTIAL by the test author.
+The skill executed correctly across all criteria: sentinel preserved, merge marker present, all subsections appended, CLAUDE.md not touched, manifest complete with append/merge language, and next steps documented. Perfect score.

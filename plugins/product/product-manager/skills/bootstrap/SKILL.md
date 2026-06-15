@@ -1,6 +1,7 @@
 ---
 name: bootstrap
-description: "Bootstrap the product-management documentation structure for a project. Creates docs/product/, generates discovery and roadmap templates, and writes a domain CLAUDE.md. Idempotent — merges missing sections into existing files without overwriting."
+bootstrap-phase: product
+description: "Bootstrap the product-management documentation structure for a project. Creates docs/product/, generates discovery and roadmap templates, and writes the product-manager fragment of the product domain doc. Idempotent — merges missing sections into existing files without overwriting."
 argument-hint: "[project name]"
 user-invocable: false
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
@@ -15,10 +16,10 @@ This sets up the home for discovery artifacts, roadmaps, JTBD canvases, and PRDs
 ## Step 1: Check and create the domain directory
 
 ```bash
-mkdir -p docs/product
+mkdir -p docs/product/_sections
 ```
 
-This step is complete when `docs/product/` exists.
+This step is complete when `docs/product/_sections/` exists.
 
 ## Step 2: Create or merge files
 
@@ -29,17 +30,20 @@ For each file below, apply the safe merge pattern:
 
 Never overwrite an existing file wholesale. This step is complete when both files below exist and contain at least the template sections.
 
-### File 1: `docs/product/CLAUDE.md`
+### Fragment: `docs/product/_sections/product-manager.md`
 
-Create with this content:
+`docs/product/CLAUDE.md` is **assembled by the coordinator** from the fragments in `_sections/` — no plugin
+writes it directly, so the product-manager and product-owner never collide on it. Write the
+product-management contribution as this fragment. It starts at H2 (the coordinator generates the
+`# Product Domain` H1):
 
 ```markdown
-# Product Domain
+## Product management (PM lens)
 
-This directory holds product-management work: problem validation, continuous discovery, JTBD
-analysis, the roadmap, and PRDs.
+This section holds product-management work: problem validation, continuous discovery, JTBD analysis,
+the roadmap, and PRDs.
 
-## What this domain covers
+### What this lens covers
 
 - **Discovery** — continuous customer interviews, opportunity solution trees, switch interviews
 - **Validation** — assumption maps, pretotypes, experiment design before any build commitment
@@ -48,19 +52,19 @@ analysis, the roadmap, and PRDs.
 - **PRDs** — specced problems handed to the product-owner for execution
 - **Voice of customer** — the PM's VoC lens, validated against discovery hypotheses
 
-## The sequence that does not reverse
+### The sequence that does not reverse
 
 Problem validation → solution validation → market validation. No PRD is written for a problem
 discovery has not confirmed.
 
-## Discovery cadence
+### Discovery cadence
 
 - Weekly customer contact, protected on the calendar
 - The product trio (PM + designer + engineer) attends every interview
 - Recruiting is automated so the cadence is self-sustaining
 - The opportunity solution tree updates as evidence arrives — monthly minimum
 
-## Roadmap conventions
+### Roadmap conventions
 
 A roadmap states the change in customer behaviour expected, not a list of features with dates.
 
@@ -68,18 +72,18 @@ A roadmap states the change in customer behaviour expected, not a list of featur
 - **Next** — validated enough to commit to soon
 - **Later** — directionally important, not yet validated
 
-## PRD conventions
+### PRD conventions
 
 Every problem larger than ~1 sprint gets a PRD before development. A PRD includes problem
 validation, target user, RICE score, success metrics (leading, lagging, guardrail), scope
 (in/out/anti-requirements), edge cases, and open questions.
 
-## RICE scoring
+### RICE scoring
 
 RICE = (Reach × Impact × Confidence) / Effort. Show the calculation — never assert "high
 priority" without the numbers.
 
-## Tooling
+### Tooling
 
 | Tool | Purpose |
 |------|---------|
@@ -88,7 +92,7 @@ priority" without the numbers.
 | useMotion | Discovery cadence and interview scheduling |
 | MS 365 | Stakeholder documentation |
 
-## Available skills
+### Available skills
 
 | Skill | Purpose |
 |-------|---------|
@@ -105,7 +109,7 @@ priority" without the numbers.
 | `/product-manager:strategic-voc-synthesis` | Validate hypotheses against VoC signal |
 | `/product-manager:define-icp` | Firmographic + behavioural ICP |
 
-## Conventions
+### Conventions
 
 - No bet reaches the roadmap without problem evidence
 - No PRD is written for an unvalidated problem
@@ -155,7 +159,7 @@ After creating or merging the files, output:
 ## Product-Manager Bootstrap Complete
 
 ### Files created
-- `docs/product/CLAUDE.md` — domain conventions and skill reference
+- `docs/product/_sections/product-manager.md` — product-manager's fragment of the product domain doc (assembled into `docs/product/CLAUDE.md` by the coordinator)
 - `docs/product/discovery-log.md` — running discovery record
 
 ### Files merged
@@ -169,8 +173,8 @@ After creating or merging the files, output:
 
 ## Rules
 
-- **Never overwrite an existing file.** Merge missing sections only. A project may already have a `docs/product/CLAUDE.md` from the product-owner — append, don't clobber.
-- **Idempotent by design.** Running this skill twice produces no duplicate sections. Check for a section heading before appending it.
+- **Write only your own fragment.** `docs/product/CLAUDE.md` is assembled by the coordinator; this skill writes `docs/product/_sections/product-manager.md` and nothing else. The product-owner writes its own fragment — there is no shared file to clobber.
+- **Safe-merge the fragment, idempotent by design.** If the fragment exists, preserve user-authored content and append only missing template sections with the merge marker — never overwrite. Running twice produces no duplicate sections.
 - **Don't invent project specifics.** Leave bracketed placeholders for the team to fill — don't guess the trio's names or the recurring slot.
 
 ## Output Format

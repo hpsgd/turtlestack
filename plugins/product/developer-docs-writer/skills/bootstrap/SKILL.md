@@ -1,6 +1,7 @@
 ---
 name: bootstrap
-description: "Bootstrap the content documentation structure for a project. Creates docs/content/, generates initial CLAUDE.md with Diataxis framework and docs-as-code conventions. Idempotent — merges missing sections into existing files without overwriting."
+bootstrap-phase: content
+description: "Bootstrap the content documentation structure for a project. Creates docs/content/, and writes the developer-docs-writer fragment of the content domain doc with the Diataxis framework and docs-as-code conventions. Idempotent — merges missing sections into existing files without overwriting."
 argument-hint: "[project name]"
 user-invocable: false
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
@@ -15,7 +16,7 @@ Bootstrap the content documentation structure for **$ARGUMENTS**.
 ### Step 1: Check and create domain directory
 
 ```bash
-mkdir -p docs/content
+mkdir -p docs/content/_sections
 ```
 
 ### Step 2: Create or merge files
@@ -24,15 +25,14 @@ For each file below, apply the safe merge pattern:
 - If file does not exist → create from template
 - If file exists → read both, find sections in template missing from file, append missing sections with `<!-- Merged from developer-docs-writer bootstrap v0.1.0 -->`
 
-#### File 1: `docs/content/CLAUDE.md`
+#### Fragment: `docs/content/_sections/developer-docs-writer.md`
 
-Create with this content (~80 lines):
+`docs/content/CLAUDE.md` is **assembled by the coordinator** from the fragments in `_sections/` — no plugin
+writes it directly, so developer-docs-writer, internal-docs-writer, and user-docs-writer never collide on it.
+Write the developer-docs-writer contribution as this fragment. It starts at H2 (the coordinator generates the
+`# Content Domain` H1):
 
 ```markdown
-# Content Domain
-
-This directory contains documentation conventions: Diataxis framework, API docs standards, SDK guide format, and docs-as-code practices.
-
 ## What This Domain Covers
 
 - **Developer documentation** — API references, SDK guides, integration guides, migration guides
@@ -127,7 +127,7 @@ After creating/merging all files, output a summary:
 ## Content Bootstrap Complete
 
 ### Files created
-- `docs/content/CLAUDE.md` — domain conventions and skill reference
+- `docs/content/_sections/developer-docs-writer.md` — developer-docs-writer's fragment of the content domain doc (assembled into `docs/content/CLAUDE.md` by the coordinator)
 
 ### Files merged
 - (list any existing files where sections were appended)

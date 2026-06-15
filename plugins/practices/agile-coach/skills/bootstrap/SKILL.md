@@ -1,5 +1,6 @@
 ---
 name: bootstrap
+bootstrap-phase: delivery
 description: "Bootstrap the agile-coaching documentation structure for a project. Creates docs/coaching/, generates initial working-agreements and retrospective templates, and writes a domain CLAUDE.md. Idempotent — merges missing sections into existing files without overwriting."
 argument-hint: "[team or project name]"
 user-invocable: false

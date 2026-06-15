@@ -1,6 +1,7 @@
 ---
 name: bootstrap
-description: "Bootstrap the product documentation structure for a project. Creates docs/product/, generates initial templates, and writes domain CLAUDE.md. Idempotent — merges missing sections into existing files without overwriting."
+bootstrap-phase: product
+description: "Bootstrap the product documentation structure for a project. Creates docs/product/, generates initial templates, and writes the product-owner fragment of the product domain doc. Idempotent — merges missing sections into existing files without overwriting."
 argument-hint: "[project name]"
 user-invocable: false
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
@@ -15,7 +16,7 @@ Bootstrap the product documentation structure for **$ARGUMENTS**.
 ### Step 1: Check and create domain directory
 
 ```bash
-mkdir -p docs/product
+mkdir -p docs/product/_sections
 ```
 
 ### Step 2: Create or merge files
@@ -24,15 +25,13 @@ For each file below, apply the safe merge pattern:
 - If file does not exist → create from template
 - If file exists → read both, find sections in template missing from file, append missing sections with `<!-- Merged from product-owner bootstrap v0.1.0 -->`
 
-#### File 1: `docs/product/CLAUDE.md`
+#### Fragment: `docs/product/_sections/product-owner.md`
 
-Create with this content (~100 lines):
+`docs/product/CLAUDE.md` is **assembled by the coordinator** from the fragments in `_sections/` — no plugin
+writes it directly, so the product-owner and product-manager never collide on it. Write the product-owner's
+contribution as this fragment. It starts at H2 (the coordinator generates the `# Product Domain` H1):
 
 ```markdown
-# Product Domain
-
-This directory contains product documentation: PRDs, user stories, JTBD canvases, and backlog management conventions.
-
 ## What This Domain Covers
 
 - **Product Requirements Documents (PRDs)** — detailed feature specifications
@@ -224,7 +223,7 @@ After creating/merging all files, output a summary:
 ## Product Bootstrap Complete
 
 ### Files created
-- `docs/product/CLAUDE.md` — domain conventions and skill reference
+- `docs/product/_sections/product-owner.md` — product-owner's fragment of the product domain doc (assembled into `docs/product/CLAUDE.md` by the coordinator)
 - `docs/product/jtbd-canvas.md` — JTBD canvas template
 
 ### Files merged
