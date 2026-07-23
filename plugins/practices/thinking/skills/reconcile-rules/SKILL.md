@@ -99,16 +99,73 @@ Wait for the user to approve removals before deleting anything.
 
 ## Step 4: Apply cleanup (only with user approval)
 
-For each rule the user approves for removal:
+Deletions land in a **shared** directory. `$GLOBAL_RULES_DIR` (default `~/.claude/rules/`) is global to
+the machine, and the SessionStart hook nudges *every* live session to run this skill. Two sessions deleting
+against the same directory at once can race: one removes a rule the other classified as *keep*, and a naive
+count check (18-for-18) still matches while the wrong file is missing. The dir isn't under git, so there's no
+clean revert. Steps 4a and 4b close that race — do them in order.
+
+### 4a. Pre-flight: refuse to delete while other sessions are live
+
+reconcile is never urgent — deferring is always safe. Before removing anything, check for other live Claude
+Code sessions:
+
+```bash
+# This session counts as one. >1 means another session could be mutating the same dir.
+pgrep -x claude 2>/dev/null | wc -l | tr -d ' '
+```
+
+- **Count > 1** → other sessions are live. **Stop. Do not delete.** Tell the user to run reconcile in a
+  single session (close the others, or come back when they're done). Skip 4b entirely.
+- **Count ≤ 1** → proceed to 4b. (A `0` means the CLI runs under a non-`claude` process name in this
+  install, not that nothing is running — it's the best-effort signal, so still proceed but stay alert to the
+  4b verification.)
+
+### 4b. Delete approved rules, then verify by name — not by count
+
+For each rule the user approved, delete it and prove the *right* files went and *only* those. The name diff
+is what catches a concurrent session deleting an unapproved keep-rule.
 
 ```bash
 RULES_DIR="${RULES_DIR:-.claude/rules}"
 GLOBAL_RULES_DIR="${GLOBAL_RULES_DIR:-$HOME/.claude/rules}"
 
-rm "$GLOBAL_RULES_DIR/learned--{topic}.md"
-# or
-rm "$RULES_DIR/learned--{topic}.md"
+# 1. Snapshot the exact set of learned rules present BEFORE deletion (both locations).
+before="$(mktemp)"; after="$(mktemp)"; approved="$(mktemp)"
+find "$GLOBAL_RULES_DIR" "$RULES_DIR" -maxdepth 1 -name 'learned--*.md' -type f 2>/dev/null | sort > "$before"
+
+# 2. Write the approved-for-removal paths — one per line, EXACTLY as approved. Edit this list.
+cat > "$approved" <<EOF
+$GLOBAL_RULES_DIR/learned--{topic-1}.md
+$RULES_DIR/learned--{topic-2}.md
+EOF
+sort -o "$approved" "$approved"
+
+# 3. Remove only the approved files (rm -f: a concurrent session already deleting one of ours is benign).
+while IFS= read -r f; do [ -n "$f" ] && rm -f -- "$f"; done < "$approved"
+
+# 4. Snapshot again and compute what ACTUALLY disappeared.
+find "$GLOBAL_RULES_DIR" "$RULES_DIR" -maxdepth 1 -name 'learned--*.md' -type f 2>/dev/null | sort > "$after"
+removed="$(comm -23 "$before" "$after")"                          # present before, gone now
+unexpected="$(comm -23 <(printf '%s\n' "$removed") "$approved")"  # gone but NOT approved — the race
+still_present="$(comm -12 "$approved" "$after")"                  # approved but still here — rm didn't take
+
+# 5. Verdict.
+if [ -n "$unexpected" ]; then
+  echo "ALARM: rules were deleted that you did NOT approve — likely a concurrent session:"
+  printf '  %s\n' $unexpected
+  echo "The rules dir isn't under git. Restore these from session-start context or a backup NOW."
+fi
+if [ -n "$still_present" ]; then
+  echo "WARNING: these approved rules are still present (rm failed or path typo):"
+  printf '  %s\n' $still_present
+fi
+[ -z "$unexpected" ] && [ -z "$still_present" ] && printf 'OK: removed exactly the approved set:\n%s\n' "$removed"
+rm -f "$before" "$after" "$approved"
 ```
+
+If the ALARM fires, surface it to the user immediately and help restore before doing anything else — do not
+update the snapshot over a corrupted state.
 
 Report what was removed.
 
@@ -142,6 +199,7 @@ with open(os.path.join(os.environ['GLOBAL_LEARNINGS_DIR'], 'reconcile-snapshot.j
 ## Rules
 
 - **Never auto-delete.** This skill recommends. The user decides. Present the evidence and wait.
+- **Single-session by design.** Deletion targets a shared global dir with no git safety net. If other Claude sessions are live (Step 4a), defer — never race them. Verify removals by name, never by count (Step 4b): a count check passes even when the wrong file went missing.
 - **Err toward keeping.** If you're unsure whether a marketplace rule fully covers a learned rule, classify as "partial overlap" not "superseded." False removal is worse than slight duplication.
 - **Context cost matters.** Each rule loaded into context costs tokens. 6 learned rules at ~15 lines each is ~90 lines of context. If 3 are superseded, removing them saves ~45 lines per session, every session.
 - **Check both locations.** Global (`$GLOBAL_RULES_DIR`, default `~/.claude/rules/`) and project (`$RULES_DIR`, default `.claude/rules/`). A global learned rule might be superseded by a project-installed marketplace rule.
