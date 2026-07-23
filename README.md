@@ -440,17 +440,11 @@ AI tell avoidance, banned vocabulary, sentence structure, markdown formatting, p
 
 #### ADHD Mode
 
-Shapes in-session assistant replies for an ADHD reader: lead with the next action, number steps, restate state each turn, suppress tangents, make progress visible, cut preamble and closers. Always-on while the plugin is enabled — opt in by electing it at any scope (user, project, or local). Requires `thinking` enabled for rule delivery. Adapted from [i-have-adhd](https://github.com/ayghri/i-have-adhd).
+Shapes in-session assistant replies for an ADHD reader: lead with the next action, number steps, restate state each turn, suppress tangents, make progress visible, cut preamble and closers. Delivered as an [output style](plugins/practices/adhd-mode/output-styles/adhd-mode.md) applied automatically while the plugin is enabled — opt in by electing it at any scope (user, project, or local); no other plugin required. Adapted from [i-have-adhd](https://github.com/ayghri/i-have-adhd).
 
 ```
 /plugin install adhd-mode@turtlestack
 ```
-
-**Rules:**
-
-| Rule | Description |
-|---|---|
-| [action-first-output](plugins/practices/adhd-mode/rules/action-first-output.md) | Action-first output shaping for an ADHD reader, with override conditions |
 
 ### Research
 

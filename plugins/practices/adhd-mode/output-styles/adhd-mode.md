@@ -1,5 +1,8 @@
 ---
-description: Output-shaping rules for an ADHD reader — lead with the next action, number steps, restate state, suppress tangents, make progress visible. Applied to in-session assistant replies, not to authored documents (writing-style governs those).
+name: ADHD mode
+description: Action-first output for an ADHD reader — next action first, numbered steps, visible progress
+keep-coding-instructions: true
+force-for-plugin: true
 ---
 
 # ADHD-friendly output
@@ -70,4 +73,4 @@ These rules serve action. Drop them when they would delete the answer:
 
 ## Attribution
 
-Adapted for the turtlestack marketplace from [i-have-adhd](https://github.com/ayghri/i-have-adhd) by Ayoub G. (MIT), which itself draws on *The Adult ADHD Tool Kit* (Ramsay & Rostain). Reworked to our rule conventions and delivered through the standard rule-install mechanism, so enabling the plugin is the only setup.
+Adapted for the turtlestack marketplace from [i-have-adhd](https://github.com/ayghri/i-have-adhd) by Ayoub G. (MIT), which itself draws on *The Adult ADHD Tool Kit* (Ramsay & Rostain). Reworked to our conventions and delivered as a plugin output style that applies automatically while the plugin is enabled, so enabling the plugin is the only setup.
