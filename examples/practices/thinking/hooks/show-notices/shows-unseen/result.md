@@ -15,8 +15,8 @@
 | PASS | stdout contains: SessionStart | present: 'SessionStart' |
 | PASS | stdout contains: Breaking change to rule install | present: 'Breaking change to rule install' |
 | PASS | stdout contains: Action needed on config | present: 'Action needed on config' |
-| PASS | file exists: config/turtlestack/notices-seen.json | exists: /var/folders/nn/d2s0hr6x7p73b0gr6gsqp9yw0000gp/T/hooktest-974b3b04-a89q146b/config/turtlestack/notices-seen.json |
-| PASS | file contains: config/turtlestack/notices-seen.json :: test-action | found in /var/folders/nn/d2s0hr6x7p73b0gr6gsqp9yw0000gp/T/hooktest-974b3b04-a89q146b/config/turtlestack/notices-seen.json: 'test-action' |
+| PASS | file exists: config/turtlestack/notices-seen.json | exists: /var/folders/nn/d2s0hr6x7p73b0gr6gsqp9yw0000gp/T/hooktest-fd9b0aa0-x62ulh_q/config/turtlestack/notices-seen.json |
+| PASS | file contains: config/turtlestack/notices-seen.json :: test-action | found in /var/folders/nn/d2s0hr6x7p73b0gr6gsqp9yw0000gp/T/hooktest-fd9b0aa0-x62ulh_q/config/turtlestack/notices-seen.json: 'test-action' |
 
 ## Captured stdout
 

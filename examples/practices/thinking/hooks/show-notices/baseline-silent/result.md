@@ -13,8 +13,8 @@
 |---|---|---|
 | PASS | exit 0 | actual exit 0 |
 | PASS | stdout empty | stdout empty |
-| PASS | file exists: config/turtlestack/notices-seen.json | exists: /var/folders/nn/d2s0hr6x7p73b0gr6gsqp9yw0000gp/T/hooktest-5b5fc960-nwm1pqkf/config/turtlestack/notices-seen.json |
-| PASS | file contains: config/turtlestack/notices-seen.json :: test-action | found in /var/folders/nn/d2s0hr6x7p73b0gr6gsqp9yw0000gp/T/hooktest-5b5fc960-nwm1pqkf/config/turtlestack/notices-seen.json: 'test-action' |
+| PASS | file exists: config/turtlestack/notices-seen.json | exists: /var/folders/nn/d2s0hr6x7p73b0gr6gsqp9yw0000gp/T/hooktest-74a5573c-c1h174sw/config/turtlestack/notices-seen.json |
+| PASS | file contains: config/turtlestack/notices-seen.json :: test-action | found in /var/folders/nn/d2s0hr6x7p73b0gr6gsqp9yw0000gp/T/hooktest-74a5573c-c1h174sw/config/turtlestack/notices-seen.json: 'test-action' |
 
 ## Captured stdout
 

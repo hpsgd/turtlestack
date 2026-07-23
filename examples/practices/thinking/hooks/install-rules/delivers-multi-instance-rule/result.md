@@ -12,9 +12,9 @@
 | Result | Assertion | Evidence |
 |---|---|---|
 | PASS | exit 0 | actual exit 0 |
-| PASS | file exists: rules/turtlestack--thinking--9.9.9--multi-instance-dispatch.md | exists: /var/folders/nn/d2s0hr6x7p73b0gr6gsqp9yw0000gp/T/hooktest-060a2c8d-1dt35s9a/rules/turtlestack--thinking--9.9.9--multi-instance-dispatch.md |
-| PASS | file contains: rules/turtlestack--thinking--9.9.9--multi-instance-dispatch.md :: When you dispatch multiple instances | found in /var/folders/nn/d2s0hr6x7p73b0gr6gsqp9yw0000gp/T/hooktest-060a2c8d-1dt35s9a/rules/turtlestack--thinking--9.9.9--multi-instance-dispatch.md: 'When you dispatch multiple instances' |
-| PASS | file contains: rules/turtlestack--thinking--9.9.9--multi-instance-dispatch.md :: When you are a dispatched instance | found in /var/folders/nn/d2s0hr6x7p73b0gr6gsqp9yw0000gp/T/hooktest-060a2c8d-1dt35s9a/rules/turtlestack--thinking--9.9.9--multi-instance-dispatch.md: 'When you are a dispatched instance' |
+| PASS | file exists: rules/turtlestack--thinking--9.9.9--multi-instance-dispatch.md | exists: /var/folders/nn/d2s0hr6x7p73b0gr6gsqp9yw0000gp/T/hooktest-dd358b09-eokjrv68/rules/turtlestack--thinking--9.9.9--multi-instance-dispatch.md |
+| PASS | file contains: rules/turtlestack--thinking--9.9.9--multi-instance-dispatch.md :: When you dispatch multiple instances | found in /var/folders/nn/d2s0hr6x7p73b0gr6gsqp9yw0000gp/T/hooktest-dd358b09-eokjrv68/rules/turtlestack--thinking--9.9.9--multi-instance-dispatch.md: 'When you dispatch multiple instances' |
+| PASS | file contains: rules/turtlestack--thinking--9.9.9--multi-instance-dispatch.md :: When you are a dispatched instance | found in /var/folders/nn/d2s0hr6x7p73b0gr6gsqp9yw0000gp/T/hooktest-dd358b09-eokjrv68/rules/turtlestack--thinking--9.9.9--multi-instance-dispatch.md: 'When you are a dispatched instance' |
 
 ## Captured stdout
 
