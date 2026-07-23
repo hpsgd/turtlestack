@@ -14,20 +14,7 @@ Captured from a real headless invocation of the skill/agent.
 
 ### Chat response
 
-# Initiative Decomposition: Multi-Tenancy Platform Capability
-
-## Assumptions stated up-front
-
-Since clarification was disallowed, this plan is built on the following assumptions. Any of them flipping changes scope materially — flag them at PRD review.
-
-1. **Current state:** Single-tenant SaaS; users belong to a single global account namespace; no "workspace" or "organisation" abstraction exists today.
-2. **Tenancy model:** Pooled (shared DB + per-row `tenant_id` discriminator, enforced at the data-access layer / RLS). Silo-per-tenant DBs and dedicated infra are explicitly rejected as the *default* but allowed as an enterprise-tier upgrade later.
-3. **Identity model:** Users can belong to one or more workspaces with workspace-scoped roles. Existing accounts migrate into a personal/legacy workspace 1:1.
-4. **Auth scope:** SSO (SAML/OIDC) is in scope as an enterprise prerequisite — at least one of the three blocking deals will require it.
-5. **Billing model:** Today is per-seat individual; target is per-workspace subscription with seat counts, invoiced (enterprise) plus self-serve credit-card (SMB).
-6. **Commercial pressure:** Three deals worth $400k ARR want this *this quarter*. Appetite is **one quarter (10–13 weeks)** to GA, with an enterprise-pilot milestone at ~week 8.
-7. **Library-vs-application:** Platform is an application, not a library — framework coupling is acceptable.
-8. **Domain conventions:** hps.gd naming (`Hps\Gd\…` namespace if PHP; `hps-gd/<project>` repo names).
+# Initiative Decomposition: Multi-tenancy for the Platform
 
 ## Context
 
@@ -35,15 +22,17 @@ Since clarification was disallowed, this plan is built on the following assumpti
 
 | Question | Answer |
 |---|---|
-| **User problem** | Enterprise buyers cannot adopt the platform because (a) their data co-mingles with other customers in a shared namespace, (b) they cannot map their org structure (departments, business units) onto the product, (c) they cannot administer their own users/roles/SSO, and (d) procurement/billing expects one contract per organisation, not per seat. Their security and compliance reviewers reject the product at the data-isolation gate. |
-| **Target user** | Two distinct personas. **Primary:** Enterprise IT administrator at a 200–2000 seat organisation evaluating the platform — needs SSO, workspace-level admin, audit logs, contract billing. **Secondary:** End user inside that enterprise — needs frictionless workspace switching, clear workspace context, no regressions to existing single-tenant UX. **Existing self-serve users** are explicitly an affected persona (migration must be invisible to them). |
-| **Success criteria** | **Commercial:** all three blocked deals close within 30 days of GA ($400k ARR booked). **Adoption:** ≥80% of active accounts migrated to workspace model within 4 weeks of GA with <0.5% support-ticket regression rate. **Isolation:** zero cross-tenant data leak incidents in the 90 days post-GA (measured by automated isolation test suite running continuously + zero P0/P1 incidents). **Sales motion:** average enterprise security-review cycle reduced from "blocked" to ≤10 business days. **Self-serve health:** no measurable drop in self-serve activation or D7 retention through the migration window. |
-| **Appetite** | **One quarter (10–13 weeks)** to GA. Enterprise-pilot milestone at week 8 (one of the three deals as design-partner customer in production). This is **fixed-time, variable-scope** — features beyond the MVP enterprise checklist defer to a fast-follow. |
-| **Constraints** | (a) Migration of existing accounts must be zero-downtime and reversible for at least 14 days. (b) Cannot break public API contracts for existing API consumers without a deprecation window — versioned API or backwards-compatible defaults required. (c) Billing changes touch revenue recognition — finance must sign off on accounting treatment before GA. (d) SOC 2 (or equivalent) controls cannot regress; isolation evidence must be auditable. (e) Pricing model change requires Legal + GTM alignment — existing customers' contracts cannot be unilaterally repriced. (f) Three live enterprise deals = real-customer scrutiny during build; design-partner agreements likely needed. |
+| **User problem** | Enterprise buyers can't adopt because they need a single account boundary that isolates their org's data, users, billing, and admin controls from other customers — and today the platform is single-tenant per user. Three procurement processes are stalled on this. |
+| **Target user** | Enterprise IT/security buyer (approves the purchase) + Workspace Admin (day-to-day owner: invites users, manages roles, sees the invoice) + End users (belong to one or more workspaces and switch between them). |
+| **Success criteria** | (1) Three blocked deals ($400k ARR) close within one quarter of GA. (2) Zero cross-tenant data leaks in security review + external pentest. (3) SSO-enabled workspace can be provisioned in <1 business day. (4) ≥90% of existing single-user accounts migrate to a workspace without support intervention. |
+| **Appetite** | **One quarter (12 weeks)** to enterprise-ready GA. Beta with the three blocked deals by week 8. Hard stop — this is displacing the next quarter's roadmap, not adding to it. |
+| **Constraints** | Deals expected to close within the quarter (revenue pressure). Existing customers must be migrated with zero downtime and no data loss. Security posture cannot regress (SOC 2 in progress). Pricing change needs finance + legal sign-off. Depends on no other in-flight initiatives. |
 
-**NFR note (Martin-style):** the *tenancy model itself* — pooled vs. silo, RLS vs. app-layer enforcement, single- vs. multi-region — should be **cleanly encoded so it can be changed without invasive rework** ([[learned--martin-nfr-flavour-answers-to-ambiguity]]). The codebase should treat tenant context as a single-source-of-truth value object threaded through every request, not as a tenant_id column added column-by-column. This is an ADR-worthy decision and warrants a historical-variation audit ([[learned--walk-variation-history-before-accepting-versioning-adr]]) — review past data-model migrations to confirm the chosen mechanism can evolve.
-
-**Platform-as-package note:** auth, data isolation, billing, and hosting interact and must be evaluated **together**, not as five independent ADRs ([[learned--evaluate-platforms-as-package]]). A consolidated multi-tenancy ADR is preferable to five sibling ADRs that cascade-rewrite when one changes.
+**Stated assumptions** (proceeding without clarification, per instruction):
+- Existing product is a B2B SaaS with per-user accounts and a shared Postgres. No prior tenant abstraction.
+- Chosen isolation model: **shared schema, tenant-scoped rows with a `workspace_id` on every business table + row-level enforcement at the ORM/repository layer.** (Cheaper than schema-per-tenant, adequate for the three deals; documented as ADR with the tradeoff noted for future re-evaluation if a regulated customer requires physical isolation.)
+- Enterprise tier will bundle multi-tenancy + SSO (SAML/OIDC) + SCIM provisioning + audit log. Pricing shifts from per-seat to per-seat with an enterprise floor.
+- Existing users become the sole member of a new personal workspace at migration — no user-facing account change beyond a workspace switcher appearing in the header.
 
 ---
 
@@ -51,28 +40,28 @@ Since clarification was disallowed, this plan is built on the following assumpti
 
 ### CPO team workstreams
 
-| Workstream | Owner role | Key deliverables (initiative-specific) | Relevant? |
+| Workstream | Owner role | Key deliverables | Relevant? |
 |---|---|---|---|
-| **Product** | product-owner | PRD covering workspace concept, member/role model, invite & onboarding flows, workspace switching UX, admin console scope, migration story for existing users, pricing & packaging decisions, deprecation of legacy single-tenant flows. User stories per persona (enterprise admin, end user, self-serve incumbent). Acceptance criteria including isolation invariants ("user in workspace A must never see object owned by workspace B"). Explicit MVP-vs-fast-follow scope list. | **Yes** — central. The workspace concept is a new primary domain object. |
-| **Design** | ui-designer | Workspace switcher pattern (global nav), workspace-scoped settings IA, admin console screens (members, roles, SSO, billing, audit log), workspace creation/invite flows, "you are now in workspace X" affordance, empty/onboarding states for new workspaces, error states (permission denied, workspace deleted). Component spec for workspace context indicator. Accessibility review of all new flows. | **Yes** — workspace switching is a new top-level UX pattern. |
-| **Content** | user-docs-writer | New "Workspaces" section in docs; admin guide (SSO setup, role management, billing); end-user guide ("switching workspaces", "what changed"); migration FAQ for existing self-serve users; API docs updates for tenant-scoped endpoints; release notes; in-app onboarding copy. | **Yes** — admin persona has zero existing documentation surface. |
-| **GTM** | gtm | Enterprise positioning ("now built for teams"); pricing-page rework (per-workspace + per-seat); sales enablement (security one-pager, isolation architecture diagram, SOC 2 mapping); launch comms (existing customers, prospects, the three blocked deals specifically); pricing-grandfathering policy for existing customers. | **Yes** — pricing model change + enterprise positioning is a launch in itself. |
-| **Support** | support | Runbook for workspace/member/role issues; escalation path for suspected cross-tenant leakage (P0 protocol); FAQ on migration; training session for support team; tagging schema in ticketing for tenancy-related issues; pre-launch beta-customer support model. | **Yes** — new failure modes and a P0 incident class (data leak). |
-| **Research** | ux-researcher | Validate workspace-switcher pattern with 5–8 enterprise admins (preferably from the three blocked deals); usability test admin console with target persona; journey-map enterprise procurement → activation; post-launch survey instrument. | **Yes** — net-new persona (enterprise admin); existing research likely doesn't cover them. |
+| Product | product-owner | PRD covering workspace lifecycle, roles (Owner/Admin/Member/Guest), invite/join flows, workspace switching, billing model change, migration UX for existing users; acceptance criteria per user story; success metrics | **Yes** — foundational |
+| Design | ui-designer | Workspace switcher pattern, workspace settings IA, member management UI, role/permission surfaces, empty-state and first-run for new workspaces, migration prompt UX, accessibility pass | **Yes** — significant surface-area change |
+| Content | user-docs-writer | Admin guide (create workspace, invite users, SSO setup, SCIM), end-user guide (switching workspaces, joining), migration FAQ, changelog entry, in-product tooltips/empty states | **Yes** — enterprise buyers evaluate docs during procurement |
+| GTM | gtm | Enterprise tier positioning + pricing page changes, sales enablement (deck, security one-pager, competitive angle), launch comms to existing customers about the tier change, three named-account launch plan | **Yes** — pricing change + new tier |
+| Support | support | Runbook for workspace/tenancy issues, migration escalation path, known-issues list, training session for CS/support on the new model | **Yes** — migration will drive tickets |
+| Research | ux-researcher | Validate workspace switcher and admin flows with 3–5 enterprise design partners (the blocked deals are the sample); post-launch usability check | **Yes** — but scoped: fast validation with the three blocked deals, not net-new persona work |
 
 ### CTO team workstreams
 
-| Workstream | Owner role | Key deliverables (initiative-specific) | Relevant? |
+| Workstream | Owner role | Key deliverables | Relevant? |
 |---|---|---|---|
-| **Architecture** | architect | **Consolidated multi-tenancy ADR** (tenancy model, identity model, billing-coupling, hosting impact — evaluated as a package per [[learned--evaluate-platforms-as-package]]). System design covering: tenant context propagation (request → service → data layer), data isolation enforcement (RLS or equivalent), workspace lifecycle (create, suspend, delete, restore), SSO architecture (SAML + OIDC abstractions), audit log architecture, migration strategy for existing data. API contract v2 (tenant-scoped). Threat model interface. Historical-variation audit of past data-model migrations to validate evolvability ([[learned--walk-variation-history-before-accepting-versioning-adr]]). | **Yes** — foundational. |
-| **Development** | developer (lead) | Workspace + membership domain model; tenant-context middleware; data-access layer enforcement; admin-console UI; workspace-switcher UI; SSO integration; audit logging; migration scripts (zero-downtime, reversible 14 days); billing integration; API v2 endpoints; deprecation shims for v1. **Streams:** (1) data/isolation, (2) identity/auth/SSO, (3) admin & switcher UX, (4) billing & metering, (5) migration & compatibility. | **Yes** — five parallel sub-streams under one lead. |
-| **QA Planning** | qa-lead | Test strategy for isolation invariants (the highest-stakes test class); SSO matrix (IdPs to test: Okta, Azure AD, Google Workspace, generic SAML); migration test plan (production-shaped data, rollback validation); pricing/billing test scenarios; performance test plan (does tenant_id indexing regress hot queries?); regression matrix for existing flows. **Quality gate definitions** per phase. | **Yes** — isolation is a hard correctness gate, not a "we'll find bugs" workstream. |
-| **QA Execution** | qa-engineer | Automated isolation test suite (per-endpoint, per-resource, asserting no cross-tenant access; run continuously post-GA); SSO integration tests; migration dry-runs against production-shaped data; performance regression suite; manual exploratory testing of admin console and switcher. | **Yes** — substantial new test surface. |
-| **DevOps** | devops | Infrastructure for workspace-scoped resources (object storage prefixing, queue routing if relevant); RLS/policy deployment in DB; rollout plan (feature flag, gradual cohort migration); monitoring dashboards (per-tenant metrics, cross-tenant leak alarms); audit log pipeline; SSO IdP onboarding runbook; rollback plan with 14-day reversibility window. | **Yes** — non-trivial infra and a high-risk rollout. |
-| **Security** | security-engineer | Threat model (focus: cross-tenant escape, privilege escalation within workspace, SSO assertion forgery, audit-log tampering); security review at end of Phase 2 and end of Phase 3; SOC 2 controls mapping (or equivalent); penetration test of isolation boundaries pre-GA; incident-response runbook for suspected leakage (P0); review of audit log completeness for compliance evidence. | **Yes** — isolation is the primary security promise of the initiative. |
-| **Data** | data-engineer | Event schema additions (`workspace_id` on every event); per-workspace analytics dashboards (for product team + for enterprise admin in-app); migration of historical event data to workspace context; revenue dashboards reflecting new pricing model; data dictionary updates. | **Yes** — every existing event needs tenant context retrofitted; new pricing model needs revenue analytics. |
+| Architecture | architect | ADR on isolation model (shared-schema + row scoping), tenant context propagation design (request → repo → query), auth/permission model (workspace-scoped RBAC), SSO/SCIM integration design, migration plan for existing data, billing/entitlement service contract | **Yes** — foundational |
+| Development | backend + frontend developers | `workspace_id` schema migration + backfill, tenant-context middleware, repository-layer scoping, RBAC enforcement, invite/SSO/SCIM flows, workspace switcher + settings UI, billing integration changes, feature-flag rollout | **Yes** — the bulk of the work |
+| QA Planning | qa-lead | Test strategy focused on **cross-tenant isolation** (the highest-risk failure mode), RBAC matrix tests, migration test plan, regression scope for every touched surface, exit criteria for GA | **Yes** — isolation testing is non-negotiable |
+| QA Execution | qa-engineer | Automated isolation test suite (every endpoint × unauthorised tenant), RBAC matrix automation, migration dry-run on production-shaped data, exploratory testing for workspace switching edge cases | **Yes** |
+| DevOps | devops | Zero-downtime migration runbook, per-tenant metrics/logging (tenant tag on every log line), tenant-aware rate limits, backup/restore per tenant, staging environment representative of multi-tenant load | **Yes** — migration is the risky step |
+| Security | security-engineer | Threat model (STRIDE with focus on tenant-boundary threats), authorisation review, SSO/SAML implementation review, external pentest scoped to isolation, audit log requirements, SOC 2 evidence updates | **Yes** — enterprise buyers will ask for the pentest report |
+| Data | data-engineer | Tenant dimension on all analytics events, per-tenant usage dashboards (needed for billing + CS), backfill of tenant on historical events where possible, deprecation of user-scoped dashboards that no longer make sense | **Yes** — billing depends on usage data being tenant-scoped |
 
-**Excluded / not-relevant workstreams:** none. Every CPO and CTO workstream is in scope. This is a "touches everything" initiative — that is the user's framing and it survives scrutiny.
+**Not included** and why: nothing excluded — the initiative genuinely touches all workstreams. Research is scoped tightly (design partners only, not fresh persona work) to fit the appetite.
 
 ---
 
@@ -82,50 +71,49 @@ Since clarification was disallowed, this plan is built on the following assumpti
 
 | Workstream | Depends on | What it needs before starting | Blocks |
 |---|---|---|---|
-| Product | — | Stated assumptions confirmed or revised; access to the three blocked deals for input | Architecture, Design, GTM, Research |
-| Architecture | Product (lightweight) | High-level scope, isolation NFR, enterprise checklist; can run in parallel with PRD detailing | Development, DevOps, Security, Data |
-| Research | Product (skeleton) | Persona definition and rough flows | Final Design, GTM positioning |
-| Design | Product, Research (initial findings) | PRD with flows; preliminary research signal on switcher pattern | Development (UI streams) |
-| Security (threat model) | Architecture | Tenancy model + identity model from ADR | Development (gates the isolation enforcement design) |
-| Development — data/isolation | Architecture, Security threat model | ADR + threat model | QA isolation tests, all other dev streams (provides tenant context primitive) |
-| Development — identity/SSO | Architecture, data/isolation primitive | Tenant-context primitive landed | QA SSO matrix |
-| Development — admin & switcher UI | Design, identity primitive | Specs + working membership model | QA UI regression |
-| Development — billing | Product (pricing decisions), Architecture | Pricing model finalised; tenant primitive | QA billing scenarios, GTM pricing page |
-| Development — migration | All other dev streams (sufficient model to migrate into) | Stable workspace + membership model | DevOps rollout, QA migration tests |
-| QA Planning | Product, Architecture | Acceptance criteria + system design | QA Execution |
-| QA Execution | Development (per stream as completed) | Buildable feature per stream | Launch gate |
-| DevOps | Architecture, Development (migration) | Infra decisions + migration scripts | Launch gate |
-| Data | Architecture, Development (event emission) | Tenant-context primitive; event schema decisions | Dashboards used by GTM and Support |
-| Content | Design (final UX), Development (stable enough for screenshots) | Working admin console | Support training, Launch |
-| Support | Content, QA findings | Docs + known-issues list | Launch gate |
-| GTM | Product (pricing), Design (final UX), Research findings | Pricing locked; positioning validated | Launch |
+| Product | — | Initiative brief + design-partner access | Everything |
+| Architecture | Product | Workspace/role/billing requirements + NFRs (isolation guarantee, migration must be zero-downtime) | Development, DevOps, Security, Data |
+| Design | Product | PRD with workspace lifecycle, role definitions, and acceptance criteria | Development (frontend), Content |
+| Security (threat model) | Architecture | Isolation model + auth/permission design | Development (gates code changes), Pentest scoping |
+| Data | Architecture | Schema decision (where `workspace_id` lives) | Billing integration, GTM (usage-based pricing inputs) |
+| Development (backend) | Architecture, Security threat model | System design, API contracts, RBAC model, threat-model mitigations agreed | QA execution, DevOps deployment, Frontend (for API contract) |
+| Development (frontend) | Design, Backend API contract | Component specs, workspace switcher pattern, API endpoints stable | QA execution, Content (screenshots) |
+| QA planning | Product, Architecture | Acceptance criteria + isolation model (drives the isolation test matrix) | QA execution |
+| QA execution | Development, QA plan | Working implementation in staging | Pentest, Launch |
+| Pentest (external) | Development complete, QA passing | Feature-complete staging environment | GA gate |
+| DevOps | Architecture | Migration plan, tenancy model | Beta rollout, GA |
+| Content | Development (feature stable enough for screenshots), Design | Working UI, final IA | Launch, Support training |
+| Support | Content, QA (known-issues list) | Docs + list of gotchas from QA | Launch |
+| GTM | Product (pricing decision), Design (final UX for demos), Legal sign-off on pricing | Enterprise tier definition + pricing model | Launch |
+| Research (design-partner validation) | Design (clickable prototype) | Prototype or early build | Product refinement before code-freeze |
+
+**Critical-path dependency to flag:** **Legal + finance sign-off on the pricing model** must happen in parallel with Phase 1. If it slips, GTM cannot launch even if the product is ready. Coordinator to own the escalation.
 
 ---
 
-## Execution sequence
+## Execution Sequence
+
+### Phased plan
 
 | Phase | Workstreams (parallel) | Duration | Gate to next phase |
 |---|---|---|---|
-| **1 — Define** | Product (PRD draft), Architecture (consolidated multi-tenancy ADR draft + variation audit), Research (enterprise-admin interviews, ideally with the three deals), Security (initial threat-model framing) | 2 weeks | **Gate G1:** PRD approved by CPO + CTO; multi-tenancy ADR accepted (variation audit attached); pricing model decision locked with Finance + GTM sign-off; design-partner agreement with at least one blocked deal. |
-| **2 — Design & Foundation** | Design (admin console + switcher specs), Security (threat model finalised), Development — data/isolation primitive (tenant context, RLS enforcement, test harness), QA Planning (strategy + isolation test framework), DevOps (RLS/policy infra spike, feature-flag plumbing), Data (event schema decisions) | 2–3 weeks | **Gate G2:** Tenant-context primitive merged behind flag; isolation test framework demonstrably catches a planted leak; UX specs accepted; threat model signed off; pricing page wireframes accepted. |
-| **3 — Build** | Dev streams in parallel: identity/SSO, admin & switcher UI, billing, migration; QA Execution (isolation suite, SSO matrix, migration dry-runs running continuously); Content (drafting alongside stable specs); Data (dashboards as events land) | 4–5 weeks | **Gate G3:** Feature-complete behind flag; isolation suite green on every PR; SSO matrix green for at least Okta + Azure AD + generic SAML; migration dry-run on production-shaped data passes + rollback verified; performance regression within budget; pen-test scheduled. |
-| **4 — Validate & Pilot** | QA Execution (full regression + exploratory), DevOps (staging-prod parity, monitoring dashboards live, rollback rehearsed), Security (pen test), Support (training + runbooks), GTM (sales enablement assets), enterprise-pilot customer onboarded in production behind flag | 2 weeks | **Gate G4:** Pen test passed (no high/critical open); pilot customer in production with green metrics for ≥5 business days; finance sign-off on revenue recognition; support team trained; rollback rehearsal successful. |
-| **5 — Prepare launch** | GTM (launch comms scheduled, pricing page staged), Content (docs published in staging), Support (on-call schedule, P0 protocol live), Product (existing-customer migration comms), legal review of grandfathering policy | 1 week (overlaps end of Phase 4) | **Gate G5:** Launch checklist 100%; existing-customer migration plan signed off; on-call rota confirmed; rollback authority and criteria documented. |
-| **6 — GA & migrate** | Coordinated release; staged rollout (internal → design partner → 10% → 50% → 100%); existing-customer migration in cohorts; close the three deals | 1–2 weeks to 100%, with 4-week migration tail | Initiative success criteria met (see Context). |
+| **1 — Define** (weeks 1–2) | Product (PRD) ∥ Architecture (isolation ADR + auth model) ∥ Security (initial threat model draft) ∥ Legal/Finance (pricing sign-off — coordinator-led) | 2 weeks | PRD signed off by design partners; ADR on isolation model accepted; threat model draft reviewed; pricing model approved by finance + legal |
+| **2 — Design & Contract** (weeks 3–4) | Design (UX flows + component specs) ∥ Architecture (API contracts, migration plan) ∥ Data (event schema) ∥ QA planning (isolation test strategy) ∥ Research (design-partner review of prototype) | 2 weeks | Frontend specs complete; API contracts frozen; migration plan reviewed by DevOps; isolation test matrix drafted |
+| **3 — Build** (weeks 5–8) | Backend dev (schema, tenant context, RBAC, SSO/SCIM, billing) ∥ Frontend dev (switcher, settings, invites) ∥ DevOps (staging env, migration tooling) ∥ QA (writing automated isolation + RBAC tests against merged code) ∥ Content (drafting docs against staging build from week 7) | 4 weeks | Feature complete in staging; all isolation tests green; migration dry-run succeeds on prod-shaped data; docs first draft ready |
+| **4 — Validate** (weeks 9–10) | QA execution (regression + exploratory) ∥ External pentest ∥ DevOps (production migration rehearsal) ∥ Design-partner beta with the three blocked deals ∥ Support training | 2 weeks | Pentest report clean (or all criticals/highs remediated); beta customers signed off; migration rehearsal successful; support runbook approved |
+| **5 — Launch** (weeks 11–12) | GTM launch (pricing page, sales enablement live) ∥ Production migration (staged rollout behind flag) ∥ Content publish ∥ Support live coverage ∥ Data (usage dashboards live) | 2 weeks | GA announced; three named deals contracted; zero P0/P1 incidents in migration; success metrics dashboard live |
 
 ### Critical path
 
-**Product (PRD) → Architecture (ADR) → Dev: data/isolation primitive → Dev: identity/SSO → QA (isolation + SSO) → Pilot → GA.**
-
-The tenant-context primitive in Phase 2 is the single most important deliverable — every other dev stream consumes it. **It must be merged by end of week 4** or the whole timeline slips.
+**Product → Architecture → Backend dev → QA/Pentest → Launch.** Minimum ~10 weeks if everything runs cleanly. The backend build (Phase 3) is the widest and most compressible-only-by-parallelising-devs point.
 
 ### Parallel opportunities
 
-- Research interviews and PRD authoring run in parallel during Phase 1; research informs Design directly without serialising through Product.
-- Within Phase 3, the four dev sub-streams (identity, admin UI, billing, migration) all consume the Phase-2 isolation primitive and proceed independently.
-- Content and Data dashboards begin in Phase 3 against the stabilising feature, not waiting for code-complete.
-- GTM enablement assets are drafted in Phase 3 in parallel with development, finalised after Gate G3.
-- The pilot in Phase 4 runs in production behind a flag while regression QA continues — pilot is *not* a separate gated wait.
+- Phase 1: Legal/finance pricing sign-off runs alongside PRD/ADR work — it has a long lead time and shouldn't serialise behind product.
+- Phase 2: Design and Architecture proceed in parallel once the PRD lands; QA planning starts as soon as acceptance criteria and the isolation model are ready.
+- Phase 3: Backend and frontend parallelise cleanly given a frozen API contract from Phase 2; QA writes tests against merged code, not at the end.
+- Phase 4: External pentest runs concurrently with the design-partner beta — different signals, same feature-complete build.
+- Content, GTM, and Support all prepare through Phases 3–4 so Phase 5 is coordination, not authoring.
 
 ---
 
@@ -133,90 +121,82 @@ The tenant-context primitive in Phase 2 is the single most important deliverable
 
 ### Workstream summary
 
-| Workstream | Owner | Depends on | Key deliverables | Phase(s) | Estimated effort |
+| Workstream | Owner | Depends on | Key deliverables | Phase | Estimated effort |
 |---|---|---|---|---|---|
-| Product | product-owner | — | PRD, pricing decisions, MVP scope, migration story | 1, ongoing | 2–3 weeks lead + 0.3 FTE through GA |
-| Architecture | architect | Product (light) | Consolidated multi-tenancy ADR + variation audit, system design, API v2 contract | 1–2 | 2–3 weeks lead + 0.3 FTE through GA |
-| Research | ux-researcher | Product (skeleton) | Enterprise admin interviews, switcher usability, post-launch instrument | 1, 4 | 1.5–2.5 weeks total |
-| Design | ui-designer | Product, Research (initial) | Admin console, switcher, settings IA, accessibility review | 2 | 2–3 weeks |
-| Security | security-engineer | Architecture | Threat model, security gates, pen test, SOC 2 mapping | 1, 2, 4 | 2–3 weeks dispersed |
-| Dev — data/isolation | developer | Architecture, Security | Tenant context primitive, RLS, isolation test harness | 2 | 2–3 weeks (critical path) |
-| Dev — identity/SSO | developer | Isolation primitive, Architecture | Membership model, SAML + OIDC, audit log | 3 | 3–4 weeks |
-| Dev — admin & switcher | developer | Design, identity primitive | Admin console, workspace switcher | 3 | 3–4 weeks |
-| Dev — billing | developer | Product (pricing), Architecture | Per-workspace subscription, seat counting, invoicing integration | 3 | 2–3 weeks |
-| Dev — migration | developer | Other dev streams (stable model) | Zero-downtime migration scripts, 14-day reversibility | 3, 6 | 2–3 weeks build + execution tail |
-| QA Planning | qa-lead | Product, Architecture | Test strategy, isolation framework, SSO matrix, gate definitions | 2 | 1.5–2 weeks lead + ongoing |
-| QA Execution | qa-engineer | Development (per stream) | Automated isolation suite, SSO tests, regression, manual exploratory | 3–4 | 4–5 weeks across phases |
-| DevOps | devops | Architecture | Infra, feature flags, monitoring, rollout plan, rollback | 2–4 | 2.5–3.5 weeks dispersed |
-| Data | data-engineer | Architecture, Dev (events) | Event schema, dashboards, historical retrofit, revenue analytics | 2–3 | 2 weeks |
-| Content | user-docs-writer | Design (final), Development (stable) | Workspaces docs, admin guide, migration FAQ, API v2 docs | 3–5 | 2 weeks |
-| GTM | gtm | Product (pricing), Design, Research | Positioning, pricing page, enablement, launch comms, grandfathering policy | 3–5 | 2 weeks |
-| Support | support | Content, QA findings | Runbooks, P0 protocol, training, ticket schema | 4–5 | 1 week |
+| Product | product-owner | — | PRD, roles, migration UX, success metrics | 1 | 1.5–2 weeks |
+| Architecture | architect | Product | Isolation ADR, auth model, migration plan, API contracts | 1–2 | 2–3 weeks |
+| Security (threat model + review) | security-engineer | Architecture | Threat model, auth review, pentest scoping/liaison | 1, 4 | 1.5–2 weeks + pentest window |
+| Design | ui-designer | Product | Switcher, settings, invite/admin flows, accessibility | 2 | 2–3 weeks |
+| Data | data-engineer | Architecture | Tenant dimension, usage dashboards, billing inputs | 2–5 | 1.5–2 weeks |
+| QA planning | qa-lead | Product, Architecture | Isolation test strategy, RBAC matrix, exit criteria | 2 | 1 week |
+| Backend development | backend developers | Architecture, Security | Schema + backfill, tenant context, RBAC, SSO/SCIM, billing integration | 3 | 4–5 weeks (2–3 devs) |
+| Frontend development | frontend developers | Design, API contract | Switcher, workspace settings, member mgmt, migration prompt | 3 | 3–4 weeks (1–2 devs) |
+| DevOps | devops | Architecture | Migration runbook, tenant-tagged obs, backup per tenant, staging | 3–4 | 2–3 weeks |
+| QA execution | qa-engineer | Development | Isolation suite, RBAC automation, migration dry-run, exploratory | 3–4 | 3 weeks |
+| External pentest | security-engineer (liaison) | Feature-complete build | Report + remediation | 4 | 2 weeks (external) + remediation buffer |
+| Content | user-docs-writer | Development, Design | Admin/user guides, migration FAQ, in-product content | 3–5 | 2 weeks |
+| Support | support | Content, QA | Runbook, escalation path, CS training | 4–5 | 1 week |
+| Research (design-partner val.) | ux-researcher | Design | Prototype validation with 3 blocked deals + post-launch check | 2, 5 | 1 week (split) |
+| GTM | gtm | Product (pricing), Design, Legal sign-off | Enterprise tier positioning, sales enablement, launch plan | 2–5 | 2–3 weeks |
+| Legal + finance (pricing) | coordinator-led | Product | Pricing model sign-off | 1 | 1–2 weeks (elapsed, low effort) |
 
 ### Timeline estimate
 
-- **Best case:** **10 weeks** to GA — PRD/ADR land cleanly in Phase 1, no surprise in SSO IdP integration, migration dry-runs pass first time, pen test clean.
-- **Likely case:** **12–13 weeks** to GA — typical friction on SSO matrix (one IdP misbehaves), one migration rework cycle, one round of pen-test findings to remediate.
-- **Worst credible case:** **16+ weeks** — isolation primitive needs rework after threat model (the ADR was wrong), billing accounting treatment blocks finance sign-off, or pen-test surfaces an architectural flaw.
-
-### Risk factors
-
-1. **Isolation primitive ships late or wrong.** Single biggest schedule risk. Mitigation: start Architecture in Phase 1 (not Phase 2); land the primitive behind a flag *before* identity/UI/billing streams begin; isolation test harness must catch planted leaks at Gate G2.
-2. **Migration of existing customers.** Reversibility window + zero downtime is genuinely hard. Mitigation: full production-shape dry-runs in Phase 3; staged cohort rollout in Phase 6; rollback rehearsal at Gate G4.
-3. **Pricing model change angers existing customers.** Grandfathering policy must be signed off by Legal + GTM + Finance before launch comms. Mitigation: Phase 1 pricing lock; explicit grandfathering plan in Gate G5.
-4. **SSO IdP variability.** SAML in practice is not SAML in spec. Mitigation: matrix-test against real IdPs in Phase 3; design partner from the blocked deals provides at least one real-world test target.
-5. **Cross-tenant leak post-GA.** P0 incident class with reputational stakes. Mitigation: continuous isolation suite in CI + production; explicit P0 protocol live before Gate G5; audit log completeness verified by Security.
-6. **Three deals churn while waiting.** Commercial risk. Mitigation: design-partner agreement at Gate G1 with at least one of the three; transparent timeline to Sales; pilot milestone at week 8 demonstrable to the other two.
-7. **Conflating "workspace" and "tenant".** Vocabulary drift causes contract bugs. Mitigation: PRD names the concept once and the ADR aligns; code uses one term throughout.
+- **Best case:** ~10 weeks — assumes design partners engage quickly, no isolation defects found in pentest, migration rehearsal clean first try.
+- **Likely case:** **12 weeks** (matches the appetite) — 1 pentest remediation cycle, one migration dry-run needing a fix, minor scope adjustment after design-partner feedback.
+- **Risk factors that could extend:**
+  - **Isolation defect found late** — a cross-tenant leak surfaced in pentest is a hard block. Mitigation: isolation testing starts in Phase 3, not Phase 4; treat it as a first-class dev-time concern, not a QA gate.
+  - **Pricing sign-off slippage** — legal/finance is external to the delivery team. Mitigation: start in week 1, escalate weekly.
+  - **SSO/SCIM per-customer variance** — enterprise IdPs (Okta, Azure AD, Google) each have quirks. Mitigation: pick the top-2 based on the three blocked deals; defer the rest.
+  - **Migration goes wrong on prod data shapes not seen in staging.** Mitigation: two rehearsals against a prod snapshot before the real cutover.
+  - **Scope creep from GTM** ("we need a self-serve enterprise flow too"). Mitigation: enterprise-tier onboarding is sales-assisted at GA; self-serve is a follow-up.
 
 ---
 
 ## Follow-ups
 
-- [ ] **Confirm or revise the 8 stated assumptions** before Gate G1 — especially tenancy model (pooled vs. silo) and pricing model. Any reversal here is a re-decomposition.
-- [ ] **Define OKRs** for this initiative — run `/coordinator:define-okrs` against the success criteria above (close-rate, isolation incident count, self-serve retention, security-review cycle time).
-- [ ] **Write the consolidated multi-tenancy ADR** as a *single package decision* covering tenancy + identity + billing + hosting interactions ([[learned--evaluate-platforms-as-package]]). Attach the historical-variation audit ([[learned--walk-variation-history-before-accepting-versioning-adr]]).
-- [ ] **Lock the design-partner agreement** with one of the three blocked deals before end of Phase 1.
-- [ ] **Spec each workstream** — run `/coordinator:write-spec` per major workstream (PRD, system design, test strategy, GTM plan) so each owner has a contract before Phase 2 begins.
-- [ ] **Finance sign-off path** for revenue recognition under the new pricing model — initiate in Phase 1, gate at Phase 4.
-- [ ] **Schedule the pen test** in Phase 1 (lead time is real) for execution in Phase 4.
+- [ ] Define OKRs for this initiative — use `/coordinator:define-okrs` (frame around the three metrics: deals closed, isolation-defect count, migration completion rate).
+- [ ] Write the PRD (product-owner) — use `/coordinator:write-spec` once Phase 1 is under way.
+- [ ] Kick off legal/finance pricing sign-off in **week 1** — this is the highest-risk parallel dependency.
+- [ ] Confirm the isolation-model ADR direction (shared schema + row scoping) with the architect before Phase 1 locks it in — flagged here as an assumption, needs a real decision.
+- [ ] Identify the 2 SSO providers to support at GA based on the three named enterprise deals' actual IdPs.
 
 ## Evaluation
 
 | Field | Value |
 |---|---|
 | Verdict | PASS |
-| Score | 19.5/20.0 (98%) |
-| Evaluated | 2026-06-13 |
+| Score | 16.5/17.0 (97%) |
+| Evaluated | 2026-07-24 |
 | Target model | claude-opus-4-7 |
 | Judge model | claude-sonnet-4-6 |
-| Target duration | 152856 ms |
-| Target cost | $0.5493 |
+| Target duration | 108707 ms |
+| Target cost | $0.4978 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | Coordinator decomposes into workstreams that map to specific agents (architect for data isolation, CPO for pricing, developer for implementation, etc.) | PASS | Workstream table explicitly maps: architect → multi-tenancy ADR, product-owner → PRD, developer → 5 sub-streams, security-engineer → threat model, gtm → pricing page. |
-| c2 | Dependencies between workstreams are identified and sequenced (e.g., data isolation design before implementation, pricing before billing) | PASS | Full dependency table lists 'Dev — data/isolation' depends on Architecture + Security threat model; 'Dev — billing' depends on 'Product (pricing decisions), Architecture'. |
-| c3 | Both CPO and CTO workstreams are present — this is not purely technical (pricing, documentation, UX are product concerns) | PASS | Separate 'CPO team workstreams' section covers product-owner, ui-designer, user-docs-writer, gtm, support, ux-researcher; 'CTO team workstreams' covers architect, developer, qa, devops, security, data. |
-| c4 | The decomposition includes effort estimates or sizing signals for each workstream | PASS | Summary table includes 'Estimated effort' column with range estimates per workstream, e.g. 'Dev — data/isolation: 2–3 weeks (critical path)', 'QA Execution: 4–5 weeks across phases'. |
-| c5 | A critical path is identified — which workstreams block everything else | PASS | 'Critical path' section: 'Product (PRD) → Architecture (ADR) → Dev: data/isolation primitive → Dev: identity/SSO → QA → Pilot → GA.' with explicit 'must be merged by end of week 4' statement. |
-| c6 | Revenue context ($400k ARR) is used to inform priority and timeline, not just mentioned | PARTIAL | Assumption 6 sets 'one quarter (10–13 weeks) to GA' driven by '3 deals worth $400k ARR'; Risk 6 explicitly names 'three deals churn while waiting' with mitigation. Used to anchor timeline and risk. |
-| c7 | Security implications of multi-tenancy are called out as a specific workstream or constraint | PASS | Security workstream lists: threat model (cross-tenant escape, privilege escalation, SSO forgery, audit-log tampering), pen test, SOC 2 mapping, P0 incident-response runbook, gates at G2 and G4. |
-| c8 | The output is a dispatch plan, not implementation — the coordinator doesn't write code or specs | PASS | No code, schema, or implementation spec appears. Output consists of workstream tables, dependency map, phase sequence, gate criteria, and follow-up action items delegating spec-writing to sub-agents. |
-| c9 | Output's workstreams cover at minimum: data isolation (architect / data engineer), auth and permissions (architect / security), billing changes (CPO + finance), UI workspace switching (UX + UI designer + developer), documentation (technical writer), pricing model (CPO + GTM) | PASS | All six areas explicitly covered: data isolation (architect ADR + dev isolation stream), auth/SSO (dev identity stream + security), billing (dev billing stream + finance sign-off), workspace switcher UI (ui-designer + dev admin/switcher), content/docs (user-docs-writer), pricing (product-owner + gtm). |
-| c10 | Output's dependency map shows that data isolation design must complete before implementation, that pricing decisions must inform billing implementation, and that auth/permissions design feeds the UI workspace switching | PASS | Dependency table: 'Dev — data/isolation' needs Architecture + Security first; 'Dev — billing' needs 'pricing model finalised'; 'Dev — admin & switcher UI' needs 'identity primitive' landed. |
-| c11 | Output identifies the critical path — likely data isolation design → auth/permissions design → implementation → migration of existing customers — and names what blocks what | PASS | Critical path section names exact chain; also notes 'Dev — migration' depends on 'stable workspace + membership model' from other streams; migration blocks 'DevOps rollout, QA migration tests'. |
-| c12 | Output uses the $400k ARR context to inform priority — connecting the dollar value to a target delivery date or quarter, not just citing the figure once | PASS | Assumption 6 connects $400k + 'this quarter' → fixed 10–13 week appetite; Risk 6 ties deal-churn to mitigation (design-partner at G1, pilot at week 8 demonstrable to other two deals). |
-| c13 | Output flags multi-tenancy security as a distinct workstream — covering tenant isolation, blast-radius if one tenant is compromised, and customer-level encryption keys / data sovereignty options | PARTIAL | Security workstream covers isolation and SSO forgery; threat model mentions 'cross-tenant escape'. Customer-level encryption keys and data sovereignty are not explicitly addressed. |
-| c14 | Output includes effort estimates per workstream as ranges (e.g. 'data isolation design: 2-3 weeks', 'billing changes: 4-6 weeks') — not single-point estimates that imply false precision | PASS | Every row in the summary table uses ranges: 'Dev — data/isolation: 2–3 weeks', 'Dev — billing: 2–3 weeks', 'QA Execution: 4–5 weeks across phases', etc. No single-point estimates. |
-| c15 | Output is a dispatch plan — names the agent or role per workstream, the deliverable per workstream, and the entry/exit criteria — does NOT contain code, schema definitions, or implementation specs | PASS | Each workstream row names role, key deliverables, and phase gate criteria (G1–G5). No code or schema present. Follow-ups delegate spec writing via '/coordinator:write-spec per major workstream'. |
-| c16 | Output covers BOTH CPO (pricing model, packaging tiers, GTM messaging, customer comms for existing customers) AND CTO (data, auth, infra) workstreams — multi-tenancy is not purely technical | PASS | Dedicated 'CPO team workstreams' section covers pricing, GTM, support, docs, research. 'CTO team workstreams' covers architecture through data engineering. Both fully populated. |
-| c17 | Output addresses migration of existing single-tenant customers as a workstream — they need to be moved into the new model without disruption, and this typically blocks final cutover | PASS | 'Dev — migration' is a named workstream: 'zero-downtime migration scripts, 14-day reversibility'; dependency table shows it blocks DevOps rollout and QA migration tests; Phase 6 includes 'existing-customer migration in cohorts'. |
-| c18 | Output identifies parallel opportunities — e.g. UX research on workspace switching can run while data isolation is being designed, technical-writer documentation drafting can run alongside implementation | PARTIAL | 'Parallel opportunities' section explicitly lists: research + PRD in parallel in Phase 1; four dev sub-streams parallel in Phase 3; content + dashboards begin in Phase 3 against stabilising feature; GTM assets drafted in Phase 3 parallel with development. |
+| c1 | Coordinator decomposes into workstreams that map to specific agents (architect for data isolation, CPO for pricing, developer for implementation, etc.) | PASS | Explicit role mapping throughout: product-owner, architect, security-engineer, ui-designer, data-engineer, qa-lead, backend developers, frontend developers, devops, user-docs-writer, gtm, ux-researcher. |
+| c2 | Dependencies between workstreams are identified and sequenced (e.g., data isolation design before implementation, pricing before billing) | PASS | Dedicated 'Dependency map' table with 'Depends on' and 'Blocks' columns for every workstream. e.g. 'Development (backend) \| Architecture, Security threat model \| ... \| QA execution, DevOps deployment'. |
+| c3 | Both CPO and CTO workstreams are present — this is not purely technical (pricing, documentation, UX are product concerns) | PASS | Output explicitly labels 'CPO team workstreams' (Product, Design, Content, GTM, Support, Research) and 'CTO team workstreams' (Architecture, Development, QA, DevOps, Security, Data). |
+| c4 | The decomposition includes effort estimates or sizing signals for each workstream | PASS | Summary table 'Estimated effort' column has ranges for every row, e.g. 'Backend development: 4–5 weeks (2–3 devs)', 'Architecture: 2–3 weeks', 'Support: 1 week'. |
+| c5 | A critical path is identified — which workstreams block everything else | PASS | 'Critical path: Product → Architecture → Backend dev → QA/Pentest → Launch. Minimum ~10 weeks if everything runs cleanly. The backend build (Phase 3) is the widest … point.' |
+| c6 | Revenue context ($400k ARR) is used to inform priority and timeline, not just mentioned | PARTIAL | Appetite set at '12 weeks' driven by the three deals; 'Beta with the three blocked deals by week 8'; SSO provider selection scoped to 'the three blocked deals' actual IdPs'; risk mitigation explicitly tied to keeping the deal timeline. |
+| c7 | Security implications of multi-tenancy are called out as a specific workstream or constraint | PASS | Dedicated Security workstream: 'Threat model (STRIDE with focus on tenant-boundary threats), authorisation review, SSO/SAML implementation review, external pentest scoped to isolation, audit log requirements, SOC 2 evidence updates'. |
+| c8 | The output is a dispatch plan, not implementation — the coordinator doesn't write code or specs | PASS | No code, schema DDL, or spec prose anywhere. Every section names a role, a deliverable, and a phase/dependency — it delegates implementation to named agents. |
+| c9 | Output's workstreams cover at minimum: data isolation (architect / data engineer), auth and permissions (architect / security), billing changes (CPO + finance), UI workspace switching (UX + UI designer + developer), documentation (technical writer), pricing model (CPO + GTM) | PASS | All six areas present: isolation ADR (architect), RBAC/auth (architect + security-engineer), billing integration (backend dev + GTM/legal), switcher UI (ui-designer + frontend), docs (user-docs-writer), pricing (gtm + coordinator-led legal/finance). |
+| c10 | Output's dependency map shows that data isolation design must complete before implementation, that pricing decisions must inform billing implementation, and that auth/permissions design feeds the UI workspace switching | PASS | Dependency map: 'Development (backend) depends on Architecture, Security threat model'; 'GTM depends on Product (pricing decision)'; 'Frontend depends on Backend API contract' (which encodes RBAC/auth model). |
+| c11 | Output identifies the critical path — likely data isolation design → auth/permissions design → implementation → migration of existing customers — and names what blocks what | PASS | 'Critical path: Product → Architecture → Backend dev → QA/Pentest → Launch.' Dependency map also shows Architecture blocks Development, Security threat model gates Development, DevOps migration gates Launch. |
+| c12 | Output uses the $400k ARR context to inform priority — connecting the dollar value to a target delivery date or quarter, not just citing the figure once | PASS | Success criteria: 'Three blocked deals ($400k ARR) close within one quarter of GA'; appetite: 'Hard stop — displacing next quarter's roadmap'; beta with three deals at week 8; scope creep risk mitigated by deal-focus. |
+| c13 | Output flags multi-tenancy security as a distinct workstream — covering tenant isolation, blast-radius if one tenant is compromised, and customer-level encryption keys / data sovereignty options | PARTIAL | Tenant isolation and STRIDE threat model are explicit; blast-radius is implied by 'tenant-boundary threats' but not named. Customer-level encryption keys and data sovereignty are entirely absent. |
+| c14 | Output includes effort estimates per workstream as ranges (e.g. 'data isolation design: 2-3 weeks', 'billing changes: 4-6 weeks') — not single-point estimates that imply false precision | PASS | Summary table uses ranges throughout: '2–3 weeks', '4–5 weeks (2–3 devs)', '1.5–2 weeks + pentest window', '3–4 weeks (1–2 devs)' — no single-point estimates. |
+| c15 | Output is a dispatch plan — names the agent or role per workstream, the deliverable per workstream, and the entry/exit criteria — does NOT contain code, schema definitions, or implementation specs | PASS | Each workstream row has Owner role, Key deliverables, and Depends-on (entry) / Blocks (exit). Phase table has explicit 'Gate to next phase'. No code or schema anywhere. |
+| c16 | Output covers BOTH CPO (pricing model, packaging tiers, GTM messaging, customer comms for existing customers) AND CTO (data, auth, infra) workstreams — multi-tenancy is not purely technical | PASS | GTM covers 'Enterprise tier positioning + pricing page changes, sales enablement, launch comms to existing customers about the tier change'. CTO side covers Architecture, Development, Security, Data, DevOps, QA. |
+| c17 | Output addresses migration of existing single-tenant customers as a workstream — they need to be moved into the new model without disruption, and this typically blocks final cutover | PASS | DevOps deliverables include 'Zero-downtime migration runbook'; Phase 4 has 'production migration rehearsal'; success criteria: '≥90% of existing single-user accounts migrate without support intervention'; Phase 5 gate: 'zero P0/P1 incidents in migration'. |
+| c18 | Output identifies parallel opportunities — e.g. UX research on workspace switching can run while data isolation is being designed, technical-writer documentation drafting can run alongside implementation | PARTIAL | Dedicated 'Parallel opportunities' section lists: Design + Architecture in parallel in Phase 2; 'Content [drafting docs against staging build from week 7]' alongside Phase 3 development; pentest concurrent with beta in Phase 4. |
 
 ### Notes
 
-The output is an exceptionally thorough dispatch plan that covers all required workstreams, dependency sequencing, phased execution with named gates, and explicit parallel opportunities. The only minor gap is c13 — customer-level encryption keys and data sovereignty options are not addressed in the security workstream, though blast-radius and isolation are.
+An exceptionally comprehensive decomposition that satisfies nearly all criteria at a high level of specificity — structured tables, explicit dependency maps, phased gates, and per-workstream effort ranges all present. The only meaningful gap is c13: while tenant isolation and STRIDE threat modelling are explicit, blast-radius and data-sovereignty/encryption-key concerns (critical for enterprise procurement) are absent from the security workstream.
