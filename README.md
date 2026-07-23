@@ -898,7 +898,7 @@ Multi-pass code review with quality scoring and adversarial analysis. See [revie
 
 | Skill | Description | Example |
 |---|---|---|
-| [code-review](plugins/engineering/code-reviewer/skills/code-review/SKILL.md) | Multi-pass code review | [Code review](examples/engineering/code-reviewer/skills/code-review/result.md) |
+| [code-review](plugins/engineering/code-reviewer/skills/code-review/SKILL.md) | Native `/code-review` layered with team conventions | [Code review](examples/engineering/code-reviewer/skills/code-review/result.md) |
 | [pr-create](plugins/engineering/code-reviewer/skills/pr-create/SKILL.md) | PR with conventional commit title | [PR creation](examples/engineering/code-reviewer/skills/pr-create/result.md) |
 
 #### [Data Engineer](plugins/engineering/data-engineer/agents/data-engineer.md)

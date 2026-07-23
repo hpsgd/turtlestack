@@ -1,138 +1,62 @@
 ---
 name: code-review
-description: Perform a structured code review of staged or recent changes
+description: Review staged or recent changes — native Claude Code review for mechanics, layered with team conventions and the team verdict contract
 argument-hint: "[branch or commit range, e.g. 'main..HEAD']"
 user-invocable: true
-allowed-tools: Read, Grep, Glob, Bash
+allowed-tools: Read, Grep, Glob, Bash, Skill, Agent
 ---
 
-Perform a structured four-pass code review with multi-signal scoring. This methodology catches bugs, security issues, and quality problems systematically — not by skimming the diff.
+Review changes by layering team conventions on top of Claude Code's native review. The native `/code-review` owns generic review mechanics — multi-agent finding, adversarial verification, bug hunting. This skill owns what the native review can't know: team conventions, the verdict contract, and the calibration bar for what counts as a finding.
 
-## Before Starting
+## Step 1: Determine scope
 
-1. **Determine scope**: Run `git diff $ARGUMENTS` (default: `git diff --staged` if no argument). Count the files and lines changed.
-2. **Read full context**: For every changed file, read the entire file — not just the diff. You need surrounding context to judge whether the change is correct.
-3. **Identify the intent**: What is this change trying to do? Read commit messages, PR description, or ask. You cannot review correctness without knowing the goal.
+Run `git diff $ARGUMENTS` (default: `git diff --staged`, falling back to `git diff main..HEAD` if nothing is staged). Record:
 
-## Pass 1: Context and Intent
+1. Files changed and lines touched
+2. Languages involved (by file extension)
+3. Whether the diff touches auth, payments, data access, or PII handling — flag these for Step 3
 
-Understand before judging.
+## Step 2: Run the native review (mechanics)
 
-1. **What changed** — list every file and summarise the change in one line each.
-2. **Why it changed** — what problem does this solve? What feature does it add?
-3. **What didn't change but should have** — are there related files that need updating? Tests? Documentation? Configuration? Types?
-4. **Dependency impact** — does this change affect other modules, services, or consumers? Check for exported API changes.
+Invoke the bundled Claude Code review via the Skill tool:
 
-Output a brief context summary before proceeding to Pass 2.
+```
+Skill(skill="code-review")
+```
 
-## Pass 2: Correctness
+This runs the native multi-agent review — correctness, security, and quality findings, adversarially verified. Collect its findings as the mechanics layer.
 
-The most important pass. Does the code do what it intends?
+**Fallback:** if the bundled skill is unavailable (disabled via `disableBundledSkills`, or an older Claude Code), dispatch the `code-reviewer:code-reviewer` agent instead — it carries the full standalone four-pass methodology.
 
-For each changed file, check:
+## Step 3: Layer the team conventions
 
-1. **Logic errors**:
-   - Off-by-one errors in loops, slices, ranges
-   - Incorrect boolean logic (De Morgan violations, inverted conditions)
-   - Missing `break` in switch/match statements
-   - Integer overflow or underflow with arithmetic on untrusted input
-   - Floating-point comparison with `==`
+The native review doesn't know the team's standards. Apply them on top:
 
-2. **Null/undefined/nil handling**:
-   - Can any variable be null where it is accessed without a check?
-   - Optional chaining used correctly? Or masking a bug by silently returning undefined?
-   - Database queries that return null — is the "not found" case handled?
+1. **Language conventions** — for each language in the diff, invoke the matching review skill:
 
-3. **Race conditions**:
-   - Shared mutable state accessed without synchronization
-   - Check-then-act patterns without atomicity (TOCTOU)
-   - Concurrent writes to the same resource
+   | Files | Skill |
+   |---|---|
+   | `.ts` / `.tsx` | `coding-standards:review-typescript` |
+   | `.cs` | `coding-standards:review-dotnet` |
+   | `.py` | `coding-standards:review-python` |
+   | `.php` | `coding-standards:review-php` |
+   | `.go` | `coding-standards:review-go` |
 
-4. **Edge cases**:
-   - Empty collections (empty array, empty string, empty map)
-   - Zero values, negative values, maximum values
-   - Unicode / special characters in string processing
-   - Timezone handling in date operations
+2. **Cross-cutting standards** — always invoke `coding-standards:review-standards` (quality and writing-style concerns that apply to every file type).
+3. **Git conventions** — when the review covers commits or a PR, invoke `coding-standards:review-git` (commit format, branch model, content dates).
+4. **Project rules** — check `.claude/rules/` and CLAUDE.md for project-specific constraints the diff may violate. Installed rules define what "correct" means for this project; a diff can pass native review and still break them.
+5. **Security-sensitive areas** — if Step 1 flagged auth, payments, data access, or PII, also run `security-compliance:security-audit` on the diff.
 
-5. **Error handling**:
-   - Are all error paths handled? Not just the happy path?
-   - Do errors propagate correctly? Or get swallowed?
-   - Are error messages actionable?
+## Step 4: Merge into the team verdict
 
-6. **State management**:
-   - Can state become inconsistent? (partial updates, failed transactions)
-   - Are cleanup paths correct? (finally blocks, defer, destructors)
+Combine native findings and conventions findings into one report. Deduplicate: where both layers flag the same line, keep the finding with the stronger evidence and note the corroboration.
 
-### Scoring — HARD vs SOFT Signals
+### Scoring — HARD vs SOFT signals
 
-- **HARD signal**: A correctness issue that will cause wrong behavior in production. Off-by-one on a billing calculation. Missing null check on a required field. Unhandled error that crashes the process. These are blockers.
-- **SOFT signal**: A correctness concern that might cause issues under specific conditions. A race condition that requires exact timing. An edge case that current usage patterns avoid. These are important but not blocking.
+- **HARD signal**: an issue that will cause wrong behaviour in production, a security vulnerability, or possible data loss. These are blockers.
+- **SOFT signal**: a concern that might cause issues under specific conditions, or a conventions violation with no runtime impact. Important but not blocking.
 
-## Pass 3: Security
-
-Check for vulnerabilities that an attacker could exploit.
-
-1. **Injection** — is any user input concatenated into:
-   - SQL queries (use parameterized queries)
-   - Shell commands (use safe APIs, never `exec(userInput)`)
-   - HTML output (escape or use framework auto-escaping)
-   - Regular expressions (ReDoS with unbounded quantifiers)
-   - File paths (path traversal with `../`)
-
-2. **Authentication and authorization**:
-   - Are new endpoints protected by auth middleware?
-   - Are authorization checks present for every operation that modifies data?
-   - Is the user's identity verified before acting on their behalf?
-
-3. **Data exposure**:
-   - Are secrets in config files, not in code?
-   - Do API responses include only the fields the client needs? (no full database rows)
-   - Are logs free of PII, tokens, and passwords?
-   - Are error messages safe for external users? (no stack traces, no internal paths)
-
-4. **Cryptography**:
-   - No custom crypto (use established libraries)
-   - No weak algorithms (MD5, SHA1 for security, ECB mode)
-   - No hardcoded keys, IVs, or salts
-
-Each security finding is a HARD signal by default.
-
-## Pass 4: Quality and Maintainability
-
-The code works and is secure. Now: is it maintainable?
-
-1. **Readability**:
-   - Can you understand what a function does from its name and signature?
-   - Are variable names descriptive? (`data`, `result`, `temp`, `val` are red flags)
-   - Is the control flow straightforward? Or does it require mental gymnastics?
-
-2. **Duplication**:
-   - Is code duplicated from elsewhere in the codebase? Grep for similar patterns.
-   - Could shared logic be extracted without over-abstracting?
-
-3. **Performance** (only flag if measurable or obvious):
-   - N+1 queries (database call inside a loop)
-   - O(n^2) algorithms on unbounded data
-   - Unnecessary re-renders (React) or re-computations
-   - Missing database indexes for new query patterns
-   - Large payloads transferred when only a subset is needed
-
-4. **Test coverage**:
-   - Are new code paths tested?
-   - Do tests cover the happy path AND at least one error path?
-   - Are tests testing behavior or implementation details?
-   - Are there tests for the edge cases identified in Pass 2?
-
-Quality findings are SOFT signals unless they introduce measurable performance regression or make the code unmaintainable.
-
-## Friction Scan
-
-After the four passes, do a friction scan:
-
-1. **Developer experience** — will the next person who touches this code understand it quickly?
-2. **Debugging** — if this breaks in production, can you diagnose the problem from the logs and error messages?
-3. **Rollback** — can this change be safely reverted without data migration?
-4. **Feature flags** — should this change be behind a feature flag?
+Conventions violations default to SOFT unless the convention exists to prevent a production failure (e.g. strict-validation gaps at a boundary are HARD).
 
 ## Output Format
 
@@ -149,6 +73,7 @@ After the four passes, do a friction scan:
 [Each finding:]
 **[Category]** `file:line` — [description]
 **Evidence:** [code or grep output]
+**Source:** [native review | <conventions skill> | both]
 **Fix:** [concrete suggestion]
 
 #### Important (SOFT signals — should fix, not blocking)
@@ -158,9 +83,6 @@ After the four passes, do a friction scan:
 #### Suggestions (quality improvements)
 
 [same format]
-
-### Friction Notes
-[any friction scan observations]
 
 ### Verdict
 
@@ -175,7 +97,7 @@ Files reviewed: N | Blockers: X | Important: Y | Suggestions: Z
 
 ## Zero-Finding Gate
 
-If the code is clean, say so and name one positive assertion with a `file:line` reference — something specific that was done well. "No findings across all four passes. The change is correct, secure, and well-structured. Notably, `src/auth/middleware.ts:42` correctly validates the JWT audience claim before extracting permissions. APPROVE." Do not manufacture issues to appear thorough — false positives erode trust.
+If both layers come back clean, say so and name one positive assertion with a `file:line` reference — something specific that was done well. "No findings from the native review or the conventions layer. Notably, `src/auth/middleware.ts:42` correctly validates the JWT audience claim before extracting permissions. APPROVE." Do not manufacture issues to appear thorough — false positives erode trust.
 
 ## Calibration Rules
 
@@ -183,8 +105,10 @@ If the code is clean, say so and name one positive assertion with a `file:line` 
 - A finding without a fix suggestion is incomplete. Propose the change.
 - "Consider whether..." is not a finding. Either it is a problem or it is not.
 - Performance concerns without measurement or obvious complexity analysis are noise.
-- Style preferences that are not codified in team standards are not findings.
+- Style preferences that are not codified in team standards are not findings. Style preferences that ARE codified (installed rules, review skills) are findings — cite the rule.
 
 ## Related Skills
 
 - `/code-reviewer:pr-create` — for creating PRs after review is complete or when the user needs to submit their changes.
+- `coding-standards:review-*` — the per-language conventions layers this skill orchestrates; invoke one directly for a single-language spot check.
+- `security-compliance:security-audit` — deeper security audit for sensitive areas or whole directories.

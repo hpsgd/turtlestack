@@ -1,6 +1,6 @@
 # Test: code-review skill applied to an Express middleware PR
 
-Scenario: A senior backend engineer opens a PR adding a token-bucket rate limiter to an Express API. The diff introduces an in-memory Map keyed on IP, removes an existing distributed-rate-limit Redis client, and ships without tests. The README, runbooks, and observability dashboards aren't updated. The reviewer needs to apply the four-pass code-review methodology.
+Scenario: A senior backend engineer opens a PR adding a token-bucket rate limiter to an Express API. The diff introduces an in-memory Map keyed on IP, removes an existing distributed-rate-limit Redis client, and ships without tests. The README, runbooks, and observability dashboards aren't updated. The reviewer needs to apply the layered code-review methodology — native review for mechanics, team conventions on top.
 
 ## Prompt
 
@@ -49,34 +49,34 @@ The PR description says: "Removes Redis dependency. Same 100/min limit. All exis
 
 A few specifics for the response (output structured per the code-review template):
 
-- **Run all 4 passes in order**, with explicit pass labels: **Pass 1 (Context)**, **Pass 2 (Correctness)**, **Pass 3 (Security)**, **Pass 4 (Quality / Friction)**. Per-pass header even for zero-finding passes.
+- **Run the layered flow in order**: scope determination, native review (or the standalone agent fallback if the bundled skill is unavailable in the harness), conventions layer (`review-typescript` + `review-standards` for this diff), merged verdict. Label which layer each finding came from (**Source:** native review | conventions skill | both).
 - **HARD vs SOFT signal labels** on every finding. **HARD** = blocker (will cause wrong behaviour in production — multi-instance correctness break, security regression, data loss). **SOFT** = important-but-conditional (improvement, debt, style).
-- **Pass 1 (Context) finding HARD**: in-memory rate limiter is per-instance — once the service runs more than one Node process or container, the 100/min limit becomes 100×N effective. With Redis it was correctly distributed; this PR breaks the security control.
-- **Pass 2 (Correctness) findings**:
+- **Context finding HARD**: in-memory rate limiter is per-instance — once the service runs more than one Node process or container, the 100/min limit becomes 100×N effective. With Redis it was correctly distributed; this PR breaks the security control.
+- **Correctness findings**:
   - HARD — Read-modify-write on `bucket.tokens` is not atomic across simultaneous requests on the same Node process (TOCTOU). Two concurrent requests both read tokens=1, both decrement, charge the user once when they should be limited.
   - SOFT — Unbounded Map growth: every unique IP adds a key, no eviction policy. IP-cycling attack or natural churn = memory leak.
   - SOFT — In-memory state lost on every deploy / restart, resetting all counters and giving abusers a fresh quota.
-- **Pass 3 (Security) findings**:
+- **Security findings**:
   - HARD — `req.ip` is fragile behind a proxy/load balancer. If `app.set('trust proxy', ...)` is misconfigured, attackers spoof `X-Forwarded-For` and bypass the limiter, OR all requests appear from the LB IP and one user starves all others.
   - SOFT — One client behind NAT (corporate office) representing 1000 users will be falsely throttled as a single IP.
   - SOFT — No `Retry-After` header on 429 responses (clients can't back off intelligently). Friction signal.
-- **Pass 4 (Quality / Friction) findings**:
+- **Quality / conventions findings**:
   - HARD — Missing observability: no logged events, no metrics emitted, no dashboard for rate-limit hits/misses. This is a security control without instrumentation = no detection of abuse.
   - HARD — Tests can't observe cross-instance drift; existing tests "validate the wrong thing" since they only run against one process.
   - SOFT — No specific test cases proposed for refill arithmetic, concurrent requests, capacity boundary, IP-key collision behind a proxy.
-- **Adversarial pass** (mandatory subsection): consider explicitly — (a) 10K req/sec attack profile, (b) 1000 users behind one NAT IP, (c) deploy resets in-memory state mid-attack, (d) IP cycling to defeat the limiter.
+- **Adversarial analysis** (from the native layer or reasoned directly): consider explicitly — (a) 10K req/sec attack profile, (b) 1000 users behind one NAT IP, (c) deploy resets in-memory state mid-attack, (d) IP cycling to defeat the limiter.
 - **Verdict**: explicit `Verdict: REQUEST_CHANGES` (not APPROVE) with explicit counts: `Blockers: N | Important: N | Suggestions: N`.
 - **Each finding cites file:line** (use `src/middleware/rateLimit.ts:N` or the diff path) AND a concrete fix suggestion (e.g. "switch to `express-rate-limit` with Redis store" OR "document the trade-off and stay with the existing distributed limiter").
-- **Zero-finding gate** acknowledged (even though this PR has findings) — state the rule: "If a pass has zero findings, name a specific positive assertion with file:line to prove review depth, not silence."
+- **Zero-finding gate** acknowledged (even though this PR has findings) — state the rule: "If both layers come back clean, name a specific positive assertion with file:line to prove review depth, not silence."
 - **Calibration rules** stated at top: no findings without evidence, no findings without fix suggestions, no style preferences not codified in team standards.
 
 ## Criteria
 
-- [ ] PASS: Skill defines four passes in sequence — Context, Correctness, Security, Quality — and requires reading full file context not just the diff
+- [ ] PASS: Skill layers team conventions on the native review — native `/code-review` (or agent fallback) for mechanics, then per-language conventions skills, cross-cutting standards, and project rules
 - [ ] PASS: Skill distinguishes HARD signals (blockers — will cause wrong behaviour in production) from SOFT signals (important but conditional)
-- [ ] PASS: Skill's correctness pass covers logic errors, null/undefined handling, race conditions, edge cases, and error propagation
-- [ ] PASS: Skill's security pass covers injection, auth/authz, data exposure, and cryptography
-- [ ] PASS: Skill includes a friction scan assessing developer experience, debuggability, rollback safety, and feature flag need
+- [ ] PASS: Skill maps changed file extensions to the matching coding-standards review skill and always applies review-standards
+- [ ] PASS: Skill routes security-sensitive diffs (auth, payments, data access, PII) to the security-audit skill
+- [ ] PASS: Skill merges findings across layers, deduplicating and recording each finding's source layer
 - [ ] PASS: Skill defines a zero-finding gate — if clean, must name a specific positive assertion with file:line to prove review depth
 - [ ] PASS: Skill's output format includes a verdict (APPROVE, REQUEST_CHANGES, NEEDS_DISCUSSION) with a count of blockers, important, and suggestion findings
 - [ ] PASS: Skill's calibration rules prohibit findings without evidence, findings without fix suggestions, and style preferences not codified in team standards
