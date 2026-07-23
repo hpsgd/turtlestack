@@ -156,7 +156,16 @@ else:
 " 2>/dev/null)
 
     if [ -n "$VERSION_CHANGED" ]; then
-        output="${output}Plugin rules have changed since last reconciliation. Run /thinking:reconcile-rules to check if any learned rules are now superseded.\n"
+        # The nudge fires in every live session until someone reconciles (which updates the
+        # snapshot). reconcile-rules deletes from a shared global dir, so if several sessions all
+        # act on this nudge at once they can race. When other sessions are live, steer to a
+        # single-session run rather than fanning the cleanup out. Same signal as the skill's 4a guard.
+        CLAUDE_SESSIONS=$(pgrep -x claude 2>/dev/null | wc -l | tr -d ' ')
+        if [ "${CLAUDE_SESSIONS:-1}" -gt 1 ]; then
+            output="${output}Plugin rules have changed since last reconciliation. Run /thinking:reconcile-rules to check for superseded learned rules — but other Claude sessions are live, so run it in a single session (close the others first) to avoid a concurrent-delete race.\n"
+        else
+            output="${output}Plugin rules have changed since last reconciliation. Run /thinking:reconcile-rules to check if any learned rules are now superseded.\n"
+        fi
     fi
 fi
 
