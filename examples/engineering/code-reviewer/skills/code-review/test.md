@@ -72,11 +72,11 @@ A few specifics for the response (output structured per the code-review template
 
 ## Criteria
 
-- [ ] PASS: Skill layers team conventions on the native review — native `/code-review` (or agent fallback) for mechanics, then per-language conventions skills, cross-cutting standards, and project rules
+- [ ] PASS: Skill layers team conventions on the native review — a mechanics layer (bundled `/code-review`, agent fallback, or declared inline pass), then a conventions layer applied either via the matching review-* skills or inline via installed rules with explicit attribution in a Layers table
 - [ ] PASS: Skill distinguishes HARD signals (blockers — will cause wrong behaviour in production) from SOFT signals (important but conditional)
-- [ ] PASS: Skill maps changed file extensions to the matching coding-standards review skill and always applies review-standards
-- [ ] PASS: Skill routes security-sensitive diffs (auth, payments, data access, PII) to the security-audit skill
-- [ ] PASS: Skill merges findings across layers, deduplicating and recording each finding's source layer
+- [ ] PASS: Output's Layers table shows the conventions layer ran for the diff's language (review-typescript/review-standards invoked, or named installed rules applied inline) — TypeScript-specific and cross-cutting standards findings or an explicit "none — checked"
+- [ ] PASS: Output's Layers table shows the security layer triggered for this security-control diff (security-audit invoked, or security-baseline rules applied inline with attribution)
+- [ ] PASS: Skill merges findings across layers, deduplicating, and every finding records its source layer
 - [ ] PASS: Skill defines a zero-finding gate — if clean, must name a specific positive assertion with file:line to prove review depth
 - [ ] PASS: Skill's output format includes a verdict (APPROVE, REQUEST_CHANGES, NEEDS_DISCUSSION) with a count of blockers, important, and suggestion findings
 - [ ] PASS: Skill's calibration rules prohibit findings without evidence, findings without fix suggestions, and style preferences not codified in team standards
