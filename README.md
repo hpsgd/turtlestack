@@ -22,6 +22,7 @@ A plugin marketplace for Claude Code. Agents, skills, rules, and conventions tha
     - [Thinking](#thinking)
     - [Tooling](#tooling)
     - [Writing Style](#writing-style)
+    - [ADHD Mode](#adhd-mode)
   - [Research](#research)
     - [Analyst](#analyst)
     - [Investigator](#investigator)
@@ -143,6 +144,7 @@ Browse the full [plugin list](#plugins) below to see what else is available.
   "enabledPlugins": {
     "coding-standards@turtlestack": true,
     "writing-style@turtlestack": true,
+    "adhd-mode@turtlestack": true,
     "security-compliance@turtlestack": true,
     "thinking@turtlestack": true,
     "tooling@turtlestack": true,
@@ -435,6 +437,20 @@ AI tell avoidance, banned vocabulary, sentence structure, markdown formatting, p
 | Skill | Description | Example |
 |---|---|---|
 | [style-guide](plugins/practices/writing-style/skills/style-guide/SKILL.md) | Writing style review and rewrite | [Style review](examples/practices/writing-style/skills/style-guide/result.md) |
+
+#### ADHD Mode
+
+Shapes in-session assistant replies for an ADHD reader: lead with the next action, number steps, restate state each turn, suppress tangents, make progress visible, cut preamble and closers. Always-on while the plugin is enabled — opt in by electing it at any scope (user, project, or local). Requires `thinking` enabled for rule delivery. Adapted from [i-have-adhd](https://github.com/ayghri/i-have-adhd).
+
+```
+/plugin install adhd-mode@turtlestack
+```
+
+**Rules:**
+
+| Rule | Description |
+|---|---|
+| [action-first-output](plugins/practices/adhd-mode/rules/action-first-output.md) | Action-first output shaping for an ADHD reader, with override conditions |
 
 ### Research
 

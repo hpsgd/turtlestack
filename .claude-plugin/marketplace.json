@@ -39,6 +39,20 @@
       ]
     },
     {
+      "name": "adhd-mode",
+      "source": "./plugins/practices/adhd-mode",
+      "description": "Shape in-session assistant output for an ADHD reader — lead with the next action, number steps, restate state, suppress tangents, make progress visible. Always-on rules; opt in by enabling the plugin.",
+      "version": "3.6.0",
+      "category": "practices",
+      "tags": [
+        "adhd",
+        "output-style",
+        "action-first",
+        "accessibility",
+        "focus"
+      ]
+    },
+    {
       "name": "security-compliance",
       "source": "./plugins/practices/security-compliance",
       "description": "Security baseline rules and audit skills for maintaining secure code",

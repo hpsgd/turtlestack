@@ -1,0 +1,17 @@
+{
+  "name": "adhd-mode",
+  "description": "Shape in-session assistant output for an ADHD reader — lead with the next action, number steps, restate state, suppress tangents, make progress visible. Delivered as always-on rules; opt in by enabling the plugin at any scope.",
+  "version": "3.6.0",
+  "author": {
+    "name": "hps.gd"
+  },
+  "repository": "https://github.com/hpsgd/turtlestack",
+  "license": "Unlicense",
+  "keywords": [
+    "adhd",
+    "output-style",
+    "action-first",
+    "accessibility",
+    "focus"
+  ]
+}
