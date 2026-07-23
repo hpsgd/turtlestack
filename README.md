@@ -1124,7 +1124,7 @@ Claude Code plugins support tools, agents, skills, and output styles. Team instr
 The thinking plugin hooks into every session:
 
 - **`UserPromptSubmit` (async)** — classifies every message via regex. Catches corrections, praise, and approach changes. Queues ambiguous messages for Claude to classify during `/thinking:retrospective`.
-- **`SessionStart`** — analyses the previous session's transcript, detects patterns, generates metrics, and injects recent learnings into context. Also checks for plugin version drift and shows any unread [change notices](plugins/practices/thinking/notices.json) once — a fresh install starts silent, existing users see what changed.
+- **`SessionStart`** — analyses the previous session's transcript, detects patterns, generates metrics, and injects recent learnings into context. Also shows any unread [change notices](plugins/practices/thinking/notices.json) once — a fresh install starts silent, existing users see what changed. (Plugin version updates are handled by Claude Code's native background auto-update, not by the plugin.)
 
 Learnings flow through two paths:
 

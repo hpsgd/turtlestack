@@ -1,3 +1,12 @@
 {
-  "notices": []
+  "notices": [
+    {
+      "id": "2026-07-native-auto-update",
+      "version": "3.7.0",
+      "severity": "info",
+      "plugin": "thinking",
+      "title": "Plugin version-drift check removed",
+      "message": "The SessionStart version-drift check (.claude/<marketplace>/plugin-updates.md) is gone. Claude Code now auto-updates marketplaces and plugins in the background by default; run '/plugin marketplace update' for a manual refresh. You can delete any leftover plugin-updates.md files."
+    }
+  ]
 }
