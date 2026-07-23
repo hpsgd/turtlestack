@@ -31,6 +31,12 @@ that would write the same files on disk. Worktrees cost setup time and disk per 
 when slices genuinely overlap. The plan carries this judgement, so the strategy can change without reworking
 the mechanism.
 
+**Vehicle.** Slice instances normally run as plain concurrent `Agent` dispatches. Two native alternatives
+exist for the executor: a `Workflow` script when the fan-out is large and mechanical (deterministic
+pipelines over many items; needs the user's explicit opt-in to multi-agent orchestration), and an agent
+team (experimental) when instances genuinely need to message each other mid-flight. The dispatch plan may
+recommend a vehicle; the executor decides.
+
 **Aggregation.** When a higher-order instance rolls up the slices — a programme-level delivery manager
 aggregating team RAID, a lead architect reconciling slice ADRs — make it a dependency edge: dispatch the
 slice instances first, then dispatch the aggregator with read access to their outputs. State the aggregation
