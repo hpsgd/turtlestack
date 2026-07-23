@@ -137,7 +137,7 @@ def plugin_eligible(n):
 
 def has_footprint():
     # Evidence that this marketplace has done work on this machine before.
-    # Only the learning signals count — NOT directory existence and NOT
+    # Only analysed session records count — NOT directory existence and NOT
     # .claude/rules/ (install-rules.sh writes rules on every first run and would
     # false-positive a fresh install). The script's own files (notices-seen.json,
     # notices.md, notices-debug.log) live directly under <marketplace>/ and are
@@ -147,8 +147,6 @@ def has_footprint():
         scopes.append(os.path.join(PROJECT_DIR, ".claude", MARKETPLACE))
     for base in scopes:
         if glob.glob(os.path.join(base, "learnings", "sessions", "*.json")):
-            return True
-        if os.path.exists(os.path.join(base, "learnings", "signals", "pending.jsonl")):
             return True
     return False
 

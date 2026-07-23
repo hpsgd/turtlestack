@@ -72,11 +72,22 @@ SEED_ACCEPTANCE = [
 
 
 def load_analysis_patterns(project_dir: str | None) -> dict[str, list[re.Pattern]]:
-    """Load seed patterns + any learned patterns from the project."""
+    """Load seed patterns + any learned patterns from the project.
+
+    Learned patterns live at .claude/<marketplace>/learnings/signals/patterns.json
+    (written by the retrospective skill). The marketplace segment is globbed so
+    the script stays marketplace-agnostic; $LEARNINGS_DIR overrides for tests.
+    """
     learned = {"correction": [], "approach_change": [], "acceptance": []}
 
+    candidates: list[Path] = []
+    env_dir = os.environ.get("LEARNINGS_DIR")
+    if env_dir:
+        candidates.append(Path(env_dir) / "signals" / "patterns.json")
     if project_dir:
-        patterns_file = Path(project_dir) / ".claude" / "learnings" / "signals" / "patterns.json"
+        candidates.extend(sorted(Path(project_dir).glob(".claude/*/learnings/signals/patterns.json")))
+
+    for patterns_file in candidates:
         if patterns_file.exists():
             try:
                 with open(patterns_file) as f:

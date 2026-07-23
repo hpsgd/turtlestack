@@ -37,24 +37,6 @@ def load_session_analyses(dirs: list[str]) -> list[dict]:
     return analyses
 
 
-def load_signals(dirs: list[str]) -> list[dict]:
-    """Load all pending signals from JSONL files."""
-    signals = []
-    for base_dir in dirs:
-        signals_file = Path(base_dir) / "signals" / "pending.jsonl"
-        if not signals_file.exists():
-            continue
-        try:
-            with open(signals_file) as f:
-                for line in f:
-                    line = line.strip()
-                    if line:
-                        signals.append(json.loads(line))
-        except (json.JSONDecodeError, OSError):
-            pass
-    return signals
-
-
 def extract_date(timestamp: str) -> str:
     """Extract YYYY-MM-DD from an ISO timestamp."""
     if not timestamp:
@@ -168,23 +150,6 @@ def detect_trend(daily: dict[str, dict]) -> dict:
     }
 
 
-def compute_signal_summary(signals: list[dict]) -> dict:
-    """Summarise real-time signal classifications."""
-    by_type = defaultdict(int)
-    by_confidence = defaultdict(int)
-
-    for s in signals:
-        by_type[s.get("type", "unknown")] += 1
-        by_confidence[s.get("confidence", "unknown")] += 1
-
-    return {
-        "total_signals": len(signals),
-        "by_type": dict(by_type),
-        "by_confidence": dict(by_confidence),
-        "unclassified": by_type.get("unclassified", 0),
-    }
-
-
 def save_metrics(metrics: dict, dirs: list[str]):
     """Save metrics to all learnings directories."""
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -218,7 +183,6 @@ def main():
         sys.exit(0)
 
     analyses = load_session_analyses(dirs)
-    signals = load_signals(dirs)
     daily = aggregate_daily(analyses)
 
     metrics = {
@@ -230,7 +194,6 @@ def main():
         "rolling_30d": compute_rolling(daily, 30),
         "all_time": compute_rolling(daily, len(daily)),
         "trend": detect_trend(daily),
-        "signals": compute_signal_summary(signals),
     }
 
     # Save to disk
@@ -259,14 +222,6 @@ def main():
             print(f"  Second half correction rate: {t['second_half_rate']:.1%}")
         else:
             print(f"\nTrend: insufficient data ({t['days']} days, need 3+)")
-
-        s = metrics["signals"]
-        if s["total_signals"] > 0:
-            print(f"\nReal-time signals: {s['total_signals']} total")
-            for stype, count in s["by_type"].items():
-                print(f"  {stype}: {count}")
-            if s["unclassified"] > 0:
-                print(f"  ⚠ {s['unclassified']} unclassified (run /thinking:retrospective)")
 
 
 if __name__ == "__main__":

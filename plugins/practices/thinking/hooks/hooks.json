@@ -22,18 +22,6 @@
           }
         ]
       }
-    ],
-    "UserPromptSubmit": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/scripts/classify-message.py",
-            "async": true
-          }
-        ]
-      }
     ]
   }
 }

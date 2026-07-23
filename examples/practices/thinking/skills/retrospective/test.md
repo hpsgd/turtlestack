@@ -44,7 +44,7 @@ Execution requirements (the retrospective output MUST include all of this):
   - Global rule: `~/.claude/rules/learned--verify-before-declaring-complete.md`
   - Global rule: `~/.claude/rules/learned--check-rule-scope-before-writing.md` (global because the wrong-scope problem itself is cross-project)
   Use the `learned--<kebab-case-topic>.md` naming convention.
-- **Classify pending signals** — show the signals queue contents and classify each. Add at least one new regex pattern to `patterns.json` for the correction phrase the existing patterns missed: `\byou haven't (actually )?checked\b`.
+- **Evolve detection patterns** — add at least one new regex pattern to `patterns.json` for the correction phrase the existing analysis patterns missed: `\byou haven't (actually )?checked\b`.
 - **Write a full execution log to `handoff/retrospective.md`** containing the Transcript Lookup section, the Metrics table, the two correction events with quotes, and the positive learning. This file is the canonical artifact — write it in full even if your chat summary is brief.
 
 ## Criteria
@@ -56,7 +56,7 @@ Execution requirements (the retrospective output MUST include all of this):
 - [ ] PASS: The API refactor success is captured as a non-obvious positive learning worth reinforcing
 - [ ] PASS: Path 1 (local learned rule) is written for every high-severity correction before any upstream PR is considered
 - [ ] PASS: Learned rule files use the correct naming convention (`learned--{kebab-case-topic}.md`) and correct scope (global vs project)
-- [ ] PARTIAL: Step 3 classifies pending signals from the signals queue and adds regex patterns for any correction phrases the existing patterns missed
+- [ ] PARTIAL: Step 3 adds regex patterns to `patterns.json` for any correction phrases the analysis script's existing patterns missed
 
 ## Output expectations
 
@@ -69,4 +69,4 @@ Execution requirements (the retrospective output MUST include all of this):
 - [ ] PASS: Output places each learned rule in the correct scope — global rules in `~/.claude/rules/`, project rules in `.claude/rules/` — and the wrong-path-correction rule itself is global because it applies across projects
 - [ ] PASS: Output presents transcript metrics — turns, corrections, reversals, correction rate — with actual counts derived from the transcript, not estimates
 - [ ] PASS: Output's transcript file lookup uses the directory hash (working-path → hash) to locate the correct file in `~/.claude/projects/` — not assuming a fixed path
-- [ ] PARTIAL: Output classifies any pending signals from the signals queue and proposes regex patterns for correction phrases the existing patterns missed — strengthening future automated detection
+- [ ] PARTIAL: Output proposes regex patterns for correction phrases the analysis script's existing patterns missed — strengthening future automated detection

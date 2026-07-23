@@ -1123,15 +1123,14 @@ Claude Code plugins support tools, agents, skills, and output styles. Team instr
 
 The thinking plugin hooks into every session:
 
-- **`UserPromptSubmit` (async)** — classifies every message via regex. Catches corrections, praise, and approach changes. Queues ambiguous messages for Claude to classify during `/thinking:retrospective`.
-- **`SessionStart`** — analyses the previous session's transcript, detects patterns, generates metrics, and injects recent learnings into context. Also shows any unread [change notices](plugins/practices/thinking/notices.json) once — a fresh install starts silent, existing users see what changed. (Plugin version updates are handled by Claude Code's native background auto-update, not by the plugin.)
+- **`SessionStart`** — analyses the previous session's transcript, detects patterns, generates metrics, and injects recent learnings into context. Also shows any unread [change notices](plugins/practices/thinking/notices.json) once — a fresh install starts silent, existing users see what changed. (Plugin version updates are handled by Claude Code's native background auto-update, not by the plugin. In-session correction capture is handled by Claude Code's native auto memory; this system covers the retrospective pass — per its own retrospective-over-realtime principle.)
 
 Learnings flow through two paths:
 
 1. **Local (immediate):** Rules written to `.claude/rules/learned--*.md` take effect next session.
 2. **Shared (upstream):** When patterns recur (5+ instances), `/thinking:propose-improvement` proposes a PR against the marketplace repo with evidence.
 
-The regex classifier self-evolves. Each retrospective that classifies an ambiguous message extracts a new regex pattern and writes it to `.claude/learnings/signals/patterns.json`, which the classifier loads on every subsequent message.
+The detection regexes self-evolve. When a retrospective surfaces a correction the analysis script missed, it extracts a new regex pattern and writes it to `.claude/<marketplace>/learnings/signals/patterns.json`, which `analyse-session.py` loads on every subsequent run.
 
 ### Evaluation framework
 
