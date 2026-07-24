@@ -26,13 +26,16 @@ plugins/<category>/<name>/
 │   └── <topic>.md
 ├── hooks/                       # Optional: lifecycle hooks
 │   └── hooks.json
+├── output-styles/               # Optional: output styles (force-for-plugin applies automatically)
+│   └── <style-name>.md
 └── templates/                   # Optional: template files
 ```
 
 ## Key conventions
 
 - Never put anything except `plugin.json` (and `marketplace.json` at root) inside `.claude-plugin/`
-- Skills, agents, hooks, rules, and templates go at the plugin root level
+- Skills, agents, hooks, rules, output styles, and templates go at the plugin root level
+- Output styles in `output-styles/` are loaded natively by Claude Code; `force-for-plugin: true` applies the style automatically while the plugin is enabled (see adhd-mode). Use them for output shaping; use `rules/` for conventions and constraints
 - Rules in `rules/` are instruction files installed into `.claude/rules/` by the thinking plugin's SessionStart hook
 - Skills in `skills/` are for context-specific guidance that Claude auto-invokes
 - Register every new plugin in `.claude-plugin/marketplace.json`
