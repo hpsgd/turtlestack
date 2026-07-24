@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.7.0](https://github.com/hpsgd/turtlestack/compare/v3.6.0...v3.7.0) (2026-07-24)
+
+
+### Features
+
+* **adhd-mode:** action-first output-shaping rule ported from i-have-adhd ([#59](https://github.com/hpsgd/turtlestack/issues/59)) ([25c8253](https://github.com/hpsgd/turtlestack/commit/25c825327b61364de5dfa94cdaa8c9c5e5aed256))
+* adopt native Claude Code capabilities across marketplace machinery ([#63](https://github.com/hpsgd/turtlestack/issues/63)) ([db7c72c](https://github.com/hpsgd/turtlestack/commit/db7c72cd4d513620e9e1fda0cab7ce90831def49))
+
+
+### Bug Fixes
+
+* **reconcile-rules:** guard shared-dir deletes against concurrent sessions ([#61](https://github.com/hpsgd/turtlestack/issues/61)) ([eafde59](https://github.com/hpsgd/turtlestack/commit/eafde59c160a90403a7202aa92d8fab48c79926d))
+
 ## [3.6.0](https://github.com/hpsgd/turtlestack/compare/v3.5.0...v3.6.0) (2026-06-15)
 
 

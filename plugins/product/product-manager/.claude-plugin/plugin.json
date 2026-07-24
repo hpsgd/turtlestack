@@ -1,7 +1,7 @@
 {
   "name": "product-manager",
   "description": "Product manager — owns the why and the what for a product slice: problem validation, continuous discovery, JTBD, roadmap, PRDs, RICE prioritisation, and strategy input to the CPO",
-  "version": "3.6.0",
+  "version": "3.7.0",
   "author": {
     "name": "hps.gd"
   },
