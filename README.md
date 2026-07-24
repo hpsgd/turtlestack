@@ -1117,7 +1117,7 @@ Claude Code plugins support tools, agents, skills, and output styles. Team instr
 
 The thinking plugin hooks into every session:
 
-- **`SessionStart`** — analyses the previous session's transcript, detects patterns, generates metrics, and injects recent learnings into context. Also shows any unread [change notices](plugins/practices/thinking/notices.json) once — a fresh install starts silent, existing users see what changed. (Plugin version updates are handled by Claude Code's native background auto-update, not by the plugin. In-session correction capture is handled by Claude Code's native auto memory; this system covers the retrospective pass — per its own retrospective-over-realtime principle.)
+- **`SessionStart`** — analyses the previous session's transcript, detects patterns, generates metrics, and injects recent learnings into context. Also checks for plugin version drift and shows any unread [change notices](plugins/practices/thinking/notices.json) once — a fresh install starts silent, existing users see what changed. (Claude Code's native plugin auto-update refreshes marketplace catalogs but does not reliably apply plugin versions — see [claude-code#52218](https://github.com/anthropics/claude-code/issues/52218) — so the plugin carries its own drift check. In-session correction capture is handled by Claude Code's native auto memory; this system covers the retrospective pass — per its own retrospective-over-realtime principle.)
 
 Learnings flow through two paths:
 
