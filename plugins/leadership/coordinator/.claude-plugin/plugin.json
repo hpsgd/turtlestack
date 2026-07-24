@@ -1,7 +1,7 @@
 {
   "name": "coordinator",
   "description": "CEO/founder proxy — cross-team coordination, OKRs, initiative decomposition, strategic decisions that span CPO and CTO domains",
-  "version": "3.6.0",
+  "version": "3.7.0",
   "author": {
     "name": "hps.gd"
   },

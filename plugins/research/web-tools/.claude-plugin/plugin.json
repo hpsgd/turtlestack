@@ -1,7 +1,7 @@
 {
   "name": "web-tools",
   "description": "Web research tooling — content retrieval with escalating fallback strategies, and PDF snapshots for evidence archival.",
-  "version": "3.6.0",
+  "version": "3.7.0",
   "author": {
     "name": "hps.gd"
   },

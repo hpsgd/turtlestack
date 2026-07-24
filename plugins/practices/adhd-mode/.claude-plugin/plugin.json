@@ -1,7 +1,7 @@
 {
   "name": "adhd-mode",
   "description": "Shape in-session assistant output for an ADHD reader — lead with the next action, number steps, restate state, suppress tangents, make progress visible. Delivered as an output style applied automatically while the plugin is enabled; opt in by enabling the plugin at any scope.",
-  "version": "3.6.0",
+  "version": "3.7.0",
   "author": {
     "name": "hps.gd"
   },
