@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.7.1](https://github.com/hpsgd/turtlestack/compare/v3.7.0...v3.7.1) (2026-07-24)
+
+
+### Bug Fixes
+
+* **thinking:** reinstate plugin version-drift check ([#66](https://github.com/hpsgd/turtlestack/issues/66)) ([89d77ec](https://github.com/hpsgd/turtlestack/commit/89d77ecb8417bea70bc609d2ebc588175c80e39f))
+
 ## [3.7.0](https://github.com/hpsgd/turtlestack/compare/v3.6.0...v3.7.0) (2026-07-24)
 
 
