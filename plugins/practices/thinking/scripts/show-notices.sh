@@ -7,8 +7,8 @@
 # additionalContext so the model can help action each notice. Records shown ids
 # in the seen-marker so they don't reappear.
 #
-# Silent on no-op, writes a per-marketplace detail file on overflow, derives
-# paths from env.
+# Sibling of check-plugin-versions.sh — same shape: silent on no-op, writes a
+# per-marketplace detail file on overflow, derives paths from env.
 #
 # Silent when nothing is unseen. Fails silent on errors (never blocks session
 # start — every error path exits 0).
@@ -60,7 +60,8 @@ DEBUG_LOG = os.path.join(STATE_DIR, "notices-debug.log")
 INSTALLED_PLUGINS = os.path.join(CONFIG_DIR, "plugins", "installed_plugins.json")
 NOTICES_PATH = os.path.join(PLUGIN_ROOT, "notices.json")
 
-# Detail file: project scope when a project dir is set, user scope otherwise.
+# Detail file lands alongside check-plugin-versions' plugin-updates.md: project
+# scope when a project dir is set, user scope otherwise.
 DETAIL_DIR = os.path.join(PROJECT_DIR, ".claude", MARKETPLACE) if PROJECT_DIR else STATE_DIR
 DETAIL_FILE = os.path.join(DETAIL_DIR, "notices.md")
 

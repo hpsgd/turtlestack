@@ -57,5 +57,5 @@ The cross-marketplace contract is regression-guarded by
 ## Other scripts
 
 `analyse-session.py`, `detect-patterns.py`, `generate-metrics.py`,
-`learning-hook.sh`, `learning-readback.sh`, `show-notices.sh` are
+`learning-hook.sh`, `learning-readback.sh`, `show-notices.sh`, `check-plugin-versions.sh` are
 internal to thinking's hooks and carry no cross-marketplace stability promise.
