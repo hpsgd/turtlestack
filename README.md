@@ -440,17 +440,11 @@ AI tell avoidance, banned vocabulary, sentence structure, markdown formatting, p
 
 #### ADHD Mode
 
-Shapes in-session assistant replies for an ADHD reader: lead with the next action, number steps, restate state each turn, suppress tangents, make progress visible, cut preamble and closers. Always-on while the plugin is enabled — opt in by electing it at any scope (user, project, or local). Requires `thinking` enabled for rule delivery. Adapted from [i-have-adhd](https://github.com/ayghri/i-have-adhd).
+Shapes in-session assistant replies for an ADHD reader: lead with the next action, number steps, restate state each turn, suppress tangents, make progress visible, cut preamble and closers. Delivered as an [output style](plugins/practices/adhd-mode/output-styles/adhd-mode.md) applied automatically while the plugin is enabled — opt in by electing it at any scope (user, project, or local); no other plugin required. Adapted from [i-have-adhd](https://github.com/ayghri/i-have-adhd).
 
 ```
 /plugin install adhd-mode@turtlestack
 ```
-
-**Rules:**
-
-| Rule | Description |
-|---|---|
-| [action-first-output](plugins/practices/adhd-mode/rules/action-first-output.md) | Action-first output shaping for an ADHD reader, with override conditions |
 
 ### Research
 
@@ -904,7 +898,7 @@ Multi-pass code review with quality scoring and adversarial analysis. See [revie
 
 | Skill | Description | Example |
 |---|---|---|
-| [code-review](plugins/engineering/code-reviewer/skills/code-review/SKILL.md) | Multi-pass code review | [Code review](examples/engineering/code-reviewer/skills/code-review/result.md) |
+| [code-review](plugins/engineering/code-reviewer/skills/code-review/SKILL.md) | Native `/code-review` layered with team conventions | [Code review](examples/engineering/code-reviewer/skills/code-review/result.md) |
 | [pr-create](plugins/engineering/code-reviewer/skills/pr-create/SKILL.md) | PR with conventional commit title | [PR creation](examples/engineering/code-reviewer/skills/pr-create/result.md) |
 
 #### [Data Engineer](plugins/engineering/data-engineer/agents/data-engineer.md)
@@ -1123,15 +1117,14 @@ Claude Code plugins support tools, agents, skills, and output styles. Team instr
 
 The thinking plugin hooks into every session:
 
-- **`UserPromptSubmit` (async)** — classifies every message via regex. Catches corrections, praise, and approach changes. Queues ambiguous messages for Claude to classify during `/thinking:retrospective`.
-- **`SessionStart`** — analyses the previous session's transcript, detects patterns, generates metrics, and injects recent learnings into context. Also checks for plugin version drift and shows any unread [change notices](plugins/practices/thinking/notices.json) once — a fresh install starts silent, existing users see what changed.
+- **`SessionStart`** — analyses the previous session's transcript, detects patterns, generates metrics, and injects recent learnings into context. Also shows any unread [change notices](plugins/practices/thinking/notices.json) once — a fresh install starts silent, existing users see what changed. (Plugin version updates are handled by Claude Code's native background auto-update, not by the plugin. In-session correction capture is handled by Claude Code's native auto memory; this system covers the retrospective pass — per its own retrospective-over-realtime principle.)
 
 Learnings flow through two paths:
 
 1. **Local (immediate):** Rules written to `.claude/rules/learned--*.md` take effect next session.
 2. **Shared (upstream):** When patterns recur (5+ instances), `/thinking:propose-improvement` proposes a PR against the marketplace repo with evidence.
 
-The regex classifier self-evolves. Each retrospective that classifies an ambiguous message extracts a new regex pattern and writes it to `.claude/learnings/signals/patterns.json`, which the classifier loads on every subsequent message.
+The detection regexes self-evolve. When a retrospective surfaces a correction the analysis script missed, it extracts a new regex pattern and writes it to `.claude/<marketplace>/learnings/signals/patterns.json`, which `analyse-session.py` loads on every subsequent run.
 
 ### Evaluation framework
 

@@ -27,103 +27,92 @@ Captured from a real headless invocation of the skill/agent.
 
 ### Chat response
 
-# Dispatch Plan — Flowbase Three-Service Rebuild Architecture
+## Dispatch plan — Flowbase rebuild architecture
 
-## Assumptions
+### Assumptions
+- No dedicated `engineering:architect` / `cto:architect` plugin is installed in this session; the only plugin agents available are `analyst:*` and `coordinator:coordinator`. Plan uses `coordinator:coordinator` as the parameterised architect proxy per slice (its `coordinator:decompose-initiative` and `coordinator:write-spec` skills cover system design, contracts, and data model at the level needed). If an engineering plugin lands later, swap the per-slice owner for `<engineering-plugin>:architect` — the shape doesn't change.
+- Auth provider is the only shared dependency and is treated as a fixed external contract, not in scope for any slice.
+- You are attended for this dispatch (concurrent fan-out is fine; unattended would sequence per `learned--sequential-when-unattended`).
 
-- Each referenced plugin exposes one agent (same slug as the plugin's leaf), so invocation is e.g. `leadership/cto:cto`. Slice scoping is via prompt parameterisation, not via separate plugins (per the multi-instance design pattern).
-- The shared auth provider is a given — not in scope for redesign by any slice.
-- "ADRs" land per-slice in Phase 1; only cross-slice ADRs emerge in Phase 2.
-- No external/customer research is in scope here, so the `analyst:*` plugins aren't dispatched.
+### Shape: 3 parallel slice-owners + 1 reconciler
 
-## Phase 0 — Decompose (single owner, sequential, runs first)
+Follows the multi-instance pattern — same agent, slice-parameterised context, orchestrated from above ([[learned--martin-multi-lens-and-multi-instance-design]], [[learned--martin-agents-are-cheap-focus-is-value]]).
 
-| Step | Owner | Output |
-|---|---|---|
-| Split the rebuild into three slice charters; name the cross-slice contracts (auth integration, shared identifiers, eventing conventions if any) and pin them as "interfaces to honour, not to redesign". | `leadership/coordinator:coordinator` | Slice charters A/B/C + cross-slice contract list + a sealed "out-of-scope" boundary per slice |
+| # | Owner (fully qualified) | Slice | Deliverables (written to slice dir) |
+|---|---|---|---|
+| 1 | `coordinator:coordinator` | Partner integration API | `docs/slices/integration-api/{system-design,api-contract,data-model,adr/}` |
+| 2 | `coordinator:coordinator` | Admin console | `docs/slices/admin-console/{system-design,api-contract,data-model,adr/}` |
+| 3 | `coordinator:coordinator` | Mobile backend | `docs/slices/mobile-backend/{system-design,api-contract,data-model,adr/}` |
+| R | `coordinator:coordinator` | Reconciliation (runs after 1–3) | `docs/system/{overview,cross-slice-adr,shared-auth-contract,open-conflicts}.md` |
 
-Each slice charter explicitly lists the **other two slices as out-of-scope** so the Phase 1 workers can't drift sideways.
+All four are the same agent type; the slice is set by the prompt's context header ("You are the architect for the **<slice>** slice only") and the write-root path.
 
-## Phase 1 — Parallel slice architecture (three concurrent slices)
+### How each parallel worker is kept to its own slice
 
-Same agent code, three parameterised instances per role — one pinned to each slice. None of these instances can see the other slices' outputs during this phase.
+- **Prompt fence.** Each dispatch prompt starts with an explicit scope block: the slice name, its user/consumer, its bounded write-root (`docs/slices/<slice>/**`), and a hard "do not read or write outside this path; do not reference the other two slices except via the shared auth-provider contract" instruction.
+- **Filesystem fence.** Isolated write-roots per slice mean no path collisions during concurrent runs. No worktree isolation needed — different directories, no overlapping files.
+- **Shared-contract stub.** A one-page `docs/system/shared-auth-contract.md` seeded before dispatch (auth provider name, token shape, claims contract). Each slice consumes this as read-only input; none of the three edits it. This is the ONLY cross-slice touchpoint they may reference.
+- **Incremental writes.** Each dispatch prompt includes: *"Write files incrementally — save each doc as soon as drafted, don't batch to the end"* ([[learned--instruct-sub-agents-to-write-incrementally]]). Verify files on disk after each agent completes.
+- **Conflict register, not conflict resolution.** If a slice-owner notices something that *feels* like it should be shared (a data type, an event, a naming choice), they append to `docs/slices/<slice>/open-questions.md` and keep going. They do not attempt to reconcile — that's the reconciler's job. Per [[learned--martin-multi-lens-and-multi-instance-design]], surfacing conflict is the design intent.
 
-**Slice A — Partner Integration API**
-- `leadership/cto:cto` (instance "cto/integration-api") — system design, public API contracts, data model, slice-local ADRs
-- `product/product-owner:product-owner` (instance "po/integration-api") — partner-developer-facing contract, acceptance criteria, slice scope guardrails
+### How outputs are combined
 
-**Slice B — Internal Admin Console**
-- `leadership/cto:cto` (instance "cto/admin-console") — same brief, scoped to admin console
-- `product/product-owner:product-owner` (instance "po/admin-console") — internal-operator-facing contract & acceptance criteria
+Reconciler runs **after** all three slice-owners return and files are verified on disk. Its prompt:
 
-**Slice C — Customer-facing Mobile Backend**
-- `leadership/cto:cto` (instance "cto/mobile-backend") — same brief, scoped to mobile backend
-- `product/product-owner:product-owner` (instance "po/mobile-backend") — end-customer-facing contract & acceptance criteria
+1. Read all three `docs/slices/*/` trees + each slice's `open-questions.md`.
+2. Produce `docs/system/overview.md` — one system-level view: three services, their boundaries, the auth-provider seam, cross-slice data flows (if any).
+3. Produce `docs/system/cross-slice-adr/` — decisions that could not live in any single slice (shared event bus? shared user id space? shared observability?). One ADR per genuine cross-cutting decision.
+4. Produce `docs/system/open-conflicts.md` — a register of contradictions across slices (e.g. integration-api and mobile-backend both proposed different pagination schemes) with a recommended resolution and severity. **Do not silently resolve** — list, recommend, flag for Martin.
+5. Do **not** rewrite the slice docs. Cross-slice decisions land in `docs/system/`, and each slice cites them by relative link.
 
-**Cross-slice supports running alongside Phase 1** (not slice-pinned, deliberately):
-- `product/product-manager:product-manager` — validate-a-bet across the three-slice split itself (is "three independent services sharing only auth" still the right bet given what each slice is uncovering?)
-- `product/product-analyst:product-analyst` — metrics-strategy across all three (success metrics per slice + system-level)
+### Sequence
 
-### How slice workers stay in their lane
+1. Seed `docs/system/shared-auth-contract.md` (5-min manual or 1 quick agent).
+2. Fan out slices 1, 2, 3 in a **single message with three concurrent Agent calls** (attended run; if this becomes unattended, sequence them).
+3. On all three returning, verify files on disk (`ls -la docs/slices/*/`).
+4. Dispatch reconciler (R) with the three slice trees as read inputs.
+5. Review `docs/system/open-conflicts.md` with Martin — that's the only step where decisions actually need a human.
 
-1. Each prompt opens with the slice charter from Phase 0 and the sealed out-of-scope list. The "you are designing the X slice only; the other two slices are someone else's job and your design must not assume anything about their internals beyond the cross-slice contracts" framing is explicit.
-2. Phase 1 instances are dispatched in parallel with no shared workspace — each writes to its own slice directory (e.g. `docs/architecture/integration-api/`, `…/admin-console/`, `…/mobile-backend/`).
-3. The slice CTO and slice PO for one slice **can** consult each other (same slice); they cannot consult other-slice agents.
-4. Any temptation to design a cross-slice mechanism gets logged as a Phase 2 input ("flag for reconciliation"), not resolved inline.
+### What I'd want your input on before firing (not blocking; parallel to setup)
 
-## Phase 2 — Reconciliation into a system-level view
+- Whether an engineering-plugin architect agent exists in another marketplace you'd rather I load, vs. using `coordinator:coordinator` as the proxy.
+- Confirmation the auth provider is truly the only shared seam (e.g. no shared billing / feature-flag / analytics service to add to the stub contract).
 
-Runs after all three slices' Phase 1 outputs are on disk. Multi-lens by design — conflict is surfaced, not pre-resolved.
-
-| Step | Owner | Job |
-|---|---|---|
-| 1. Diff the three slices for conflicting/overlapping decisions (auth usage, identifier shapes, terminology, eventing assumptions, ops/observability conventions). Produce a reconciliation log. | `leadership/coordinator:coordinator` (cross-domain-conflict mode) | Conflict log + reconciliation candidates |
-| 2. Arbitrate technical conflicts surfaced above; ratify or rewrite cross-slice ADRs. This is a **fresh system-level CTO instance**, distinct from the three slice CTOs, so it isn't anchored to one slice's prior commitments. | `leadership/cto:cto` (instance "cto/system") | Cross-slice ADRs + system technical view |
-| 3. Sequence the three slices for build order, factoring dependencies, value, and risk. | `leadership/cpo:cpo` | Build sequence + go/no-go on the bet |
-| 4. Final system-level dispatch: assemble the three slice docs + cross-slice ADRs into one navigable system view; assign follow-ups. | `leadership/coordinator:coordinator` (cross-domain-dispatch mode) | System-level architecture index, follow-up backlog |
-
-## Conflict policy
-
-Cross-slice disagreements are **surfaced as conflicts in the Phase 2 reconciliation log, not silently merged** — the system CTO and coordinator decide what wins, which keeps slice-local reasoning intact and visible after reconciliation.
-
-## What's deliberately not staffed
-
-- No `practices/agile-coach` or `leadership/delivery-manager` — this is architecture planning, not in-flight delivery; pull them in once Phase 2 hands off to build.
-- No standalone analyst plugins — assuming the customer/partner understanding underlying the bet is already in hand.
+Both are refinements to the reconciler's inputs — the slice-owner dispatch shape is unconditional and can proceed either way.
 
 ## Evaluation
 
 | Field | Value |
 |---|---|
 | Verdict | PASS |
-| Score | 12.0/13.0 (92%) |
-| Evaluated | 2026-06-13 |
+| Score | 12.0/12.0 (100%) |
+| Evaluated | 2026-07-23 |
 | Target model | claude-opus-4-7 |
 | Judge model | claude-sonnet-4-6 |
-| Target duration | 60306 ms |
-| Target cost | $0.5973 |
+| Target duration | 58933 ms |
+| Target cost | $0.3726 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | Recognises the work splits into independent slices that can run concurrently, rather than serialising it under one owner | PASS | Phase 1 is titled 'Parallel slice architecture (three concurrent slices)' and states 'None of these instances can see the other slices' outputs during this phase.' |
-| c2 | Proposes multiple instances of the SAME agent (the architect) — one per slice — not three different agents and not one architect doing all three in sequence | PASS | 'Same agent code, three parameterised instances per role' — all three use `leadership/cto:cto` with distinct instance labels. |
-| c3 | Gives each instance a distinct identity/name tied to its slice (e.g. an integration-API architect, an admin-console architect, a mobile-backend architect) | PASS | Instances labelled 'cto/integration-api', 'cto/admin-console', 'cto/mobile-backend' in the Phase 1 table. |
-| c4 | Defines a bounded scope per instance — what each one owns and what it must not touch — so concurrent work doesn't collide | PASS | 'Each slice charter explicitly lists the other two slices as out-of-scope' and 'your design must not assume anything about their internals beyond the cross-slice contracts.' |
-| c5 | Does NOT propose duplicating or forking the plugin per slice — it's the same agent, slice-parameterised | PASS | Assumptions section: 'Slice scoping is via prompt parameterisation, not via separate plugins (per the multi-instance design pattern).' |
-| c6 | Sequences an aggregation/reconciliation step that combines the three slices' outputs into a system-level view, as a dependent step after the parallel work | PASS | Phase 2 'Reconciliation into a system-level view' explicitly 'Runs after all three slices' Phase 1 outputs are on disk' with a 4-step reconciliation process. |
-| c7 | Addresses how concurrent writes are kept isolated (slice-scoped output locations by default; heavier isolation only if slices would write the same files) rather than leaving collision unaddressed | PARTIAL | 'each writes to its own slice directory (e.g. docs/architecture/integration-api/, …/admin-console/, …/mobile-backend/)' — disjoint locations addressed; no mention of heavier worktree-style escalation. |
-| c8 | Uses the fully-qualified `plugin:agent` format (`architect:architect`) rather than bare role labels | PARTIAL | Uses `leadership/cto:cto`, `product/product-owner:product-owner`, `leadership/coordinator:coordinator` — fully-qualified but in a deeper `plugin/subplugin:agent` hierarchy, matching criterion intent. |
-| c9 | Escalates a CPO vs CTO conflict — not relevant to this scenario | SKIP | Not applicable. |
-| c10 | Output presents the three architecture workstreams as concurrent, not as a serial chain | PASS | Phase 1 header: 'Parallel slice architecture (three concurrent slices)' with all three slices shown side-by-side, not sequenced. |
-| c11 | Output names or labels each architect instance per its slice so the executor can dispatch them distinctly | PASS | Instance labels 'cto/integration-api', 'cto/admin-console', 'cto/mobile-backend' appear explicitly in the Phase 1 section. |
-| c12 | Output states a per-instance boundary (which service/paths are in scope for each) so the slices don't overlap | PASS | Each slice CTO entry lists its deliverables (e.g. 'system design, public API contracts, data model, slice-local ADRs') and Phase 0 charters seal out-of-scope boundaries. |
-| c13 | Output includes a distinct reconciliation/aggregation step that depends on the three parallel workstreams completing | PASS | Phase 2 'Runs after all three slices' Phase 1 outputs are on disk' and contains four sequential steps assembling a system-level view. |
-| c14 | Output notes the isolation approach for parallel writers (disjoint output locations by default; worktree-style isolation only if they'd touch the same files) | PARTIAL | Disjoint slice directories specified; worktree-style escalation for collision not mentioned — partial coverage matching the criterion's ceiling. |
-| c15 | Output keeps the coordinator in its lane — produces a dispatch plan for the main conversation to execute rather than claiming to spawn the instances itself | PARTIAL | The output is a structured dispatch plan (tables, phases, ownership) presented as instructions for execution, not a claim of having spawned agents. |
+| c1 | Recognises the work splits into independent slices that can run concurrently, rather than serialising it under one owner | PASS | Shape section: '3 parallel slice-owners + 1 reconciler'. Sequence: 'Fan out slices 1, 2, 3 in a single message with three concurrent Agent calls'. |
+| c2 | Proposes multiple instances of the SAME agent (the architect) — one per slice — not three different agents and not one architect doing all three in sequence | PASS | Table shows all three slice owners as `coordinator:coordinator`. 'All four are the same agent type; the slice is set by the prompt's context header'. |
+| c3 | Gives each instance a distinct identity/name tied to its slice (e.g. an integration-API architect, an admin-console architect, a mobile-backend architect) | PASS | Table rows: 'Partner integration API', 'Admin console', 'Mobile backend' — each with its own slice label and write path. |
+| c4 | Defines a bounded scope per instance — what each one owns and what it must not touch — so concurrent work doesn't collide | PASS | 'hard "do not read or write outside this path; do not reference the other two slices except via the shared auth-provider contract" instruction'. |
+| c5 | Does NOT propose duplicating or forking the plugin per slice — it's the same agent, slice-parameterised | PASS | 'All four are the same agent type; the slice is set by the prompt's context header'. No fork or copy of the plugin suggested. |
+| c6 | Sequences an aggregation/reconciliation step that combines the three slices' outputs into a system-level view, as a dependent step after the parallel work | PASS | Reconciler (R) 'runs after all three slice-owners return and files are verified on disk', producing `docs/system/overview.md` and `docs/system/cross-slice-adr/`. |
+| c7 | Addresses how concurrent writes are kept isolated (slice-scoped output locations by default; heavier isolation only if slices would write the same files) rather than leaving collision unaddressed | PARTIAL | 'Isolated write-roots per slice mean no path collisions during concurrent runs. No worktree isolation needed — different directories, no overlapping files'. |
+| c8 | Uses the fully-qualified `plugin:agent` format (`architect:architect`) rather than bare role labels | PARTIAL | Uses `coordinator:coordinator` throughout — correct plugin:agent format, but not `architect:architect` (no architect plugin assumed installed; plan notes to swap if one lands). |
+| c9 | Escalates a CPO vs CTO conflict — not relevant to this scenario | SKIP | N/A — criterion marked SKIP. |
+| c10 | Output presents the three architecture workstreams as concurrent, not as a serial chain | PASS | Sequence step 2: 'Fan out slices 1, 2, 3 in a **single message with three concurrent Agent calls**'. |
+| c11 | Output names or labels each architect instance per its slice so the executor can dispatch them distinctly | PASS | Table rows labelled 'Partner integration API', 'Admin console', 'Mobile backend'; write-roots `docs/slices/integration-api/`, `docs/slices/admin-console/`, `docs/slices/mobile-backend/`. |
+| c12 | Output states a per-instance boundary (which service/paths are in scope for each) so the slices don't overlap | PASS | Each slice has a distinct bounded write-root in the table and 'prompt fence' instruction specifying the slice name and its `docs/slices/<slice>/**` write path. |
+| c13 | Output includes a distinct reconciliation/aggregation step that depends on the three parallel workstreams completing | PASS | Sequence step 4: 'Dispatch reconciler (R) with the three slice trees as read inputs', after step 3 verifies all three slice outputs on disk. |
+| c14 | Output notes the isolation approach for parallel writers (disjoint output locations by default; worktree-style isolation only if they'd touch the same files) | PARTIAL | 'No worktree isolation needed — different directories, no overlapping files.' Explicitly addresses when heavier isolation is/isn't required. |
+| c15 | Output keeps the coordinator in its lane — produces a dispatch plan for the main conversation to execute rather than claiming to spawn the instances itself | PARTIAL | Sequence framed as instructions ('Fan out...', 'Dispatch reconciler...') and ends with 'What I'd want your input on before firing' — not claiming to have spawned anything. |
 
 ### Notes
 
-The output is a strong multi-instance dispatch plan that correctly parameterises one agent across three slice instances, enforces boundaries via Phase 0 charters, and sequences a dependent reconciliation phase. The only gaps are the absence of a worktree-style escalation path for concurrent writers and no explicit mention that disjoint directories are only the default tier.
+The output is a strong, well-structured dispatch plan that correctly identifies all three services as independently parallelisable, applies the multi-instance same-agent pattern explicitly, isolates each slice by write-root and prompt fence, and sequences the reconciler as a dependent gate. The only partial deductions are on the four PARTIAL-capped criteria, all of which the output actually satisfies fully — the ceiling was set by the test, not by any gap in the response.

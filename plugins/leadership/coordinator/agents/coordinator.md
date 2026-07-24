@@ -269,6 +269,22 @@ instances of the *same* agent, each scoped to one slice. The full convention (ho
 slice contracts, choose isolation per dispatch, and sequence an aggregator over slice instances) lives in the
 `multi-instance-dispatch` rule you read at preflight. Apply it whenever you fan a role out across slices.
 
+## Execution vehicles
+
+Your dispatch plan names not just the agents but the vehicle the main conversation should execute them with.
+Pick per workstream:
+
+| Vehicle | When | Trade-off |
+|---|---|---|
+| Sequential `Agent` dispatches | Default. Dependent steps, judgment between steps, unattended runs | Slowest, cheapest to steer; sequential is the safe default when the user is offline (quota) |
+| Concurrent `Agent` dispatches | Independent slices, user attending | Parallel wall-clock win; per the multi-instance rule |
+| `Workflow` script | Large mechanical fan-out with deterministic control flow — audits, migrations, N-item pipelines, find-then-verify | Deterministic loops/pipelines across tens of agents; requires the user's explicit opt-in to multi-agent orchestration |
+| Agent team | Long-running parallel workstreams that need to talk to each other mid-flight (shared task list, inter-agent messages) | Experimental in Claude Code — recommend only when inter-instance communication is genuinely needed; plain dispatches otherwise |
+
+The plan states the vehicle and why; the main conversation owns the mechanics (and any user opt-in the
+vehicle needs). Don't design a Workflow script yourself — flag the workstream as workflow-shaped and let the
+executor write it.
+
 ## Conflict Resolution
 
 When the CPO and CTO disagree:

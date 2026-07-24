@@ -3,10 +3,20 @@ name: security-audit
 description: Perform a security-focused audit of code changes or a specific area of the codebase.
 argument-hint: "[file path, directory, or git diff range]"
 user-invocable: true
-allowed-tools: Read, Grep, Glob, Bash
+allowed-tools: Read, Grep, Glob, Bash, Skill
 ---
 
 Perform a focused security audit on the specified code. If no argument is provided, audit staged changes (`git diff --staged`). Follow every step below — skipping steps leads to missed vulnerabilities.
+
+## Step 0 — Native review first (diff-scoped audits only)
+
+When the scope is a diff or the current branch's pending changes, run Claude Code's bundled security review first and collect its findings as input:
+
+```
+Skill(skill="security-review")
+```
+
+The native review covers generic vulnerability classes on the branch diff. The steps below then add what it can't know — the org's security baseline (installed `security-baseline` rules), data-flow mapping across the wider codebase, and the team's report format. Skip this step for directory- or area-scoped audits (the native review only covers pending branch changes) and when the bundled skill is unavailable — the rest of the audit is self-contained either way.
 
 ## Step 1 — Scope identification
 

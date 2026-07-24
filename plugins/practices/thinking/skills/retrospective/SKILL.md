@@ -10,13 +10,12 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 
 Analyse conversation transcripts to extract learnings. Use `$ARGUMENTS` to control what to do:
 
-- **`current`** — analyse the current session's transcript (Steps 1–4)
-- **`latest`** — analyse the most recent completed session (Steps 1–4)
+- **`current`** — analyse the current session's transcript (Steps 1–3)
+- **`latest`** — analyse the most recent completed session (Steps 1–3)
 - **`summary`** — show accumulated metrics and trends (runs `generate-metrics.py`)
-- **`patterns`** — detect recurring patterns across all sessions (runs `detect-patterns.py`, then Step 5)
-- **`signals`** — classify queued ambiguous signals and evolve regex patterns (Step 3 only)
-- **`full`** — run everything: analyse latest session, classify signals, detect patterns, generate metrics (Steps 1–6)
-- **`{session-id}`** — analyse a specific past session (Steps 1–4)
+- **`patterns`** — detect recurring patterns across all sessions (runs `detect-patterns.py`, then Step 4)
+- **`full`** — run everything: analyse latest session, detect patterns, generate metrics (Steps 1–5)
+- **`{session-id}`** — analyse a specific past session (Steps 1–3)
 
 This skill is also triggered automatically by the SessionStart hook, which runs the analysis scripts on the previous session. Use this skill manually when you want to run analysis mid-session, review metrics, or trigger pattern detection and rule proposals.
 
@@ -74,7 +73,7 @@ done
 
 For `current`: find the most recently modified `.jsonl` file across all `$TRANSCRIPT_DIRS`.
 For a specific session: search all `$TRANSCRIPT_DIRS` for `{session-id}.jsonl`.
-For `summary` or `patterns`: skip to Step 3 or Step 4.
+For `summary`: skip straight to `generate-metrics.py`. For `patterns`: skip to Step 4.
 
 **Output:** Path to the transcript file, or list of available sessions.
 
@@ -96,67 +95,19 @@ The script outputs structured JSON with:
 - **events**: each correction, reversal, or success with context and timestamps
 - **files_modified**: which files were touched and how many times
 
-Read the JSON output and present the results.
-
-**Output:** Metrics summary table and event list.
-
-## Step 3: Classify queued signals (mandatory)
-
-The `UserPromptSubmit` hook captures every user message and classifies obvious cases via regex. Messages that are ambiguous are queued as `"type": "unclassified"` in `$LEARNINGS_DIR/signals/pending.jsonl`.
-
-Read the pending signals file:
+Then dump the actual user messages and read them all:
 
 ```bash
-LEARNINGS_DIR="${LEARNINGS_DIR:-.claude/turtlestack/learnings}"
-cat "$LEARNINGS_DIR/signals/pending.jsonl"
+python3 ${CLAUDE_PLUGIN_ROOT}/scripts/analyse-session.py <transcript.jsonl> --dump-user-turns
 ```
 
-For each `unclassified` signal, read the `prompt_preview` and classify it yourself:
-- **correction** (rating 2-4): user is correcting, rejecting, or redirecting your work
-- **frustration** (rating 1-3): user is expressing dissatisfaction
-- **praise** (rating 8-10): user is expressing approval
-- **direction** (rating 5-6): user is giving new instructions (neutral, not correcting)
-- **neutral** (rating 5-7): none of the above
+The script's events come from regex matching; the dump is your check on it. Read every turn and note any correction, frustration, or approach change the events list missed — these are exactly the ones the patterns can't catch yet, and they feed both Step 3's learnings and the pattern evolution.
 
-Update the signal's `type` and `rating` fields, and set `confidence` to `"claude"`. Write the updated signals back.
+**Output:** Metrics summary table, event list, and any regex-missed events you spotted in the dump.
 
-This is why the system doesn't need an external AI API — you ARE the AI doing the classification.
+## Step 3: Interpret, write learnings, and apply local rules (mandatory)
 
-### Update the regex patterns (mandatory after classifying)
-
-For each message you classified that the regex missed, **extract a pattern that would catch similar messages in the future** and add it to `$LEARNINGS_DIR/signals/patterns.json`.
-
-The patterns file has this structure:
-
-```json
-{
-  "correction": ["\\bfeels (arbitrary|wrong|off)\\b", "\\bunderestimating\\b"],
-  "praise": [],
-  "approach_change": ["\\bi think (we|you) should\\b"],
-  "not_correction": []
-}
-```
-
-For each unclassified message you classified:
-1. Identify the **key phrase** that signals the intent (e.g., "feels arbitrary" → correction)
-2. Write a regex pattern that would match it and similar phrasings
-3. Test the pattern mentally against a few examples — would it false-positive on normal instructions?
-4. If the pattern is safe (low false-positive risk), add it to the appropriate category
-
-Read the existing `patterns.json` (create if missing), append new patterns, and write it back. The `classify-message.py` script loads this file on every run, so new patterns take effect immediately.
-
-**Rules for pattern generation:**
-- Patterns must be **general enough** to catch variations but **specific enough** to avoid false positives
-- `\bfeels (arbitrary|wrong|off|unnecessary)\b` is good — catches a class of pushback
-- `\bfeels\b` alone is too broad — would match "it feels responsive"
-- Always use `\b` word boundaries to prevent partial matches
-- Test against the original message AND imagine 3 other messages — would they match correctly?
-
-**Output:** Classified signal count by type + number of new patterns added.
-
-## Step 4: Interpret, write learnings, and apply local rules (mandatory)
-
-For each event extracted by the script AND each classified signal, interpret it into a learning:
+For each event extracted by the script — plus each regex-missed event you spotted in the Step 2 user-turn dump — interpret it into a learning:
 
 ### For corrections (HIGH severity):
 
@@ -185,6 +136,34 @@ Check `git log` for the file to distinguish iterative refinement from reversals.
 Ask: *What did the assistant do right that should be reinforced?*
 
 Only record successes that are non-obvious — approaches that worked but might not be the default choice. "Wrote code that compiled" is not worth recording. "Used a single bundled PR instead of splitting, and the user confirmed that was the right call" is.
+
+### Evolve the detection patterns (when the script missed something)
+
+`analyse-session.py` finds events by regex. For each event the user-turn dump surfaced that the script did NOT flag, extract a pattern that would catch similar messages in the future and add it to `$LEARNINGS_DIR/signals/patterns.json` (create if missing). The script loads this file on every run, so new patterns take effect from the next analysis.
+
+The patterns file has this structure:
+
+```json
+{
+  "correction": ["\\bfeels (arbitrary|wrong|off)\\b", "\\bunderestimating\\b"],
+  "approach_change": ["\\bi think (we|you) should\\b"],
+  "acceptance": []
+}
+```
+
+For each missed event:
+
+1. Identify the **key phrase** that signals the intent (e.g., "feels arbitrary" → correction)
+2. Write a regex pattern that would match it and similar phrasings
+3. Test the pattern mentally against a few examples — would it false-positive on normal instructions?
+4. If the pattern is safe (low false-positive risk), add it to the appropriate category
+
+**Rules for pattern generation:**
+- Patterns must be **general enough** to catch variations but **specific enough** to avoid false positives
+- `\bfeels (arbitrary|wrong|off|unnecessary)\b` is good — catches a class of pushback
+- `\bfeels\b` alone is too broad — would match "it feels responsive"
+- Always use `\b` word boundaries to prevent partial matches
+- Test against the original message AND imagine 3 other messages — would they match correctly?
 
 ### Path 1: Write local learned rules (immediate effect)
 
@@ -237,7 +216,7 @@ Examples (project-specific defaults shown):
 
 **Output:** Classified learnings with rules and scope + list of learned rule files written.
 
-## Step 5: Check for patterns (mandatory for `patterns` mode)
+## Step 4: Check for patterns (mandatory for `patterns` mode)
 
 Read all session analysis files from `$LEARNINGS_DIR/sessions/` and `$GLOBAL_LEARNINGS_DIR/sessions/`.
 
@@ -267,11 +246,11 @@ Save the pattern to `$LEARNINGS_DIR/patterns/{pattern-id}.json`.
 
 **Output:** Pattern table with proposed changes.
 
-## Step 6: Path 2 — Propose upstream PR (when patterns reach threshold)
+## Step 5: Path 2 — Propose upstream PR (when patterns reach threshold)
 
 When a pattern has 5+ instances, OR the user approves a 3+ instance pattern, OR a learned rule contradicts a marketplace rule — propose a PR against the marketplace repo to share the improvement.
 
-### 6a. Draft the change
+### 5a. Draft the change
 
 Determine what needs to change in the marketplace:
 
@@ -279,10 +258,10 @@ Determine what needs to change in the marketplace:
 |---|---|
 | Repeated correction about approach | New rule in the relevant plugin's `rules/` directory |
 | Pattern in a specific agent's domain | Update to the agent definition or skill |
-| Regex pattern that catches a new class of correction | Update to `scripts/classify-message.py` seed patterns |
+| Regex pattern that catches a new class of correction | Update to `scripts/analyse-session.py` seed patterns |
 | Learned rule that should be shared | Move from `$RULES_DIR/learned--*.md` to the marketplace plugin's `rules/` |
 
-### 6b. Present to user for approval
+### 5b. Present to user for approval
 
 ```markdown
 ### Proposed upstream change
@@ -302,7 +281,7 @@ Determine what needs to change in the marketplace:
 Submit as PR? (Y/n)
 ```
 
-### 6c. Create the PR
+### 5c. Create the PR
 
 If approved:
 

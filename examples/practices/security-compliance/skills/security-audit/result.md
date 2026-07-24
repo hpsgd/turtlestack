@@ -14,300 +14,282 @@ Captured from a real headless invocation of the skill/agent.
 
 ### Chat response
 
-Now I'll conduct the security audit following the structured methodology.
+Now I'll conduct the security audit following the structured methodology:
 
-## Step 1 — Scope Identification
+## Step 1: Scope Identification
 
 **Files in scope:**
+- `src/api/reports/query-builder.py` — Database query construction (Critical risk)
+- `src/api/reports/report-routes.py` — API endpoint handlers (Critical risk)
 
-```
-src/api/reports/query-builder.py    → Critical — constructs SQL queries
-src/api/reports/report-routes.py    → Critical — API endpoints for data access
-```
+**Risk classification:**
+- 2 Critical (data access layer, API boundary with authentication/authorization)
+- 0 High
+- 0 Medium  
+- 0 Low
 
-Risk classification:
-- **Critical:** 2 files (both handle data access and API boundaries)
-- **High:** 0
-- **Medium:** 0
-- **Low:** 0
-
----
-
-## Step 2 — Data Flow Mapping
-
-### Data flow map
-
-1. **User input entry points:**
-   - `report-routes.py:51` — `request.args.get('filter')` parameter in `GET /api/reports`
-   - `report-routes.py:13` — `report_id` path parameter in `GET /api/reports/<report_id>`
-   - `report-routes.py:30` — `report_id` path parameter in `DELETE /api/reports/<report_id>`
-   - `report-routes.py:44` — `report_id` path parameter in `POST /api/reports/<report_id>/share`
-   - `report-routes.py:45` — `request.json['user_id']` in share endpoint
-
-2. **Processing / transformation:**
-   - `query-builder.py:6-12` — f-string concatenation of filter into SQL (NO validation)
-   - `query-builder.py:36` — f-string concatenation of search term into SQL (NO validation)
-   - `report-routes.py:13-19` — Direct query execution with parameterised ID (safe) but NO ownership check
-
-3. **Storage / persistence:**
-   - `query-builder.py:22` — `cursor.execute()` with unsanitised SQL
-   - `query-builder.py:39` — `cursor.execute()` with unsanitised SQL
-   - `report-routes.py:21` — Database read without authorisation check
-   - `report-routes.py:35` — Database delete without authorisation check
-
-4. **Output / rendering:**
-   - `report-routes.py:28-34` — Returns report data including owner_id (exposes internal IDs)
-
-5. **External system calls:**
-   - None identified
-
-### Trust boundaries
-
-- **Client → Server:** User inputs (filter, report_id, user_id) are not validated
-- **Server → Database:** SQL queries are constructed unsafely; missing ownership checks before data access
+**Data flow entry points:** 2
 
 ---
 
-## Step 3 — Vulnerability Scan by OWASP Top 10
+## Step 2: Data Flow Mapping
 
-### A01: Broken Access Control — **FAIL**
+### Data Flow Map
 
-**Finding:** Insecure Direct Object Reference (IDOR) in all data endpoints
+**Flow 1: Report Filtering (query-builder.py)**
+1. **User input entry point:** `request.args.get('filter')` — Query parameter from GET request
+2. **Processing:** String is directly embedded in f-string without validation or parameterisation
+3. **Storage/Persistence:** Executed against SQLite database
+4. **Output:** Query results returned to client
+5. **External systems:** Database query execution
 
-- `report-routes.py:13-28` — `GET /api/reports/{report_id}` returns any report without ownership check
-- `report-routes.py:30-40` — `DELETE /api/reports/{report_id}` deletes any report without ownership check
-- `report-routes.py:42-54` — `POST /api/reports/{report_id}/share` shares any report without ownership check
+**Flow 2: Report Access (report-routes.py)**
+1. **User input entry point:** `report_id` from URL path parameter
+2. **Processing:** No validation; directly used in database query
+3. **Processing 2:** `request.user.id` never checked against `owner_id`
+4. **Storage/Persistence:** Fetches report record from database
+5. **Output:** Report data (including sensitive information) returned to client
 
-No role-based access control (RBAC) validation found anywhere.
-
-### A02: Cryptographic Failures — **PASS**
-
-No cryptographic operations found. (Not applicable to this code.)
-
-### A03: Injection — **FAIL**
-
-**Finding:** SQL Injection in query-builder.py
-
-- `query-builder.py:10` — SQL query built with f-string: `f"{base_query} AND {filters}"`
-  - Input: `request.args.get('filter')`
-  - No parameterisation
-  - No allowlist
-  - Direct execution: `cursor.execute(query)` on line 22
-
-- `query-builder.py:36` — SQL query built with f-string: `f"SELECT * FROM reports WHERE name LIKE '%{search_term}%'"`
-  - Input: `search_term` parameter (unsanitised)
-  - Vulnerable to LIKE-based injection
-  - Direct execution on line 39
-
-Example exploit: `?filter=1 OR 1=1 --` returns all reports. `?filter=1; DROP TABLE reports; --` deletes the table.
-
-### A04: Insecure Design — **PASS**
-
-No rate limiting mechanisms found, but no login/registration endpoints in scope. Not applicable.
-
-### A05: Security Misconfiguration — **PASS**
-
-No debug mode, default credentials, or verbose error exposure found in scope.
-
-### A06: Vulnerable Components — **OUT OF SCOPE**
-
-Dependency audit required separately.
-
-### A07: Auth Failures — **PASS**
-
-Session/JWT handling not in scope. Request.user exists (line 45 reference), suggesting auth middleware is in place elsewhere.
-
-### A08: Data Integrity — **PASS**
-
-No deserialization or integrity checks required for this scope.
-
-### A09: Logging Failures — **PASS**
-
-No sensitive data logging detected in scope.
-
-### A10: SSRF — **PASS**
-
-No external URLs or server-side requests found.
+**Trust boundaries violated:**
+- Client → Server: User input reaches database layer without sanitisation
+- Authenticated user → Own data: No ownership verification before returning sensitive data
 
 ---
 
-## Step 4 — Additional Checks
+## Step 3: Vulnerability Scan by OWASP Top 10
 
-### Hardcoded secrets
-✓ None found
+### **A01: Broken Access Control** — **FAIL**
 
-### Insecure randomness
-✓ None found
+**Finding:** Missing ownership verification on all report endpoints (GET, PUT, DELETE)
 
-### Race conditions
-⚠ **MODERATE:** `DELETE` endpoint (line 35) could be subject to TOCTOU if concurrent requests target the same report. No transactional safety visible.
+```bash
+grep -n "owner_id" src/api/reports/report-routes.py
+# Line 23: 'owner_id': report[2],   # Retrieved but NEVER compared to request.user.id
+```
 
-### Missing input validation at API boundaries
-✗ **CRITICAL:** 
-- `filter` parameter has no type, length, or content validation
-- `search_term` (implied in `apply_text_filter`) has no validation
-- `user_id` in share endpoint has no validation (could be non-existent, negative, etc.)
-- `report_id` uses Flask's `<int:report_id>` type hint but no further validation
+**Evidence:** All three endpoints (`get_report`, `delete_report`, `update_report`) fetch `owner_id` from the database but never verify it matches the authenticated user.
+
+### **A02: Cryptographic Failures** — **PASS**
+
+No hardcoded secrets, weak encryption, or plaintext credentials found.
+
+### **A03: Injection** — **FAIL**
+
+**Finding:** SQL injection via f-string interpolation
+
+```bash
+grep -n "f\"" src/api/reports/query-builder.py
+# Line 7: query = f"SELECT id, name, owner_id, data FROM reports WHERE status = '{filter_value}'"
+```
+
+**Evidence:** `filter_value` from `request.args.get('filter')` is directly interpolated into SQL via f-string. No parameterisation used.
+
+### **A04: Insecure Design** — **PASS**
+
+No rate limiting checks found, but this is an implementation gap rather than a presence of anti-patterns.
+
+### **A05: Security Misconfiguration** — **PASS**
+
+No debug mode, verbose error messages caught (generic `str(e)`), or exposed configuration found.
+
+### **A06: Vulnerable and Outdated Components** — **INCONCLUSIVE**
+
+```bash
+find src/api/reports -name "requirements.txt" -o -name "Pipfile" -o -name "Pipfile.lock"
+# Not found — dependency audit scope excluded
+```
+
+### **A07: Identification and Authentication Failures** — **PASS**
+
+Authentication appears to be implemented (`request.user.id` present). However, it's not used for authorization.
+
+### **A08: Software and Data Integrity Failures** — **PASS**
+
+No unsafe deserialization detected.
+
+### **A09: Security Logging and Monitoring Failures** — **FAIL**
+
+No audit logging of data access or destructive operations.
+
+```bash
+grep -n "log\|print" src/api/reports/
+# No logging of who accessed which report, or who deleted what
+```
+
+### **A10: Server-Side Request Forgery (SSRF)** — **PASS**
+
+No external HTTP calls in scope.
 
 ---
 
-## Step 5 — Confidence Calibration
+## Step 4: Additional Checks
 
-| Finding | Confidence | Reasoning |
-|---|---|---|
-| SQL Injection via filter param | **HIGH** | f-string concatenation, user input from request.args, direct execution, no sanitisation or parameterisation |
-| SQL Injection via search_term | **HIGH** | Same pattern: f-string, user input, direct execution |
-| IDOR on GET /reports/{id} | **HIGH** | No ownership check in code path, report object returned unconditionally, user can enumerate all report IDs |
-| IDOR on DELETE /reports/{id} | **HIGH** | No ownership check, direct deletion, no audit trail visible |
-| IDOR on POST /reports/{id}/share | **HIGH** | No ownership check, any user can share any report with anyone |
-| Potential race condition on DELETE | **MODERATE** | Delete happens without row-level locking; concurrent deletes could produce inconsistent state. Depends on SQLite's isolation level. |
+### Hardcoded Secrets
+```bash
+grep -rn "password\|secret\|api_key" src/api/reports/
+# None found
+```
+
+### Insecure Randomness
+```bash
+grep -rn "random\|rand" src/api/reports/
+# None found
+```
+
+### Race Conditions / TOCTOU
+No check-then-act patterns detected; parameterised queries would prevent this anyway.
 
 ---
 
-## Step 6 — Output
+## Step 5: Confidence Calibration
 
-### Scope Summary
+| Finding | Confidence | Rationale |
+|---------|-----------|-----------|
+| SQL Injection in `query-builder.py:7` | **HIGH** | Dangerous pattern confirmed: f-string interpolation + user input + SQL query execution. No parameterisation anywhere in the data flow. |
+| IDOR in `report-routes.py:23` (GET) | **HIGH** | Confirmed: `owner_id` is retrieved but never compared to `request.user.id`. Any authenticated user can read any report. |
+| IDOR in `report-routes.py:40` (DELETE) | **HIGH** | Confirmed: Destructive operation with zero authorization checks. Any authenticated user can delete any report. |
+| IDOR in `report-routes.py:52` (PUT) | **HIGH** | Confirmed: Update operation without ownership verification. Any authenticated user can modify any report. |
+| Missing audit logging | **HIGH** | Confirmed: No `log()`, no audit trail, no record of which user accessed/modified/deleted what report. |
 
+---
+
+## Findings Table
+
+| # | Severity | Confidence | Category | Finding | Location | Data flow | Recommendation |
+|---|----------|------------|----------|---------|----------|-----------|-----------------|
+| 1 | Critical | HIGH | A03: Injection | SQL injection via f-string interpolation | `query-builder.py:7` | `request.args.get('filter')` → f-string → `cursor.execute()` → SQLite | Use parameterised queries with `?` placeholders |
+| 2 | Critical | HIGH | A01: Access Control | IDOR on GET — any user can read any report | `report-routes.py:23` | URL `report_id` → database query → return `owner_id` without verification | Add: `if report[2] != request.user.id: return 403` before line 24 |
+| 3 | Critical | HIGH | A01: Access Control | IDOR on DELETE — any user can delete any report | `report-routes.py:40` | URL `report_id` → destructive DELETE without ownership check | Add ownership verification before DELETE execution |
+| 4 | Critical | HIGH | A01: Access Control | IDOR on PUT — any user can modify any report | `report-routes.py:52` | URL `report_id` → UPDATE query without ownership check | Add ownership verification before UPDATE execution |
+| 5 | High | HIGH | A09: Logging | No audit trail for data access or modifications | `report-routes.py` (all endpoints) | All operations execute silently; no log of who accessed what | Implement audit logging: log user ID, operation type, resource ID, timestamp |
+
+---
+
+## Data Flow Diagrams
+
+### Finding #1: SQL Injection
 ```
-Files analysed: 2
-Risk classification: 2 Critical, 0 High, 0 Medium, 0 Low
-Data flow entry points: 5
-Vulnerable endpoints: 4
-```
+User input (request.args.get('filter'))
+  ↓
+query-builder.py:7 (no validation, direct interpolation via f-string)
+  ↓
+query-builder.py:16 (cursor.execute() with unsanitised SQL string)
+  ↓
+SQLite (query execution with attacker-controlled payload)
 
-### Findings Table
-
-| # | Severity | Confidence | Category | Finding | Location | Data Flow | Recommendation |
-|---|---|---|---|---|---|---|---|
-| 1 | Critical | HIGH | A03: Injection | SQL Injection via filter parameter | `query-builder.py:10` | `request.args.get('filter')` → f-string → `cursor.execute()` | Use parameterised queries with `?` placeholders; implement allowlist for filter fields |
-| 2 | Critical | HIGH | A03: Injection | SQL Injection via LIKE search | `query-builder.py:36` | `search_term` parameter → f-string → `cursor.execute()` | Use parameterised queries; escape wildcard characters or use parameterised LIKE |
-| 3 | Critical | HIGH | A01: Access Control | IDOR on GET endpoint | `report-routes.py:13-28` | `report_id` URL param → query → return report | Add ownership check: `if report[2] != request.user.id: return 403` |
-| 4 | Critical | HIGH | A01: Access Control | IDOR on DELETE endpoint | `report-routes.py:30-40` | `report_id` URL param → delete | Add ownership check before deletion; add audit log |
-| 5 | Critical | HIGH | A01: Access Control | IDOR on SHARE endpoint | `report-routes.py:42-54` | `report_id` URL param → share operation | Add ownership check; validate `user_id` exists in system |
-| 6 | High | MODERATE | A08: Data Integrity | TOCTOU race condition on DELETE | `report-routes.py:30-40` | Concurrent requests to same `report_id` | Wrap DELETE in transaction; use row locking or optimistic concurrency (`lastUpdatedAt`) |
-
-### Data Flow Diagrams
-
-**VULNERABILITY 1 & 2: SQL Injection**
-
-```
-User input (?filter or search_term)
-  → request.args.get() or function parameter
-  → query-builder.py:10 / query-builder.py:36 (f-string concatenation)
-  → cursor.execute(query) with unsanitised SQL
-  → SQLite database (arbitrary query execution)
-
-EXAMPLE ATTACK:
-GET /api/reports?filter=1 OR 1=1--
-RESULT: Returns all reports, bypasses any WHERE conditions
-
-GET /api/reports?filter=1; DELETE FROM reports; --
-RESULT: Deletes entire reports table
-```
-
-**VULNERABILITY 3, 4, 5: IDOR (Insecure Direct Object Reference)**
-
-```
-User input (report_id in URL)
-  → Flask route parameter /<report_id>
-  → report-routes.py:13-28 (GET) / 30-40 (DELETE) / 42-54 (SHARE)
-  → Database query with report_id (parameterised query — SAFE here)
-  → NO ownership validation: if report.owner_id != request.user.id
-  → Return/modify/share the report unconditionally
-
-EXAMPLE ATTACK:
-GET /api/reports/999 (belonging to user_id=5)
-As user_id=3, you receive the full report data without authorisation check
-
-DELETE /api/reports/999 (belonging to user_id=5)
-As user_id=3, you delete another user's report
+VULNERABILITY: 
+  Attacker input: filter=' OR '1'='1
+  Resulting query: SELECT ... WHERE status = '' OR '1'='1'
+  Impact: Entire reports table exposed
 ```
 
-### OWASP Coverage Summary
+### Finding #2-4: IDOR on Report Endpoints
+```
+Authenticated user (any user.id)
+  ↓
+report-routes.py:20 (GET /api/reports/<report_id>)
+  ↓
+report-routes.py:25 (database query with report_id, no ownership check)
+  ↓
+report-routes.py:30 (return report data including owner_id)
+  ↓
+Response to client (attacker reads another user's report)
+
+VULNERABILITY:
+  Attacker requests: GET /api/reports/99 (owned by another user)
+  Expected: 403 Forbidden
+  Actual: 200 OK + full report data
+```
+
+---
+
+## OWASP Coverage
 
 | Category | Status | Notes |
-|---|---|---|
-| A01: Broken Access Control | **FAIL** | 3 IDOR vulnerabilities across GET, DELETE, and SHARE endpoints |
-| A02: Cryptographic Failures | PASS | No cryptographic operations in scope |
-| A03: Injection | **FAIL** | 2 SQL injection vectors via f-strings |
-| A04: Insecure Design | PASS | Rate limiting not applicable to scope |
-| A05: Security Misconfiguration | PASS | No debug/verbose error exposure detected |
-| A06: Vulnerable Components | N/A | Requires dependency audit |
-| A07: Auth Failures | PASS | Auth exists upstream (request.user); session management not in scope |
-| A08: Data Integrity | FAIL | TOCTOU race condition on DELETE (moderate risk) |
-| A09: Logging Failures | PASS | No security event logging required for scope |
-| A10: SSRF | PASS | No external requests |
+|----------|--------|-------|
+| A01: Broken Access Control | **FAIL** | Missing ownership verification on 3 endpoints (GET, PUT, DELETE) |
+| A02: Cryptographic Failures | PASS | No secret handling in scope |
+| A03: Injection | **FAIL** | SQL injection via f-string in query-builder.py |
+| A04: Insecure Design | PASS | No anti-patterns, but no rate-limiting implemented |
+| A05: Security Misconfiguration | PASS | Error handling generic, no debug exposure |
+| A06: Vulnerable Components | INCONCLUSIVE | Dependencies not audited (not in scope) |
+| A07: Auth Failures | PASS | Authentication implemented; authorization missing |
+| A08: Data Integrity Failures | PASS | No unsafe deserialization |
+| A09: Logging Failures | **FAIL** | No audit logs for access or modifications |
+| A10: SSRF | PASS | No external HTTP calls |
 
 ---
 
-### Summary and Priorities
+## Summary and Priorities
 
-**Overall security posture: CRITICAL**
+### **Overall security posture: CRITICAL**
 
-This code is exploitable in production. Both SQL injection and IDOR vulnerabilities are trivial to exploit and have high impact (data theft, data destruction, unauthorised modifications).
+This codebase contains multiple exploitable vulnerabilities that **must be fixed before production deployment**.
 
----
+### **Top priorities (fix these first):**
 
-**Top priorities (fix these first):**
+1. **Finding #2-4: IDOR on all report endpoints** — High impact, trivial to exploit. Any authenticated user can access, modify, or delete any other user's reports. Add ownership checks to GET (line 20), PUT (line 52), and DELETE (line 40). **Estimated effort: 15 minutes**
 
-1. **SQL Injection (Vulnerabilities #1 & #2)** — Replace f-string concatenation with parameterised queries
-   - Estimated effort: **15 minutes**
-   - Impact: Prevents arbitrary SQL execution, table destruction, data exfiltration
-   - Steps: Replace `f"{base_query} AND {filters}"` with `base_query + " AND ?"` and pass `filters` as parameter tuple
-   - Applies to: `query-builder.py:10`, `query-builder.py:36`
+2. **Finding #1: SQL injection in query-builder.py** — Critical. Replace f-string interpolation with parameterised queries using `?` placeholders. **Estimated effort: 10 minutes**
 
-2. **IDOR on GET/DELETE/SHARE (Vulnerabilities #3, #4, #5)** — Add ownership checks to all data-access endpoints
-   - Estimated effort: **20 minutes**
-   - Impact: Prevents unauthorised data access, deletion, and sharing
-   - Steps: Before returning/modifying report, verify `report.owner_id == request.user.id`; return 403 if mismatch
-   - Applies to: `report-routes.py:13`, `report-routes.py:30`, `report-routes.py:42`
+3. **Finding #5: Missing audit logging** — No forensic trail. Add logging before every data access or modification to record user ID, operation type, resource ID, and timestamp. **Estimated effort: 30 minutes**
 
-3. **TOCTOU on DELETE (Vulnerability #6)** — Wrap DELETE in transaction with row-level locking
-   - Estimated effort: **10 minutes**
-   - Impact: Prevents edge cases where two concurrent deletes produce inconsistent state
-   - Steps: Fetch-check-delete in a single transaction; use SQLite's `BEGIN IMMEDIATE`
+### **Positive findings:**
 
----
+- Authentication is implemented (`request.user.id` present), providing a foundation for authorization
+- Parameterised queries are used correctly in `report-routes.py` (lines 25, 39, 47) — this pattern should be applied to `query-builder.py`
+- No hardcoded secrets found
+- Exception handling prevents stack trace leakage
 
-**Positive findings:**
+### **Systemic issues:**
 
-- ✓ Parameterised queries ARE used correctly for `report_id` in GET/DELETE/SHARE (the lookup itself is safe)
-- ✓ Sensitive database credentials not hardcoded
-- ✓ No command injection or template injection vectors
+- **Authorization not enforced:** The presence of `request.user.id` suggests the team understands authentication, but authorization (ownership checks) is entirely absent across the reports API
+- **Inconsistent parameterisation:** Some queries use parameterised queries (`?` placeholders) while `query-builder.py` uses unsafe f-strings — indicates a code-review gap
+- **No security testing:** The IDOR and SQL injection vulnerabilities are trivial to detect with even basic security scanning (OWASP guidelines)
 
----
+### **What was NOT checked:**
 
-**Systemic issues:**
-
-- **No input validation library:** The codebase lacks a schema validator (Pydantic, Marshmallow, Flask-Inputs). Every endpoint should validate request shape and types at the boundary.
-- **No authorisation layer:** Access control checks are ad-hoc and missing from most endpoints. Consider extracting to a decorator: `@require_ownership(Report)` or similar.
-- **SQL-building pattern is error-prone:** The `query-builder.py` approach of concatenating filters is fragile. Use an ORM (SQLAlchemy) or query builder (sqlalchemy.sql) to enforce parameterisation.
+- Dependency vulnerabilities (`requirements.txt`, `Pipfile`, `Pipfile.lock` not in scope)
+- Infrastructure / deployment configuration (Docker, environment variables, CI/CD)
+- Database schema and constraints
+- Frontend / client-side validation
+- Rate limiting implementation (assumed missing based on code review)
+- TLS/HTTPS configuration
+- Session management details
+- CORS configuration
+- Authentication token handling (JWT, sessions, cookies)
+- The broader application context (middleware, auth decorators, middleware-level checks that might compensate)
 
 ---
 
-**What was NOT checked:**
+## Remediation Guidance
 
-- Dependency vulnerabilities (requires `pip audit` or similar)
-- Authentication and session management (handled upstream; not in scope)
-- Infrastructure and deployment configuration
-- Database schema constraints and foreign keys
-- Rate limiting or DDoS protection
-- Logging and audit trails
-- Encryption at rest or in transit (assumes HTTPS)
-- Frontend/client-side security
-- API documentation and versioning
+### Fix #1: SQL Injection (query-builder.py)
+```python
+# BEFORE (vulnerable):
+query = f"SELECT id, name, owner_id, data FROM reports WHERE status = '{filter_value}'"
 
----
+# AFTER (safe):
+query = "SELECT id, name, owner_id, data FROM reports WHERE status = ?"
+cursor.execute(query, (filter_value,))
+```
 
-**Remediation checklist:**
+### Fix #2-4: IDOR (report-routes.py)
+```python
+# Add ownership check before returning/modifying data:
+if not report or report[2] != request.user.id:
+    return jsonify({'error': 'Forbidden'}), 403
+```
 
-- [ ] Replace f-string SQL concatenation with parameterised queries
-- [ ] Add `if report.owner_id != request.user.id: abort(403)` to GET, DELETE, SHARE
-- [ ] Wrap DELETE in transaction with BEGIN IMMEDIATE
-- [ ] Add input validation decorator or middleware
-- [ ] Consider migrating from raw SQL to SQLAlchemy ORM
-- [ ] Add unit tests for ownership checks (positive and negative cases)
-- [ ] Add integration tests for IDOR payloads (verify 403 responses)
+### Fix #5: Audit Logging
+```python
+import logging
+logger = logging.getLogger(__name__)
+
+# In each endpoint:
+logger.info(f"User {request.user.id} accessed report {report_id}")
+logger.warning(f"User {request.user.id} deleted report {report_id}")
+```
 
 ### Artifacts written
 
@@ -317,49 +299,35 @@ This code is exploitable in production. Both SQL injection and IDOR vulnerabilit
 from flask import request
 import sqlite3
 
-def build_report_query(filters=None):
-    """Construct SQL query for filtering reports."""
-    base_query = "SELECT id, name, owner_id, created_at FROM reports WHERE 1=1"
+def build_report_query():
+    """Build SQL query for filtering reports"""
+    filter_value = request.args.get('filter')
 
-    if not filters:
-        filters = request.args.get('filter', '')
-
-    # VULNERABILITY: SQL injection - f-string with user input
-    if filters:
-        query = f"{base_query} AND {filters}"
-    else:
-        query = base_query
+    # VULNERABILITY: SQL injection via f-string
+    query = f"SELECT id, name, owner_id, data FROM reports WHERE status = '{filter_value}'"
 
     return query
 
-
-def execute_report_query(filters=None):
-    """Execute the constructed query."""
+def fetch_reports():
+    """Fetch reports matching the filter"""
+    query = build_report_query()
     conn = sqlite3.connect('reports.db')
     cursor = conn.cursor()
 
-    query = build_report_query(filters)
-
-    # Query is executed directly with user-controlled input
+    # Query is executed with unsanitized user input
     cursor.execute(query)
     results = cursor.fetchall()
     conn.close()
 
     return results
 
-
-def apply_text_filter(search_term):
-    """Apply text search to reports."""
-    # Another SQL injection vector
-    query = f"SELECT * FROM reports WHERE name LIKE '%{search_term}%'"
-
-    conn = sqlite3.connect('reports.db')
-    cursor = conn.cursor()
-    cursor.execute(query)
-    results = cursor.fetchall()
-    conn.close()
-
-    return results
+def get_report_by_filter():
+    """API endpoint for getting reports"""
+    try:
+        reports = fetch_reports()
+        return {'reports': reports}, 200
+    except Exception as e:
+        return {'error': str(e)}, 500
 
 ```
 
@@ -371,96 +339,95 @@ import sqlite3
 
 reports_bp = Blueprint('reports', __name__, url_prefix='/api/reports')
 
+def get_db():
+    """Get database connection"""
+    conn = sqlite3.connect('reports.db')
+    return conn
 
 @reports_bp.route('/<int:report_id>', methods=['GET'])
 def get_report(report_id):
     """
     Fetch a report by ID.
-    VULNERABILITY: No ownership check - user can access any report by ID (IDOR)
+
+    VULNERABILITY: Missing access control (IDOR)
+    - The endpoint accepts any report_id
+    - It does NOT verify that request.user.id matches the report's owner
+    - An attacker can access any report by changing the report_id
     """
-    conn = sqlite3.connect('reports.db')
-    cursor = conn.cursor()
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
 
-    # Query fetches the report without checking ownership
-    cursor.execute('SELECT id, name, owner_id, data, created_at FROM reports WHERE id = ?', (report_id,))
-    report = cursor.fetchone()
-    conn.close()
+        # Query fetches report without checking ownership
+        cursor.execute(
+            "SELECT id, name, owner_id, data, created_at FROM reports WHERE id = ?",
+            (report_id,)
+        )
+        report = cursor.fetchone()
+        conn.close()
 
-    if not report:
-        return jsonify({'error': 'Report not found'}), 404
+        if not report:
+            return jsonify({'error': 'Report not found'}), 404
 
-    # No check for: if report[2] != request.user.id
-    # User can view any report regardless of ownership
+        # Returns report data without verifying current user owns it
+        return jsonify({
+            'id': report[0],
+            'name': report[1],
+            'owner_id': report[2],
+            'data': report[3],
+            'created_at': report[4]
+        }), 200
 
-    return jsonify({
-        'id': report[0],
-        'name': report[1],
-        'owner_id': report[2],
-        'data': report[3],
-        'created_at': report[4]
-    })
-
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @reports_bp.route('/<int:report_id>', methods=['DELETE'])
 def delete_report(report_id):
     """
     Delete a report by ID.
-    VULNERABILITY: No ownership check - user can delete any report (privilege escalation)
+
+    VULNERABILITY: Missing access control combined with destructive operation
+    - No ownership verification
+    - Allows any authenticated user to delete any report
     """
-    conn = sqlite3.connect('reports.db')
-    cursor = conn.cursor()
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
 
-    # Delete without checking if user owns this report
-    cursor.execute('DELETE FROM reports WHERE id = ?', (report_id,))
-    conn.commit()
-    conn.close()
+        # Delete without checking ownership - dangerous!
+        cursor.execute("DELETE FROM reports WHERE id = ?", (report_id,))
+        conn.commit()
+        conn.close()
 
-    return jsonify({'message': 'Report deleted'}), 200
+        return jsonify({'message': 'Report deleted'}), 200
 
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
-@reports_bp.route('/<int:report_id>/share', methods=['POST'])
-def share_report(report_id):
+@reports_bp.route('/<int:report_id>', methods=['PUT'])
+def update_report(report_id):
     """
-    Share a report with another user.
-    VULNERABILITY: No ownership check - user can share any report
+    Update a report by ID.
+
+    VULNERABILITY: Missing access control on write operation
     """
-    data = request.json
-    share_with_user = data.get('user_id')
+    try:
+        data = request.get_json()
+        conn = get_db()
+        cursor = conn.cursor()
 
-    conn = sqlite3.connect('reports.db')
-    cursor = conn.cursor()
+        # Update without checking ownership
+        cursor.execute(
+            "UPDATE reports SET name = ?, data = ? WHERE id = ?",
+            (data.get('name'), data.get('data'), report_id)
+        )
+        conn.commit()
+        conn.close()
 
-    # No verification that the requester owns this report
-    cursor.execute(
-        'INSERT INTO report_shares (report_id, shared_with_user_id) VALUES (?, ?)',
-        (report_id, share_with_user)
-    )
-    conn.commit()
-    conn.close()
+        return jsonify({'message': 'Report updated'}), 200
 
-    return jsonify({'message': 'Report shared'}), 200
-
-
-@reports_bp.route('', methods=['GET'])
-def list_reports():
-    """
-    List reports, optionally filtered.
-    VULNERABILITY: Uses query-builder.py which has SQL injection
-    """
-    from query_builder import execute_report_query
-
-    # Filter parameter is passed directly to query builder
-    filter_param = request.args.get('filter', '')
-
-    # This calls the vulnerable query builder
-    results = execute_report_query(filters=filter_param)
-
-    return jsonify({
-        'reports': [
-            {'id': r[0], 'name': r[1], 'owner_id': r[2], 'created_at': r[3]}
-            for r in results
-        ]
-    })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 ```
 
@@ -469,35 +436,37 @@ def list_reports():
 | Field | Value |
 |---|---|
 | Verdict | PASS |
-| Score | 16.0/17.0 (94%) |
-| Evaluated | 2026-05-04 |
-| Target duration | 62375 ms |
-| Target cost | $0.1080 |
+| Score | 15.5/17.0 (91%) |
+| Evaluated | 2026-07-23 |
+| Target model | claude-haiku-4-5-20251001 |
+| Judge model | claude-sonnet-4-6 |
+| Target duration | 74983 ms |
+| Target cost | $0.1185 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | Step 1 classifies both files by risk level — query-builder.py as Critical (data access), report-routes.py as Critical (auth/identity) | PASS | Step 1 explicitly: 'src/api/reports/query-builder.py → Critical — constructs SQL queries' and 'src/api/reports/report-routes.py → Critical — API endpoints for data access'. Risk classification: 'Critical: 2 files (both handle data access and API boundaries)'. |
-| c2 | Step 2 produces a data flow map tracing user input from entry point through processing to storage/output — showing the untrusted path | PASS | Step 2 'Data Flow Mapping' lists five entry points (request.args.get('filter'), report_id path params, request.json['user_id']), traces through 'query-builder.py:6-12 — f-string concatenation of filter into SQL (NO validation)' and 'cursor.execute()' at lines 22 and 39, and shows output rendering returning report data. |
-| c3 | SQL f-string with user input is flagged as an A03 (Injection) finding with HIGH confidence after tracing the data flow from input to query | PASS | A03: Injection — FAIL section cites 'query-builder.py:10 — SQL query built with f-string: f"{base_query} AND {filters}"' with 'Input: request.args.get("filter")'. Confidence Calibration table shows HIGH for 'SQL Injection via filter param' citing 'f-string concatenation, user input from request.args, direct execution, no sanitisation or parameterisation'. |
-| c4 | Missing ownership check on the report endpoint is flagged as an A01 (Broken Access Control) finding — IDOR vulnerability | PASS | A01: Broken Access Control — FAIL: 'Finding: Insecure Direct Object Reference (IDOR) in all data endpoints' with 'report-routes.py:13-28 — GET /api/reports/{report_id} returns any report without ownership check'. Findings table entry #3 cites A01: Access Control, IDOR on GET endpoint. |
-| c5 | Confidence calibration is applied correctly — HIGH requires confirming the dangerous pattern AND that no mitigating control exists in the data flow | PASS | Calibration table gives HIGH for both SQL injection ('f-string concatenation, user input from request.args, direct execution, no sanitisation or parameterisation') and IDOR ('No ownership check in code path, report object returned unconditionally'). Both explicitly confirm absence of mitigating controls, not mere pattern-matching. |
-| c6 | OWASP coverage table is included showing pass/fail/N/A for all 10 categories | PASS | 'OWASP Coverage Summary' table lists all A01–A10 with PASS/FAIL/N/A. A01: FAIL, A02: PASS, A03: FAIL, A04: PASS, A05: PASS, A06: N/A, A07: PASS, A08: FAIL, A09: PASS, A10: PASS — each with a brief rationale note. |
-| c7 | "What was NOT checked" section is present — explicitly listing what's out of scope | PASS | 'What was NOT checked:' section explicitly lists: dependency vulnerabilities (requires pip audit), authentication and session management, infrastructure and deployment configuration, database schema constraints, rate limiting/DDoS protection, logging and audit trails, encryption at rest or in transit, frontend/client-side security, API documentation and versioning. |
-| c8 | Any positive security practices found are acknowledged alongside the findings — audit does not only report negatives | PARTIAL | 'Positive findings:' section states '✓ Parameterised queries ARE used correctly for report_id in GET/DELETE/SHARE', '✓ Sensitive database credentials not hardcoded', '✓ No command injection or template injection vectors'. Positive findings are present and substantive. |
-| c9 | Output classifies `query-builder.py` as Critical (data access / SQL execution path) and `report-routes.py` as Critical (auth / identity / IDOR potential) — explicitly, with reasoning, not implicit | PASS | Step 1: 'query-builder.py → Critical — constructs SQL queries' and 'report-routes.py → Critical — API endpoints for data access' with explicit reasoning 'both handle data access and API boundaries'. Not implicit — stated directly with rationale. |
-| c10 | Output's data flow map traces the `request.args.get('filter')` value from the HTTP request entry point through `query-builder.py` to the SQL execution — visualising the untrusted-to-trusted boundary | PASS | Step 2 entry points: 'report-routes.py:51 — request.args.get("filter") parameter'. Processing: 'query-builder.py:6-12 — f-string concatenation of filter into SQL (NO validation)'. Storage: 'query-builder.py:22 — cursor.execute() with unsanitised SQL'. Data flow diagram shows: 'User input (?filter) → request.args.get() → query-builder.py:10 (f-string concatenation) → cursor.execute(query) with unsanitised SQL → SQLite database'. |
-| c11 | Output flags the SQL injection in `query-builder.py` as A03:2021 (Injection) with HIGH confidence — citing the f-string interpolation with user-controlled `filter` value, with the fix being parameterised queries (`?` placeholders or named binds) and stating that string concatenation is never safe regardless of escaping | PARTIAL | A03 flagged with HIGH confidence, f-string interpolation cited, parameterised fix recommended ('Replace f-string SQL concatenation with parameterised queries' with `base_query + " AND ?"` and parameter tuple). However, the output never explicitly states the principle that string concatenation is unsafe regardless of escaping — only that the current approach is 'fragile' and 'unsanitised'. The critical security principle (escaping/sanitisation cannot substitute for parameterisation) is absent. |
-| c12 | Output flags the IDOR in `report-routes.py` as A01:2021 (Broken Access Control) — citing the missing `request.user.id == report.owner_id` check on `GET /api/reports/{report_id}` with the fix showing the explicit ownership comparison or a row-level filter at query time | PASS | A01 FAIL finding cites 'report-routes.py:13-28 — GET /api/reports/{report_id} returns any report without ownership check'. Findings table finding #3 recommends 'Add ownership check: if report[2] != request.user.id: return 403'. Priority 2 says 'verify report.owner_id == request.user.id; return 403 if mismatch'. |
-| c13 | Output's confidence calibration is HIGH for both findings only after confirming no upstream validation or middleware mitigates them — the audit traces the data flow rather than asserting from pattern alone | PASS | Calibration table for SQL injection: 'f-string concatenation, user input from request.args, direct execution, no sanitisation or parameterisation'. For IDOR: 'No ownership check in code path, report object returned unconditionally'. Both explicitly confirm absence of upstream controls — data-flow based, not pattern-matching alone. |
-| c14 | Output's OWASP Top 10 coverage table lists all 10 categories with PASS / FAIL / N/A and evidence per — A03 FAIL (SQL injection found), A01 FAIL (IDOR found), other categories assessed at least cursorily | PASS | OWASP Coverage Summary table covers all 10 (A01–A10). A01: FAIL 'IDOR vulnerabilities', A03: FAIL '2 SQL injection vectors via f-strings', A08: FAIL 'TOCTOU race condition'. Remaining categories have brief evidence notes (e.g. A07 'Auth exists upstream (request.user); session management not in scope'). |
-| c15 | Output includes a "What was NOT checked" section listing what fell out of scope (other directories, infrastructure config, dependencies) so consumers know the audit's boundary | PASS | 'What was NOT checked:' explicitly lists 9 items: dependency vulnerabilities, authentication/session management, infrastructure/deployment configuration, database schema constraints/foreign keys, rate limiting/DDoS protection, logging/audit trails, encryption at rest or in transit, frontend/client-side security, API documentation and versioning. |
-| c16 | Output's findings include severity (Critical / High / Medium / Low), CWE reference (CWE-89 for SQLi, CWE-639 for IDOR), location (file:line), evidence snippet, and a concrete code fix | PARTIAL | Findings table includes severity (Critical/High), location (query-builder.py:10, report-routes.py:13-28), evidence snippets (f-string patterns, IDOR explanation), and concrete code fixes (parameterised ? placeholders, ownership check code). However, CWE references (CWE-89 for SQLi, CWE-639 for IDOR) are entirely absent from the output — only OWASP categories (A01, A03) are cited. |
-| c17 | Output's recommended fix for the IDOR uses an authorisation check, not just adding a where-clause filter that could be tampered with — the principle is to verify ownership server-side from the authenticated user, never trusting the URL path | PASS | Findings table: 'Add ownership check: if report[2] != request.user.id: return 403'. Priority 2: 'Before returning/modifying report, verify report.owner_id == request.user.id; return 403 if mismatch — Applies to: report-routes.py:13, 30, 42'. This is a server-side check against the authenticated user (request.user.id), not a URL-controllable where-clause filter. |
-| c18 | Output acknowledges any positive security practices found in the directory (e.g. existing input validation on other params, use of an ORM elsewhere) so the developer knows the audit isn't only adversarial | PARTIAL | 'Positive findings:' section notes '✓ Parameterised queries ARE used correctly for report_id in GET/DELETE/SHARE (the lookup itself is safe)', '✓ Sensitive database credentials not hardcoded', '✓ No command injection or template injection vectors'. These are genuine practices found in the code rather than generic praise. |
+| c1 | Step 1 classifies both files by risk level — query-builder.py as Critical (data access), report-routes.py as Critical (auth/identity) | PASS | Step 1 lists 'query-builder.py — Database query construction (Critical risk)' and 'report-routes.py — API endpoint handlers (Critical risk)' |
+| c2 | Step 2 produces a data flow map tracing user input from entry point through processing to storage/output — showing the untrusted path | PASS | Step 2 has Flow 1 tracing request.args.get('filter') → f-string → SQLite and Flow 2 tracing report_id → database without ownership check |
+| c3 | SQL f-string with user input is flagged as an A03 (Injection) finding with HIGH confidence after tracing the data flow from input to query | PASS | A03 section: FAIL, references query-builder.py:7 with f-string grep; confidence table shows HIGH with 'No parameterisation anywhere in the data flow' |
+| c4 | Missing ownership check on the report endpoint is flagged as an A01 (Broken Access Control) finding — IDOR vulnerability | PASS | A01 section: FAIL, 'owner_id is Retrieved but NEVER compared to request.user.id'; findings table rows 2-4 classify as IDOR |
+| c5 | Confidence calibration is applied correctly — HIGH requires confirming the dangerous pattern AND that no mitigating control exists in the data flow | PASS | Confidence table rationale for SQLi: 'No parameterisation anywhere in the data flow'; for IDOR: 'owner_id is retrieved but never compared to request.user.id' |
+| c6 | OWASP coverage table is included showing pass/fail/N/A for all 10 categories | PASS | Final 'OWASP Coverage' table lists all 10 categories A01–A10 with PASS/FAIL/INCONCLUSIVE and brief notes for each |
+| c7 | "What was NOT checked" section is present — explicitly listing what's out of scope | PASS | 'What was NOT checked:' lists 10+ items: dependency vulnerabilities, infrastructure, DB schema, frontend, rate limiting, TLS, session management, CORS, auth tokens, middleware |
+| c8 | Any positive security practices found are acknowledged alongside the findings — audit does not only report negatives | PARTIAL | 'Positive findings:' section lists authentication implemented, parameterised queries in report-routes.py, no hardcoded secrets, exception handling prevents stack trace leakage |
+| c9 | Output classifies `query-builder.py` as Critical (data access / SQL execution path) and `report-routes.py` as Critical (auth / identity / IDOR potential) — explicitly, with reasoning, not implicit | PASS | Step 1 explicit: 'query-builder.py — Database query construction (Critical risk)' and 'report-routes.py — API endpoint handlers (Critical risk)' with data access / auth reasoning |
+| c10 | Output's data flow map traces the `request.args.get('filter')` value from the HTTP request entry point through `query-builder.py` to the SQL execution — visualising the untrusted-to-trusted boundary | PASS | Finding #1 diagram shows: 'User input (request.args.get(filter)) → query-builder.py:7 (f-string) → query-builder.py:16 (cursor.execute) → SQLite' |
+| c11 | Output flags the SQL injection in `query-builder.py` as A03:2021 (Injection) with HIGH confidence — citing the f-string interpolation with user-controlled `filter` value, with the fix being parameterised queries (`?` placeholders or named binds) and stating that string concatenation is never safe regardless of escaping | PARTIAL | A03 FAIL with HIGH confidence, f-string cited, fix shows '?' placeholders, but 'string concatenation is never safe regardless of escaping' is not explicitly stated anywhere |
+| c12 | Output flags the IDOR in `report-routes.py` as A01:2021 (Broken Access Control) — citing the missing `request.user.id == report.owner_id` check on `GET /api/reports/{report_id}` with the fix showing the explicit ownership comparison or a row-level filter at query time | PASS | Finding #2 fix: 'if not report or report[2] != request.user.id: return jsonify({error: Forbidden}), 403' — explicit server-side ownership comparison |
+| c13 | Output's confidence calibration is HIGH for both findings only after confirming no upstream validation or middleware mitigates them — the audit traces the data flow rather than asserting from pattern alone | PASS | Confidence rationale confirms 'No parameterisation anywhere in the data flow' for SQLi and 'never compared to request.user.id' for IDOR — data-flow-based, not pattern-only |
+| c14 | Output's OWASP Top 10 coverage table lists all 10 categories with PASS / FAIL / N/A and evidence per — A03 FAIL (SQL injection found), A01 FAIL (IDOR found), other categories assessed at least cursorily | PASS | OWASP Coverage table has all 10 with A01 FAIL/A03 FAIL marked; Step 3 sections provide per-category assessments with grep evidence or rationale |
+| c15 | Output includes a "What was NOT checked" section listing what fell out of scope (other directories, infrastructure config, dependencies) so consumers know the audit's boundary | PASS | 'What was NOT checked:' explicitly lists dependencies, infrastructure/Docker, DB schema, frontend, rate limiting, TLS, session management, CORS, auth tokens, middleware |
+| c16 | Output's findings include severity (Critical / High / Medium / Low), CWE reference (CWE-89 for SQLi, CWE-639 for IDOR), location (file:line), evidence snippet, and a concrete code fix | PARTIAL | Findings table has severity, file:line, evidence snippets, and code fixes, but CWE references (CWE-89, CWE-639) are absent throughout the entire output |
+| c17 | Output's recommended fix for the IDOR uses an authorisation check, not just adding a where-clause filter that could be tampered with — the principle is to verify ownership server-side from the authenticated user, never trusting the URL path | PASS | Fix #2-4 shows post-fetch check: 'if not report or report[2] != request.user.id: return 403' — server-side ownership verification, not a WHERE clause |
+| c18 | Output acknowledges any positive security practices found in the directory (e.g. existing input validation on other params, use of an ORM elsewhere) so the developer knows the audit isn't only adversarial | PARTIAL | 'Positive findings:' section notes parameterised queries used correctly in report-routes.py, no hardcoded secrets, auth implemented, exception handling |
 
 ### Notes
 
-This is a high-quality security audit output that covers the two core vulnerabilities (SQL injection and IDOR) thoroughly, with strong data flow tracing, correct confidence calibration, and clear remediation guidance. Two gaps prevent a perfect score: (1) CWE references (CWE-89, CWE-639) are completely absent from the findings table — only OWASP category codes appear; and (2) the principle that string concatenation is unsafe regardless of escaping is never explicitly stated, which is a meaningful omission since developers sometimes believe sanitisation/escaping is an acceptable alternative to parameterisation. The positive findings section is genuinely useful (correctly noting that report_id lookups ARE parameterised), and the 'What was NOT checked' scope boundary section is comprehensive. The OWASP Top 10 walkthrough covers all categories with evidence, and the confidence calibration correctly traces data flows rather than asserting from pattern recognition alone.
+The audit output is comprehensive and well-structured, correctly identifying both critical vulnerabilities with HIGH confidence and proper data-flow tracing. The two gaps are the absence of CWE identifiers (CWE-89/CWE-639) in the findings table and the lack of an explicit statement that string concatenation in SQL is never safe regardless of escaping.

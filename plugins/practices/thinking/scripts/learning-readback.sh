@@ -28,35 +28,6 @@ GLOBAL_LEARNINGS="${GLOBAL_LEARNINGS_DIR:-$HOME/.claude/$MARKETPLACE/learnings}"
 
 output=""
 
-# --- Recent correction signals (from classify-message.py) ---
-SIGNALS_FILE="$PROJECT_LEARNINGS/signals/pending.jsonl"
-if [ -f "$SIGNALS_FILE" ]; then
-    # Count recent corrections (last 24 hours)
-    RECENT_CORRECTIONS=$(python3 -c "
-import json, sys
-from datetime import datetime, timezone, timedelta
-cutoff = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
-corrections = []
-try:
-    with open('$SIGNALS_FILE') as f:
-        for line in f:
-            line = line.strip()
-            if not line: continue
-            d = json.loads(line)
-            if d.get('timestamp', '') > cutoff and d.get('type') in ('correction', 'frustration'):
-                corrections.append(d)
-except: pass
-if corrections:
-    print(f'Recent corrections ({len(corrections)} in last 24h):')
-    for c in corrections[-3:]:
-        print(f'  - [{c[\"type\"]}] {c.get(\"reason\", \"\")} ({c.get(\"prompt_preview\", \"\")[:80]})')
-" 2>/dev/null)
-
-    if [ -n "$RECENT_CORRECTIONS" ]; then
-        output="$output$RECENT_CORRECTIONS\n"
-    fi
-fi
-
 # --- Recent session learnings ---
 for learnings_dir in "$PROJECT_LEARNINGS/sessions" "$GLOBAL_LEARNINGS/sessions"; do
     [ -d "$learnings_dir" ] || continue

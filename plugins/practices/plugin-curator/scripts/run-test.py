@@ -657,7 +657,7 @@ _HOOK_ARTIFACT_PATHS = {
 """Workspace-relative paths populated entirely by hooks, not by skills.
 
 - `rules/` and `global-rules/` come from the SessionStart rule installer (~20 files per session)
-- `learnings/signals/pending.jsonl` comes from the UserPromptSubmit message classifier (one entry per prompt)
+- `learnings/signals/patterns.json` holds learned detection regexes read by the analyser
 - `learnings/sessions/<SESSION_ID>.json` comes from the SessionStart learning analyser
 
 Including these in snapshots adds ~1500 lines of noise to every result.md and obscures the skill's actual output. Skill output to learnings/global-learnings goes to other paths (memory files written by the /thinking:learning skill), which we still capture."""
@@ -670,7 +670,7 @@ def _snapshot_artifacts(workspace: Path) -> tuple[dict[str, str], dict[str, byte
     embedded inline in result.md; binary artifacts (PDFs, images, archives)
     get written next to result.md and linked from it.
 
-    Files written by hooks (rule installer, message classifier) are excluded —
+    Files written by hooks (rule installer, learning analyser) are excluded —
     they're session bootstrap, not skill output.
     """
     text_artifacts: dict[str, str] = {}

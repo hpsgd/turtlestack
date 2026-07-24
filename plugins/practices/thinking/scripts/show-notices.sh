@@ -7,8 +7,8 @@
 # additionalContext so the model can help action each notice. Records shown ids
 # in the seen-marker so they don't reappear.
 #
-# Sibling of check-plugin-versions.sh — same shape: silent on no-op, writes a
-# per-marketplace detail file on overflow, derives paths from env.
+# Silent on no-op, writes a per-marketplace detail file on overflow, derives
+# paths from env.
 #
 # Silent when nothing is unseen. Fails silent on errors (never blocks session
 # start — every error path exits 0).
@@ -60,8 +60,7 @@ DEBUG_LOG = os.path.join(STATE_DIR, "notices-debug.log")
 INSTALLED_PLUGINS = os.path.join(CONFIG_DIR, "plugins", "installed_plugins.json")
 NOTICES_PATH = os.path.join(PLUGIN_ROOT, "notices.json")
 
-# Detail file lands alongside check-plugin-versions' plugin-updates.md: project
-# scope when a project dir is set, user scope otherwise.
+# Detail file: project scope when a project dir is set, user scope otherwise.
 DETAIL_DIR = os.path.join(PROJECT_DIR, ".claude", MARKETPLACE) if PROJECT_DIR else STATE_DIR
 DETAIL_FILE = os.path.join(DETAIL_DIR, "notices.md")
 
@@ -138,7 +137,7 @@ def plugin_eligible(n):
 
 def has_footprint():
     # Evidence that this marketplace has done work on this machine before.
-    # Only the learning signals count — NOT directory existence and NOT
+    # Only analysed session records count — NOT directory existence and NOT
     # .claude/rules/ (install-rules.sh writes rules on every first run and would
     # false-positive a fresh install). The script's own files (notices-seen.json,
     # notices.md, notices-debug.log) live directly under <marketplace>/ and are
@@ -148,8 +147,6 @@ def has_footprint():
         scopes.append(os.path.join(PROJECT_DIR, ".claude", MARKETPLACE))
     for base in scopes:
         if glob.glob(os.path.join(base, "learnings", "sessions", "*.json")):
-            return True
-        if os.path.exists(os.path.join(base, "learnings", "signals", "pending.jsonl")):
             return True
     return False
 

@@ -1,3 +1,28 @@
 {
-  "notices": []
+  "notices": [
+    {
+      "id": "2026-07-native-auto-update",
+      "version": "3.7.0",
+      "severity": "info",
+      "plugin": "thinking",
+      "title": "Plugin version-drift check removed",
+      "message": "The SessionStart version-drift check (.claude/<marketplace>/plugin-updates.md) is gone. Claude Code now auto-updates marketplaces and plugins in the background by default; run '/plugin marketplace update' for a manual refresh. You can delete any leftover plugin-updates.md files."
+    },
+    {
+      "id": "2026-07-classifier-removed",
+      "version": "3.7.0",
+      "severity": "info",
+      "plugin": "thinking",
+      "title": "Real-time message classifier removed",
+      "message": "The UserPromptSubmit classifier and its signals queue are gone — Claude Code's native auto memory captures in-session corrections now, and /thinking:retrospective reads transcripts directly. You can delete leftover .claude/<marketplace>/learnings/signals/pending.jsonl files (patterns.json stays; it feeds the retrospective analyser)."
+    },
+    {
+      "id": "2026-07-adhd-output-style",
+      "version": "3.7.0",
+      "severity": "info",
+      "plugin": "adhd-mode",
+      "title": "adhd-mode now delivers via output style",
+      "message": "adhd-mode is now a native output style applied automatically while the plugin is enabled (no longer installed rules, no longer requires thinking). Stale installed copies of its old rule under .claude/rules/ are removed on next rule install."
+    }
+  ]
 }

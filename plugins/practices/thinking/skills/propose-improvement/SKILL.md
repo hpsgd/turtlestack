@@ -183,7 +183,7 @@ Map the learning to a file in the target marketplace repo:
 | New rule (process/convention) | `plugins/{category}/{plugin}/rules/{topic}.md` |
 | Skill update (methodology change) | `plugins/{category}/{plugin}/skills/{skill}/SKILL.md` |
 | Agent update (responsibility change) | `plugins/{category}/{plugin}/agents/{agent}.md` |
-| Regex pattern evolution | `scripts/classify-message.py` or `scripts/analyse-session.py` |
+| Regex pattern evolution | `scripts/analyse-session.py` |
 | Template improvement | `plugins/{category}/{plugin}/templates/{template}.md` |
 | Cross-cutting rule | `plugins/practices/coding-standards/rules/{topic}.md` |
 

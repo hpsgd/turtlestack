@@ -72,11 +72,22 @@ SEED_ACCEPTANCE = [
 
 
 def load_analysis_patterns(project_dir: str | None) -> dict[str, list[re.Pattern]]:
-    """Load seed patterns + any learned patterns from the project."""
+    """Load seed patterns + any learned patterns from the project.
+
+    Learned patterns live at .claude/<marketplace>/learnings/signals/patterns.json
+    (written by the retrospective skill). The marketplace segment is globbed so
+    the script stays marketplace-agnostic; $LEARNINGS_DIR overrides for tests.
+    """
     learned = {"correction": [], "approach_change": [], "acceptance": []}
 
+    candidates: list[Path] = []
+    env_dir = os.environ.get("LEARNINGS_DIR")
+    if env_dir:
+        candidates.append(Path(env_dir) / "signals" / "patterns.json")
     if project_dir:
-        patterns_file = Path(project_dir) / ".claude" / "learnings" / "signals" / "patterns.json"
+        candidates.extend(sorted(Path(project_dir).glob(".claude/*/learnings/signals/patterns.json")))
+
+    for patterns_file in candidates:
         if patterns_file.exists():
             try:
                 with open(patterns_file) as f:
@@ -481,11 +492,21 @@ def main():
                         default=os.environ.get("GLOBAL_LEARNINGS_DIR"),
                         help="Global learnings directory (default: $GLOBAL_LEARNINGS_DIR or ~/.claude/turtlestack/learnings/)")
     parser.add_argument("--json", action="store_true", help="Output raw JSON to stdout")
+    parser.add_argument("--dump-user-turns", action="store_true",
+                        help="Print every cleaned user message (numbered, one block per turn) and exit. "
+                             "Lets the retrospective review the actual messages rather than trusting "
+                             "regex extraction — regex-missed corrections stay visible.")
     args = parser.parse_args()
 
     if not os.path.exists(args.jsonl_path):
         print(json.dumps({"error": f"File not found: {args.jsonl_path}"}))
         sys.exit(1)
+
+    if args.dump_user_turns:
+        turns = extract_conversation_turns(parse_jsonl(args.jsonl_path))
+        for i, t in enumerate((t for t in turns if t["type"] == "user"), 1):
+            print(f"[{i}] {t['text']}")
+        return
 
     results = analyse_session(args.jsonl_path)
 

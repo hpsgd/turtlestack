@@ -65,24 +65,28 @@ Captured from a real headless invocation of the skill/agent.
 
 ### Chat response
 
-## Code Review — `views.py` — Password Reset Handler
+Here is the full review of `views.py`.
+
+---
+
+## Code Review — `views.py`: `request_password_reset`
+
+**Verdict: BLOCK** — one SQL injection blocker prevents approval regardless of other findings.
 
 ---
 
 ## Findings
 
----
-
 **Finding 1**
 **Severity**: BLOCKER | **Confidence**: HIGH | **File:Line**: `views.py:15`
 **Evidence**: `cursor.execute(f"SELECT id, username FROM auth_user WHERE email = '{email}'")`
-**Description**: Direct f-string interpolation of user-supplied input into a raw SQL query. An attacker can inject arbitrary SQL — dump tables, bypass authentication, or escalate to OS-level commands if `xp_cmdshell` is available.
+**Impact**: Attacker submits `' OR '1'='1` as email, returns the first row in the table. Submit `'; DROP TABLE auth_user; --` for full DDL access (database-user permitting). No exploit chaining required — this is directly reachable from the public internet.
 **Fix**:
 ```python
-# Option A — parameterised raw query
+# Option A — parameterised raw SQL
 cursor.execute("SELECT id, username FROM auth_user WHERE email = %s", [email])
 
-# Option B (preferred) — eliminate the raw query entirely
+# Option B — preferred: drop the raw query entirely
 try:
     user = User.objects.get(email=email)
 except User.DoesNotExist:
@@ -92,144 +96,159 @@ except User.DoesNotExist:
 ---
 
 **Finding 2**
-**Severity**: CRITICAL | **Confidence**: HIGH | **File:Line**: `views.py:26–28`
-**Evidence**: `for profile in user.linkedprofile_set.all(): profile.reset_token = token; profile.save()`
-**Description**: N+1 write pattern. Each loop iteration fires a separate `UPDATE` — one per linked profile. For a user with 100 linked profiles, this issues 100 round-trips to the database inside a single HTTP request.
+**Severity**: CRITICAL | **Confidence**: HIGH | **File:Line**: `views.py:19`
+**Evidence**: `return JsonResponse({'error': 'Email not found'}, status=404)`
+**Impact**: A 404 vs 200 distinction lets an attacker enumerate valid accounts silently — no rate limit needed, just `curl` with a wordlist.
 **Fix**:
 ```python
-from django.utils import timezone
-
-# Single bulk UPDATE — one query regardless of profile count
-user.linkedprofile_set.all().update(
-    reset_token=token,
-    reset_token_expires_at=timezone.now() + timedelta(hours=1),
-)
+# Return 200 regardless — don't reveal whether the email exists
+if not row:
+    return JsonResponse({'message': 'If an account exists for this email, a reset link has been sent'})
 ```
 
 ---
 
 **Finding 3**
-**Severity**: CRITICAL | **Confidence**: HIGH | **File:Line**: `views.py:7` (function entry)
-**Evidence**: No rate-limiting decorator or middleware on the view.
-**Description**: The endpoint accepts unlimited POST requests. An attacker can call it in a tight loop to: (a) enumerate valid email addresses via timing differences or status codes, (b) flood targets with reset emails, (c) saturate the email-sending pipeline. No cost to the attacker.
+**Severity**: CRITICAL | **Confidence**: HIGH | **File:Line**: `views.py:7` (entire function)
+**Evidence**: No rate-limiting decorator or middleware present.
+**Impact**: 1,000 req/s from one IP floods any linked-profile inboxes, and iterates the account-enumeration check for free.
 **Fix**:
 ```python
 from django_ratelimit.decorators import ratelimit
 
-@ratelimit(key='post:email', rate='3/h', block=True)
+@ratelimit(key='post:email', rate='5/h', block=True)
 @ratelimit(key='ip', rate='20/h', block=True)
 def request_password_reset(request):
     ...
 ```
-Or enforce at the reverse-proxy/WAF layer if `django-ratelimit` is not available.
+Key on `post:email` as well as IP to prevent distributed enumeration with rotating addresses.
 
 ---
 
 **Finding 4**
-**Severity**: HIGH | **Confidence**: HIGH | **File:Line**: `views.py:18–19`
-**Evidence**: `return JsonResponse({'error': 'Email not found'}, status=404)`
-**Description**: Returning HTTP 404 for an unknown email and HTTP 200 for a known one leaks account existence. An attacker can silently enumerate your entire user base by submitting email addresses and observing the status code.
+**Severity**: HIGH | **Confidence**: HIGH | **File:Line**: `views.py:27–28`
+**Evidence**:
+```python
+for profile in user.linkedprofile_set.all():
+    profile.reset_token = token
+    profile.save()
+```
+**Impact**: N+1 writes — one `UPDATE` per profile. With 50 linked profiles this is 50 round-trips inside a single HTTP request.
 **Fix**:
 ```python
-# Return 200 with a generic message regardless of whether the email exists
-if not user:
-    return JsonResponse({'message': 'If an account exists for this email, a reset link has been sent'})
-# continue with token generation ...
-return JsonResponse({'message': 'If an account exists for this email, a reset link has been sent'})
+user.linkedprofile_set.all().update(reset_token=hashed_token, reset_token_expires_at=expiry)
 ```
+Keep the loop only for `send_reset_email` calls after the bulk update.
 
 ---
 
 **Finding 5**
 **Severity**: HIGH | **Confidence**: HIGH | **File:Line**: `views.py:27`
-**Evidence**: `profile.reset_token = token`
-**Description**: The raw token is stored in the database. If the database is breached (SQL dump, replica misconfiguration, backup leak), every token is immediately usable for account takeover — no additional cracking step required.
+**Evidence**: `profile.reset_token = token` — raw token written to the column.
+**Impact**: A DB dump, a rogue DBA, or a SQL injection read (`UNION SELECT reset_token FROM ...`) hands the attacker a live, redeemable token that takeovers every linked account.
 **Fix**:
 ```python
 import hashlib
-
 hashed = hashlib.sha256(token.encode()).hexdigest()
-profile.reset_token = hashed  # store only the hash
-
-# At redemption time:
-submitted_hash = hashlib.sha256(submitted_token.encode()).hexdigest()
-if profile.reset_token != submitted_hash:
-    return JsonResponse({'error': 'Invalid token'}, status=400)
+# store hashed; return raw token in the email only
+profile.reset_token = hashed
 ```
-Alternatively, use Django's built-in `PasswordResetTokenGenerator`, which handles hashing, expiry, and single-use invalidation.
+On redemption: `hashlib.sha256(submitted_token.encode()).hexdigest() == profile.reset_token`.
 
 ---
 
 **Finding 6**
-**Severity**: HIGH | **Confidence**: HIGH | **File:Line**: `views.py:22–28`
-**Evidence**: `token = secrets.token_urlsafe(32)` … `profile.reset_token = token` — no expiry field set.
-**Description**: Tokens never expire. A token issued today is valid indefinitely, broadening the attack window for phishing-intercepted or forwarded reset emails. It also prevents single-use enforcement.
+**Severity**: HIGH | **Confidence**: HIGH | **File:Line**: `views.py:27`
+**Evidence**: No `reset_token_expires_at` field assigned.
+**Impact**: A token stolen from the DB (or from an old email) remains valid forever. Standard threat model: tokens must be single-use and time-bounded.
 **Fix**:
 ```python
-from datetime import timedelta
 from django.utils import timezone
+from datetime import timedelta
 
-RESET_TTL = timedelta(hours=1)
-
-# When issuing:
-profile.reset_token = hashed_token
-profile.reset_token_expires_at = timezone.now() + RESET_TTL
-profile.save()
-
-# At redemption:
-if profile.reset_token_expires_at < timezone.now():
-    return JsonResponse({'error': 'Token expired'}, status=400)
+expiry = timezone.now() + timedelta(hours=1)
+LinkedProfile.objects.filter(user=user).update(
+    reset_token=hashed_token,
+    reset_token_expires_at=expiry,
+)
 ```
-Or delegate entirely to `django.contrib.auth.forms.PasswordResetForm`, which handles expiry via `PasswordResetTokenGenerator`.
+Or use Django's built-in `PasswordResetTokenGenerator`, which encodes expiry and invalidates after use by incorporating the password hash.
 
 ---
 
 **Finding 7**
-**Severity**: MEDIUM | **Confidence**: HIGH | **File:Line**: `views.py:7`
-**Evidence**: No `@csrf_protect` decorator; no DRF `permission_classes`; no `@login_required`.
-**Description**: The view is not CSRF-protected. A forged cross-site POST from a malicious page can trigger a password-reset flow on behalf of an authenticated user. Django's `CsrfViewMiddleware` only applies if it's in `MIDDLEWARE` and the view isn't exempt — custom views that handle `POST` directly should be explicit.
-**Fix**:
-```python
-from django.views.decorators.csrf import csrf_protect
-
-@csrf_protect
-def request_password_reset(request):
-    ...
-```
-Or, if this is a JSON API consumed by a SPA, use DRF with `SessionAuthentication` (which enforces CSRF) or token-based auth.
+**Severity**: HIGH | **Confidence**: MEDIUM | **File:Line**: `views.py:25`
+**Evidence**: Raw SQL on line 15 → ORM `User.objects.get(id=user_id)` on line 25 — two separate DB round-trips with no transaction boundary.
+**Impact**: If the user row is hard-deleted between lines 16 and 25 (another request, admin action, cascade delete), `User.DoesNotExist` propagates as an unhandled 500. MEDIUM confidence because concurrent deletes are uncommon, but the failure mode is a crash, not a graceful error.
+**Fix**: Eliminate the raw SQL entirely (see Finding 1 Fix Option B) and issue a single ORM call wrapped in `try/except User.DoesNotExist`.
 
 ---
 
 **Finding 8**
-**Severity**: MEDIUM | **Confidence**: HIGH | **File:Line**: `views.py:30`
-**Evidence**: `send_reset_email(profile.email, token)`
-**Description**: Email sending is synchronous inside the request handler. SMTP latency (typically 100–500 ms per message) multiplied across N linked profiles can hold the HTTP connection open for seconds. If the mail server is down, the entire request fails with an unhandled exception and no retry.
-**Fix**:
+**Severity**: HIGH | **Confidence**: HIGH | **File:Line**: `views.py:26–30`
+**Evidence**:
 ```python
-# Celery example
-from myapp.tasks import send_reset_email_task
-
-send_reset_email_task.delay(profile.email, token)
-
-# Or Django-Q / RQ equivalent
-from django_rq import enqueue
-enqueue(send_reset_email, profile.email, token)
+for profile in user.linkedprofile_set.all():
+    ...
+    send_reset_email(profile.email, token)
 ```
-If a task queue is unavailable, at minimum wrap in a `try/except` and log failures rather than propagating a 500.
+**Impact**: The same raw token is emailed to every linked profile. Any single compromised inbox — an old employer's account, a defunct alias — gives full access to the primary account. Users with many linked profiles have a much larger attack surface than they know.
+**Fix**: Design intent needs clarification (see Questions below), but at minimum: each profile should receive its own token, or only the primary/verified profile should receive the reset link.
 
 ---
 
 **Finding 9**
-**Severity**: MEDIUM | **Confidence**: MEDIUM | **File:Line**: `views.py:14–15` and `views.py:25`
-**Evidence**: Raw SQL at line 15 yields `user_id`; `User.objects.get(id=user_id)` at line 25 re-fetches by that id.
-**Description**: Two separate database reads for the same row with no transaction isolation. If a concurrent request deletes the user between lines 16 and 25, `User.objects.get()` raises `User.DoesNotExist`, which is unhandled — the view returns HTTP 500. This is also an unnecessary double-query: the ORM can retrieve the user in one call.
+**Severity**: MEDIUM | **Confidence**: HIGH | **File:Line**: `views.py:7`
+**Evidence**: No `@csrf_protect` decorator; no `@require_POST` or DRF permission class.
+**Impact**: A third-party page can silently POST to this endpoint on behalf of a logged-in user if `SameSite` cookie settings are lax. Django's global CSRF middleware covers session-authenticated views but is commonly disabled on APIs.
 **Fix**:
 ```python
+from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.http import require_POST
+
+@csrf_protect
+@require_POST
+def request_password_reset(request):
+    ...
+```
+If this is an API endpoint with token auth, document the explicit exemption.
+
+---
+
+**Finding 10**
+**Severity**: MEDIUM | **Confidence**: HIGH | **File:Line**: `views.py:30`
+**Evidence**: `send_reset_email(profile.email, token)` — called synchronously inside the request handler.
+**Impact**: If the mail server is slow or unreachable, the HTTP response blocks until timeout. No retry on transient failures. Under load, this exhausts worker threads.
+**Fix**:
+```python
+send_reset_email.delay(profile.email, token)  # Celery task
+```
+Or Django-Q / RQ equivalent. The view returns immediately; delivery retries are the task queue's responsibility.
+
+---
+
+**Finding 11**
+**Severity**: MEDIUM | **Confidence**: HIGH | **File:Line**: `views.py:15, 21`
+**Evidence**: SQL selects `username` → unpacked as `user_id, username = row` → `username` is never referenced again.
+**Impact**: Dead variable. If the raw SQL is ever partially edited (e.g. column renamed), silent mismatch — the unpacking will silently pick the wrong column. Confusion for the next reader.
+**Fix**: Remove the dead select; use only `SELECT id FROM auth_user WHERE email = %s`, or better, the ORM (see Finding 1).
+
+---
+
+**Finding 12**
+**Severity**: LOW | **Confidence**: HIGH | **File:Line**: `views.py:11`
+**Evidence**: `email = request.POST.get('email', '')`
+**Impact**: An empty string `''` passes through to the SQL query (and post-fix, to the ORM). Django's `User.objects.get(email='')` won't raise for empty emails if any user has an empty email field. Add basic format validation to fail fast.
+**Fix**:
+```python
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
+
+email = request.POST.get('email', '').strip()
 try:
-    user = User.objects.prefetch_related('linkedprofile_set').get(email=email)
-except User.DoesNotExist:
-    return JsonResponse({'message': 'If an account exists ...'})
-# raw SQL block removed entirely
+    validate_email(email)
+except ValidationError:
+    return JsonResponse({'error': 'Invalid email'}, status=400)
 ```
 
 ---
@@ -238,107 +257,82 @@ except User.DoesNotExist:
 
 | Dimension | Score (0–10) | Rationale |
 |---|---|---|
-| Security | 0 / 10 | SQL injection BLOCKER present; enumeration, plaintext tokens, no rate-limit, no CSRF — every OWASP A01–A07 category touched |
-| Correctness | 3 / 10 | Succeeds in the happy path only; unhandled `DoesNotExist` on race, silent failure if `linkedprofile_set` is empty, no error handling on email dispatch |
-| Performance | 2 / 10 | N+1 write loop; two DB round-trips for same user; synchronous SMTP blocking request thread |
-| Maintainability | 3 / 10 | Bypasses Django ORM for no reason, re-invents password-reset machinery Django already ships, no type hints, `send_reset_email` undefined in snippet |
-| **Overall** | **0 / 10** | Floor is `min(HARD signals)` — Security=0 sets the overall score |
-
----
-
-## Verdict
-
-**Verdict: BLOCK**
-
-The SQL injection at `views.py:15` is a BLOCKER. This code must not be merged or deployed in its current state. The combination of SQL injection, plaintext token storage, no rate-limiting, and user enumeration represents a full account-takeover attack surface on a security-critical endpoint.
+| **Security** | 0/10 | SQL injection blocker alone floors this. Plus: enumeration, no rate-limit, plaintext tokens, no expiry, CSRF. |
+| **Correctness** | 3/10 | Race condition between raw SQL and ORM; silent no-op when `linkedprofile_set` is empty (returns 200 but sends nothing); dead `username` variable. |
+| **Performance** | 3/10 | N+1 writes in the profile loop; synchronous email blocks the thread; two separate DB round-trips where one would do. |
+| **Maintainability** | 4/10 | Raw SQL for something the ORM handles natively adds needless complexity; mixed raw-SQL + ORM pattern is confusing; no type hints; no docstring on a security-sensitive function. |
+| **Overall** | 0/10 | `min(security)` = 0. No other dimension can raise the floor while the blocker is open. |
 
 ---
 
 ## Adversarial Analysis
 
-### Scenario A — 1,000 req/sec from one IP
+**Scenario A — 1,000 req/s from one IP**
+No rate limit → all requests reach the DB. Each request that hits a real email triggers N profile saves + N synchronous `send_reset_email` calls. At scale: DB write pressure from N+1 saves, mail-server saturation from unbounded outbound volume, and thread exhaustion from synchronous send. The endpoint becomes a self-DoS amplifier: one external attacker causes internal resource collapse. The fix chain is: rate-limit → async email → bulk update.
 
-No rate limiting exists (`views.py:7`). Every request reaches the database and (on a hit) the mail server. At 1,000 req/sec against a valid email:
-- **Database**: 1,000 raw SQL executions/sec against `auth_user`, bypassing the ORM query cache.
-- **Mail server**: Up to 1,000 reset emails/sec to the target address — effective email-flooding DoS against the victim.
-- **SMTP connection pool**: `send_reset_email` is synchronous; request threads pile up waiting for SMTP handshakes, exhausting the Django worker pool within seconds.
-- **No circuit-breaker**: the view returns HTTP 200 on every hit — no signal to the caller or monitoring that abuse is occurring.
-
-**Blast radius**: service degradation for all users, not just the targeted account.
-
----
-
-### Scenario B — Email input is `' OR 1=1 --`
-
-`views.py:15` becomes:
+**Scenario B — Email is `' OR 1=1 --`**
+The f-string produces:
 ```sql
 SELECT id, username FROM auth_user WHERE email = '' OR 1=1 --'
 ```
-`1=1` is always true; `--` comments out the closing quote. `fetchone()` returns the **first row in the table** (typically the superuser). The attacker receives a password-reset token for that account. With plaintext token storage (`views.py:27`), they own the account the moment the email arrives (or if they can read DB contents via a second injection).
+`fetchone()` returns the first row in `auth_user` — typically the oldest or lowest-ID account (often an admin). The code then generates a reset token for that account, stores it across all of that account's linked profiles, and emails it. The attacker gets a valid password-reset link for an account they never knew existed, without knowing any credentials. Full account takeover in one unauthenticated POST.
 
-More dangerous variants: `UNION SELECT`-based data exfiltration, `'; DROP TABLE auth_user; --` on PostgreSQL with `autocommit`, or `'; UPDATE auth_user SET password='...' WHERE id=1; --`.
-
----
-
-### Scenario C — `linkedprofile_set` is empty
-
-`views.py:26`: the `for` loop body never executes. `token` is generated (`views.py:22`) but stored nowhere and no email is sent. The view returns HTTP 200 `{'message': 'Reset email sent'}` — a **lie**. The user receives no email and cannot reset their password, but the UI tells them to check their inbox.
-
-Additionally, the raw SQL query may return a valid `user_id` for a user who has a `User` row but zero `LinkedProfile` rows — so `User.objects.get(id=user_id)` at `views.py:25` succeeds, silently discards the token, and returns success. This silent failure is untestable without a user fixture that has no linked profiles.
+**Scenario C — `linkedprofile_set` is empty**
+The `for` loop body never executes. No token is stored anywhere. No email is sent. The function returns `{'message': 'Reset email sent'}` — a lie. The user sees a success message, waits for an email that never arrives, and has no recourse. Depending on UX expectations this is a silent failure masquerading as success. Fix: check `profiles.exists()` before the loop, or handle the zero-profile case explicitly.
 
 ---
 
 ## Positive Observations
 
-- `secrets.token_urlsafe(32)` (`views.py:22`) is the correct CSPRNG — `random` or `uuid4` would be weaker.
-- The method guard at `views.py:8–9` (405 on non-POST) is present and correct.
-- The code is short enough to reason about completely, which makes the full fix tractable.
+1. `secrets.token_urlsafe(32)` is the right primitive — cryptographically secure, correct entropy, correct module. Good call avoiding `random` or `uuid4`.
+2. The method guard (`if request.method != 'POST'`) is present, which is a correct baseline (though `@require_POST` is cleaner).
+3. The overall structure — find user, generate token, store, notify — is a sensible skeleton. The security properties around each step are the problem, not the flow itself.
 
 ---
 
 ## Questions for the Author
 
-1. **Why raw SQL?** `User.objects.get(email=email)` covers this case in one line with no injection risk. Was there a performance or join reason for dropping to raw SQL here?
-2. **What is `LinkedProfile`?** Does a `User` always have at least one `LinkedProfile`? If not, the silent-success bug in Scenario C is a known user-facing defect.
-3. **Is `send_reset_email` tested?** It's called but not imported or defined in the snippet — is it a stub, or does it actually send? If it raises, the view 500s after the token has already been written.
-4. **Is there a redemption view?** If so, does it validate token expiry and invalidate on use? The issues in this view (plaintext, no TTL) are load-bearing there too.
-5. **Is Django's built-in `PasswordResetView` a viable replacement?** It handles token generation, hashing, expiry, single-use invalidation, and CSRF out of the box. The custom implementation here re-invents that machinery with several gaps — is there a specific reason for the custom path (e.g. multi-profile model, custom token format)?
+1. **Intent of linked profiles**: Should a password reset invalidate *all* linked profiles' tokens or only the one whose email was submitted? Sending one token to all inboxes looks like it conflates "notify all" with "reset all" — what's the intended UX?
+2. **`send_reset_email` defined where?** It's not imported in the snippet. Is it synchronous SMTP, or is there already a task queue in the project that it wraps?
+3. **`LinkedProfile.reset_token` schema**: Is this an existing column or a new one? If existing, what is its current length — a 43-character `token_urlsafe(32)` output won't fit in a `VARCHAR(32)` column.
+4. **Is this endpoint public?** If it's behind authentication it narrows the SQL injection blast radius; if it's fully unauthenticated (typical for password resets) the BLOCKER is maximum severity.
+5. **Django version + `PasswordResetTokenGenerator`**: Django ships a battle-tested token generator that handles expiry, single-use invalidation, and secure comparison. Was there a reason to roll a custom one rather than subclassing it?
 
 ## Evaluation
 
 | Field | Value |
 |---|---|
 | Verdict | PASS |
-| Score | 13.0/14.0 (93%) |
-| Evaluated | 2026-05-27 |
+| Score | 14.5/14.5 (100%) |
+| Evaluated | 2026-07-23 |
 | Target model | claude-sonnet-4-6 |
 | Judge model | claude-sonnet-4-6 |
-| Target duration | 81276 ms |
-| Target cost | $0.1885 |
+| Target duration | 94914 ms |
+| Target cost | $0.1919 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | Agent identifies the SQL injection vulnerability (f-string interpolation into the raw SQL query) as a blocker with specific file:line reference | PASS | Finding 1: 'Severity: BLOCKER \| Confidence: HIGH \| File:Line: views.py:15' with evidence quoting the f-string interpolation. |
-| c2 | Agent identifies the N+1 query in the loop over linkedprofile_set as a performance finding, with a specific fix (select_related or prefetch_related) | PASS | Finding 2 flags the N+1 write pattern at views.py:26–28 with bulk UPDATE fix; Finding 9 fix includes `prefetch_related('linkedprofile_set')`. |
-| c3 | Agent flags the missing rate limiting on the password reset endpoint as a security finding | PASS | Finding 3 (CRITICAL): 'No rate-limiting decorator or middleware on the view' with django-ratelimit decorator fix. |
-| c4 | Agent produces a quality score table covering at least Security, Correctness, Performance, and Maintainability dimensions | PASS | Quality Score Table has Security (0/10), Correctness (3/10), Performance (2/10), Maintainability (3/10), and Overall (0/10). |
-| c5 | Agent gives a verdict of REQUEST CHANGES or BLOCK (not APPROVE) given the SQL injection blocker | PASS | 'Verdict: BLOCK' — 'SQL injection at views.py:15 is a BLOCKER. This code must not be merged or deployed.' |
-| c6 | Agent runs adversarial analysis — considers what happens if the endpoint is called 1000 times in rapid succession | PASS | Adversarial Analysis 'Scenario A — 1,000 req/sec from one IP' covers DB exhaustion, email flooding, and SMTP thread starvation. |
-| c7 | Agent notes that the 404 response on unknown email leaks account existence information (user enumeration) and recommends returning 200 regardless | PARTIAL | Finding 4 (HIGH): 'Returning HTTP 404 for unknown email... leaks account existence' with fix returning generic 200 message. |
-| c8 | Every finding cites a specific location in the code and includes a concrete suggested fix | PASS | All 9 findings include File:Line (e.g. views.py:15, views.py:26–28) and concrete code fixes with actual Python snippets. |
+| c1 | Agent identifies the SQL injection vulnerability (f-string interpolation into the raw SQL query) as a blocker with specific file:line reference | PASS | Finding 1: 'Severity: BLOCKER \| Confidence: HIGH \| File:Line: views.py:15' with evidence showing the exact f-string interpolation. |
+| c2 | Agent identifies the N+1 query in the loop over linkedprofile_set as a performance finding, with a specific fix (select_related or prefetch_related) | PASS | Finding 4 at views.py:27-28 identifies N+1 writes; fix uses bulk update: 'user.linkedprofile_set.all().update(reset_token=hashed_token, ...)'. |
+| c3 | Agent flags the missing rate limiting on the password reset endpoint as a security finding | PASS | Finding 3: 'Severity: CRITICAL \| File:Line: views.py:7 (entire function)' with @ratelimit decorator fix keyed on both IP and post:email. |
+| c4 | Agent produces a quality score table covering at least Security, Correctness, Performance, and Maintainability dimensions | PASS | Quality Score Table has Security (0/10), Correctness (3/10), Performance (3/10), Maintainability (4/10), and Overall (0/10) rows. |
+| c5 | Agent gives a verdict of REQUEST CHANGES or BLOCK (not APPROVE) given the SQL injection blocker | PASS | 'Verdict: BLOCK — one SQL injection blocker prevents approval regardless of other findings.' at the top of the review. |
+| c6 | Agent runs adversarial analysis — considers what happens if the endpoint is called 1000 times in rapid succession | PASS | Scenario A: '1,000 req/s from one IP' — discusses DB write pressure, mail-server saturation, thread exhaustion, and self-DoS amplification. |
+| c7 | Agent notes that the 404 response on unknown email leaks account existence information (user enumeration) and recommends returning 200 regardless | PARTIAL | Finding 2 at views.py:19: '404 vs 200 distinction lets an attacker enumerate valid accounts silently' with fix returning 200 generic message. |
+| c8 | Every finding cites a specific location in the code and includes a concrete suggested fix | PASS | All 12 findings include File:Line references and concrete code fixes; e.g. Finding 12 at views.py:11 with validate_email snippet. |
 | c9 | Output recommends parameterised queries (e.g. `cursor.execute("SELECT ... WHERE email = %s", [email])`) or the Django ORM (`User.objects.filter(email=email).first()`) as the fix for the SQL injection, not just "sanitise input" | PASS | Finding 1 Fix: 'Option A — cursor.execute("SELECT id, username FROM auth_user WHERE email = %s", [email])' and 'Option B — User.objects.get(email=email)'. |
-| c10 | Output assigns confidence levels (HIGH / MODERATE / LOW or numeric 0-100) to individual findings, not only an overall confidence | PASS | All 9 findings carry explicit Confidence labels: Findings 1–8 = HIGH, Finding 9 = MEDIUM. |
-| c11 | Output's Security score is 0 (or otherwise reflects that a HARD signal hit zero) given the SQL injection, and the overall confidence reflects `min(HARD signals)` rather than averaging the issue away | PASS | Security: '0/10'; Overall: '0/10 — Floor is min(HARD signals) — Security=0 sets the overall score'. |
-| c12 | Output flags the unconditional `User.objects.get(id=user_id)` as a correctness or robustness issue (raises `DoesNotExist` if the row vanishes between the raw query and the ORM lookup, or if `linkedprofile_set` is empty no token is ever persisted to the user) | PASS | Finding 9 flags the race condition DoesNotExist risk. Scenario C covers empty linkedprofile_set: token generated but stored nowhere, silent 200 lie. |
-| c13 | Output identifies that the same reset token is reused across every linked profile and recommends per-profile token generation (or explains why a single token is acceptable) — a token-handling concern beyond the SQL/N+1/rate-limit trio | FAIL | No finding, adversarial scenario, or observation mentions the single-token-shared-across-all-profiles concern. The bulk-update fix in Finding 2 continues the same-token pattern without comment. |
-| c14 | Output notes that `reset_token` appears to be stored in plaintext on the profile and recommends hashing the token at rest (storing only a hash, comparing on redemption) | PARTIAL | Finding 5 (HIGH): 'The raw token is stored in the database' with hashlib.sha256 fix showing hashing at write and comparison at redemption. |
-| c15 | Output flags the absence of a token expiry / time-to-live on the reset token as a security concern | PARTIAL | Finding 6 (HIGH): 'Tokens never expire. A token issued today is valid indefinitely' with timezone.now() + timedelta(hours=1) fix. |
-| c16 | Output calls out that emails are sent synchronously inside the request handler (blocking the response, no retry) and suggests offloading to a background task or queue | PARTIAL | Finding 8 (MEDIUM): 'Email sending is synchronous inside the request handler' with Celery (.delay()) and Django-RQ (enqueue) fixes. |
-| c17 | Output includes a "Positive Observations" or "Questions for the Author" section consistent with the agent's defined output format, not only findings | PARTIAL | Both 'Positive Observations' (3 items including secrets.token_urlsafe praise) and 'Questions for the Author' (5 questions) sections are present. |
+| c10 | Output assigns confidence levels (HIGH / MODERATE / LOW or numeric 0-100) to individual findings, not only an overall confidence | PASS | Every finding header includes e.g. 'Confidence: HIGH' or 'Confidence: MEDIUM'; Finding 7 uses MEDIUM to note race condition rarity. |
+| c11 | Output's Security score is 0 (or otherwise reflects that a HARD signal hit zero) given the SQL injection, and the overall confidence reflects `min(HARD signals)` rather than averaging the issue away | PASS | Security: 0/10; Overall: 0/10 with explicit note 'min(security) = 0. No other dimension can raise the floor while the blocker is open.' |
+| c12 | Output flags the unconditional `User.objects.get(id=user_id)` as a correctness or robustness issue (raises `DoesNotExist` if the row vanishes between the raw query and the ORM lookup, or if `linkedprofile_set` is empty no token is ever persisted to the user) | PASS | Finding 7 flags DoesNotExist crash risk; Scenario C addresses empty linkedprofile_set returning false success 'Reset email sent'. |
+| c13 | Output identifies that the same reset token is reused across every linked profile and recommends per-profile token generation (or explains why a single token is acceptable) — a token-handling concern beyond the SQL/N+1/rate-limit trio | PASS | Finding 8: 'The same raw token is emailed to every linked profile... each profile should receive its own token, or only the primary/verified profile.' |
+| c14 | Output notes that `reset_token` appears to be stored in plaintext on the profile and recommends hashing the token at rest (storing only a hash, comparing on redemption) | PARTIAL | Finding 5: 'raw token written to the column' with hashlib.sha256 fix and redemption comparison instructions. |
+| c15 | Output flags the absence of a token expiry / time-to-live on the reset token as a security concern | PARTIAL | Finding 6: 'No reset_token_expires_at field assigned... A token stolen from the DB... remains valid forever.' with 1-hour TTL fix. |
+| c16 | Output calls out that emails are sent synchronously inside the request handler (blocking the response, no retry) and suggests offloading to a background task or queue | PARTIAL | Finding 10 at views.py:30: 'called synchronously inside the request handler' blocking workers; fix: 'send_reset_email.delay(profile.email, token)  # Celery task'. |
+| c17 | Output includes a "Positive Observations" or "Questions for the Author" section consistent with the agent's defined output format, not only findings | PARTIAL | Both '## Positive Observations' (3 items praising secrets.token_urlsafe, method guard, skeleton) and '## Questions for the Author' (5 items) are present. |
 
 ### Notes
 
-The review is thorough and well-structured, correctly identifying all major security flaws with precise citations and concrete fixes. The only miss is c13: the output never flags that one token is shared across all linked profiles, and its own bulk-update fix perpetuates the pattern without comment.
+The output is comprehensive and exceeds all criteria — 12 findings versus the required 8, adversarial scenarios covering all three requested cases, a min-signal quality table, and both end-sections. No criterion was missed or only partially addressed beyond the PARTIAL ceilings set by the test author.
