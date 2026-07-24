@@ -492,11 +492,21 @@ def main():
                         default=os.environ.get("GLOBAL_LEARNINGS_DIR"),
                         help="Global learnings directory (default: $GLOBAL_LEARNINGS_DIR or ~/.claude/turtlestack/learnings/)")
     parser.add_argument("--json", action="store_true", help="Output raw JSON to stdout")
+    parser.add_argument("--dump-user-turns", action="store_true",
+                        help="Print every cleaned user message (numbered, one block per turn) and exit. "
+                             "Lets the retrospective review the actual messages rather than trusting "
+                             "regex extraction — regex-missed corrections stay visible.")
     args = parser.parse_args()
 
     if not os.path.exists(args.jsonl_path):
         print(json.dumps({"error": f"File not found: {args.jsonl_path}"}))
         sys.exit(1)
+
+    if args.dump_user_turns:
+        turns = extract_conversation_turns(parse_jsonl(args.jsonl_path))
+        for i, t in enumerate((t for t in turns if t["type"] == "user"), 1):
+            print(f"[{i}] {t['text']}")
+        return
 
     results = analyse_session(args.jsonl_path)
 

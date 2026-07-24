@@ -95,13 +95,19 @@ The script outputs structured JSON with:
 - **events**: each correction, reversal, or success with context and timestamps
 - **files_modified**: which files were touched and how many times
 
-Read the JSON output and present the results.
+Then dump the actual user messages and read them all:
 
-**Output:** Metrics summary table and event list.
+```bash
+python3 ${CLAUDE_PLUGIN_ROOT}/scripts/analyse-session.py <transcript.jsonl> --dump-user-turns
+```
+
+The script's events come from regex matching; the dump is your check on it. Read every turn and note any correction, frustration, or approach change the events list missed — these are exactly the ones the patterns can't catch yet, and they feed both Step 3's learnings and the pattern evolution.
+
+**Output:** Metrics summary table, event list, and any regex-missed events you spotted in the dump.
 
 ## Step 3: Interpret, write learnings, and apply local rules (mandatory)
 
-For each event extracted by the script — plus any correction you spot in the transcript that the script missed — interpret it into a learning:
+For each event extracted by the script — plus each regex-missed event you spotted in the Step 2 user-turn dump — interpret it into a learning:
 
 ### For corrections (HIGH severity):
 
@@ -133,7 +139,7 @@ Only record successes that are non-obvious — approaches that worked but might 
 
 ### Evolve the detection patterns (when the script missed something)
 
-`analyse-session.py` finds events by regex. When your own read of the transcript surfaces a correction or approach change the script did NOT flag, extract a pattern that would catch similar messages in the future and add it to `$LEARNINGS_DIR/signals/patterns.json` (create if missing). The script loads this file on every run, so new patterns take effect from the next analysis.
+`analyse-session.py` finds events by regex. For each event the user-turn dump surfaced that the script did NOT flag, extract a pattern that would catch similar messages in the future and add it to `$LEARNINGS_DIR/signals/patterns.json` (create if missing). The script loads this file on every run, so new patterns take effect from the next analysis.
 
 The patterns file has this structure:
 

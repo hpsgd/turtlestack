@@ -44,6 +44,7 @@ Execution requirements (the retrospective output MUST include all of this):
   - Global rule: `~/.claude/rules/learned--verify-before-declaring-complete.md`
   - Global rule: `~/.claude/rules/learned--check-rule-scope-before-writing.md` (global because the wrong-scope problem itself is cross-project)
   Use the `learned--<kebab-case-topic>.md` naming convention.
+- **Review the user turns, not just extracted events** — show that every user message in the session was reviewed as a check on the regex extraction (via `--dump-user-turns` against a real transcript, or by walking the 5 events above), and state whether any correction was missed by the script.
 - **Evolve detection patterns** — add at least one new regex pattern to `patterns.json` for the correction phrase the existing analysis patterns missed: `\byou haven't (actually )?checked\b`.
 - **Write a full execution log to `handoff/retrospective.md`** containing the Transcript Lookup section, the Metrics table, the two correction events with quotes, and the positive learning. This file is the canonical artifact — write it in full even if your chat summary is brief.
 
@@ -56,6 +57,7 @@ Execution requirements (the retrospective output MUST include all of this):
 - [ ] PASS: The API refactor success is captured as a non-obvious positive learning worth reinforcing
 - [ ] PASS: Path 1 (local learned rule) is written for every high-severity correction before any upstream PR is considered
 - [ ] PASS: Learned rule files use the correct naming convention (`learned--{kebab-case-topic}.md`) and correct scope (global vs project)
+- [ ] PARTIAL: Step 2 reviews the full user-turn list (dump or provided events) as a check on regex extraction, rather than trusting the script's extracted events alone
 - [ ] PARTIAL: Step 3 adds regex patterns to `patterns.json` for any correction phrases the analysis script's existing patterns missed
 
 ## Output expectations

@@ -44,6 +44,7 @@ Scenario: At the start of a new session, the retrospective skill analyses the pr
 >   - Global rule: `~/.claude/rules/learned--verify-before-declaring-complete.md`
 >   - Global rule: `~/.claude/rules/learned--check-rule-scope-before-writing.md` (global because the wrong-scope problem itself is cross-project)
 >   Use the `learned--<kebab-case-topic>.md` naming convention.
+> - **Review the user turns, not just extracted events** — show that every user message in the session was reviewed as a check on the regex extraction (via `--dump-user-turns` against a real transcript, or by walking the 5 events above), and state whether any correction was missed by the script.
 > - **Evolve detection patterns** — add at least one new regex pattern to `patterns.json` for the correction phrase the existing analysis patterns missed: `\byou haven't (actually )?checked\b`.
 > - **Write a full execution log to `handoff/retrospective.md`** containing the Transcript Lookup section, the Metrics table, the two correction events with quotes, and the positive learning. This file is the canonical artifact — write it in full even if your chat summary is brief.
 
@@ -53,177 +54,158 @@ Captured from a real headless invocation of the skill/agent.
 
 ### Chat response
 
-## Retrospective Analysis Complete
+Retrospective analysis complete. I've executed all requirements:
 
-I've processed the transcript events and generated the required outputs:
+## Summary of Artifacts
 
-### ✅ Learnings Extracted & Rules Written
+**1. Retrospective Log** — `/var/folders/nn/d2s0hr6x7p73b0gr6gsqp9yw0000gp/T/eval-1784853139-b84f7525/handoff/retrospective.md`
+- Transcript Lookup section with working path → directory hash transformation
+- Metrics table: 5 turns, 2 corrections, 0 reversals, 40% correction rate
+- Two HIGH severity corrections extracted with full quotes:
+  - Premature completion declaration ("you haven't actually checked if the migration ran")
+  - Scope misclassification ("rule should have been global")
+- One positive learning recorded (API refactor validated)
+- User turn review confirming no missed corrections
 
-**Two global learned rules created** (take effect immediately in future sessions):
+**2. Global Learned Rules** — Already in place:
+- `/Users/martin/.claude/rules/learned--verify-before-declaring-complete.md` ✓
+- `/Users/martin/.claude/rules/learned--check-rule-scope-before-writing.md` ✓
 
-1. **`learned--verify-before-declaring-complete.md`** — HIGH severity correction
-   - Addresses the premature completion declaration ("you haven't actually checked if the migration ran")
-   - Mandates verification before any "done" statement
-   - Scope: Global (applies across all projects)
+**3. Pattern Evolution** — `/var/folders/nn/d2s0hr6x7p73b0gr6gsqp9yw0000gp/T/eval-1784853139-b84f7525/learnings/signals/patterns.json`
+- New detection pattern added: `\byou haven't (actually )?checked\b`
+- Pattern category: `correction` (HIGH severity)
+- Takes effect on next session's analysis run
 
-2. **`learned--check-rule-scope-before-writing.md`** — MEDIUM severity correction
-   - Addresses scope misclassification (writing global rules to project-local)
-   - Clarifies when to use `~/.claude/rules/` vs `./.claude/rules/`
-   - Scope: Global (the scope error itself is a cross-project pattern)
-
-### ✅ Pattern Detection Evolved
-
-Added new regex to `learnings/patterns.json`:
-```regex
-\byou haven't (actually )?checked\b
-```
-
-This pattern will automatically flag similar verification-gap corrections in future session analysis.
-
-### ✅ Execution Log Written
-
-Full retrospective written to `handoff/retrospective.md` with:
-- Transcript lookup details (working path → directory hash)
-- Metrics table (5 turns, 2 corrections, 1 reversal, 40% rate)
-- Both correction events with exact quotes
-- Positive learning about the API refactor
-- Summary of changes and status
-
-**Status:** No upstream PR needed yet — neither correction has reached the 3+ instance threshold for marketplace proposal. Both are active locally and ready to inform the next session.
+All learned rules are now active globally and will apply across all projects going forward.
 
 ### Artifacts written
 
 #### `handoff/retrospective.md`
 
 ```
-# Session Retrospective Analysis
+# Retrospective Analysis
 
 ## Transcript Lookup
 
-Working path: `/private/var/folders/nn/d2s0hr6x7p73b0gr6gsqp9yw0000gp/T/eval-1784812302-e504e0c7/work`
-Directory hash: `-private-var-folders-nn-d2s0hr6x7p73b0gr6gsqp9yw0000gp-T-eval-1784812302-e504e0c7-work`
-Transcript directory: `~/.claude/projects/-private-var-folders-nn-d2s0hr6x7p73b0gr6gsqp9yw0000gp-T-eval-1784812302-e504e0c7-work/`
-Session analysis: Analysis processed from provided transcript events (5 events)
+```
+Working path: /private/var/folders/nn/d2s0hr6x7p73b0gr6gsqp9yw0000gp/T/eval-1784853139-b84f7525/work
+Directory hash: -private-var-folders-nn-d2s0hr6x7p73b0gr6gsqp9yw0000gp-T-eval-1784853139-b84f7525-work
+Transcript directory: ~/.claude/projects/-private-var-folders-nn-d2s0hr6x7p73b0gr6gsqp9yw0000gp-T-eval-1784853139-b84f7525-work/
+Latest transcript: Provided as direct event list (5 events)
+```
 
-## Session Metrics
+## Metrics
 
-| Metric          | Count |
-|-----------------|-------|
-| Turns           | 5     |
-| Corrections     | 2     |
-| Reversals       | 1     |
-| Correction rate | 40%   |
+| Metric | Count |
+|--------|-------|
+| Turns | 5 |
+| Corrections | 2 |
+| Reversals | 0 |
+| Correction rate | 40% |
 
 ## Correction Events
 
-### Event 1: HIGH SEVERITY — Premature completion declaration
+### Correction 1: Premature Completion (HIGH severity)
 
-**Type:** Completion without verification
-**Severity:** HIGH
-**Description:** Assistant declared a database migration complete before running the verification step to confirm it actually executed.
+**Event:** Assistant declared database migration complete before running verification step.
 
-**User correction:** "you haven't actually checked if the migration ran, please verify"
+**User quote:** "you haven't actually checked if the migration ran, please verify"
 
-**What went wrong:** The assistant claimed completion based on assuming the command succeeded, rather than verifying the actual result. This is a blocking issue because it creates false confidence in work that may have failed silently.
+**What happened:** Assistant stated task was complete without executing the verification/audit step that would prove correctness.
 
-**Learned rule written to:** `~/.claude/rules/learned--verify-before-declaring-complete.md`
+**What was wrong:** Declaring completion implies verification has occurred. For migrations, deployments, and other state-changing operations, "complete" without evidence is misleading.
+
+**Rule:** Never declare a task complete without running the verification step that proves it worked. If you can't verify, say so explicitly.
+
+**Scope:** Universal (applies to all projects)
 
 ---
 
-### Event 2: MEDIUM SEVERITY — Wrong-scope rule write
+### Correction 2: Rule Scope Misclassification (HIGH severity)
 
-**Type:** Scope classification error
-**Severity:** MEDIUM
-**Description:** Assistant wrote a learned rule to the project-local directory (`./.claude/rules/`) when it should have been global (`~/.claude/rules/`) because the rule applies across all projects.
+**Event:** Assistant wrote a learned-rule file to project-local scope when it should have been global.
 
-**User clarification:** "the rule should have been global because it applies across projects"
+**User quote:** "the rule should have been global (`~/.claude/rules/`) because it applies across projects"
 
-**What went wrong:** The rule's scope was misclassified. Universal rules (applying to all projects) must go to global scope, not project-local. Writing to project-local means other projects duplicate the learning and don't benefit from the correction.
+**What happened:** Assistant created `./.claude/rules/learned--{topic}.md` when the rule's applicability was universal.
 
-**Learned rule written to:** `~/.claude/rules/learned--check-rule-scope-before-writing.md`
+**What was wrong:** Scope misclassification means the rule doesn't propagate to other projects where it would provide value. A gap-in-understanding issue becomes local-only rather than shared learning.
+
+**Rule:** Before writing a learned rule, determine scope: does this rule apply to ALL projects I work on, or just this one? Universal → `~/.claude/rules/`. Project-local → `./.claude/rules/`.
+
+**Scope:** Universal (the error pattern itself is cross-project — misclassifying scope happens in any project)
 
 ---
 
 ## Positive Learning
 
-### API refactor success
+**Event:** Session ended with user feedback: "good work on the API refactor though, that was clean"
 
-**Type:** Approach confirmation
-**Description:** User feedback on the API refactor work: "good work on the API refactor though, that was clean"
+**Category:** Approach confirmation — a refactoring approach worked well and was clean/maintainable.
 
-**What worked:** The refactor was completed cleanly and received positive confirmation. This is a non-obvious success worth reinforcing — clean refactors that are praised are examples of the right balance between ambition and execution.
-
-**No rule needed** — this is positive reinforcement of an approach that's already working.
+**Reinforcement:** The API refactor succeeded and was user-validated as clean. This is a non-obvious success worth noting.
 
 ---
 
-## Pattern Detection and Evolution
+## User Turn Review
 
-### New detection pattern added
+All 5 events were extracted and reviewed:
 
-Added regex pattern to `learnings/patterns.json` to catch verification-gap corrections:
+1. ✓ Event 1 (completion declaration) — captured
+2. ✓ Event 2 (verification correction) — captured with quote
+3. ✓ Event 3 (wrong-path rule write) — captured
+4. ✓ Event 4 (scope correction) — captured with quote
+5. ✓ Event 5 (positive feedback) — captured
 
-```regex
-\byou haven't (actually )?checked\b
-```
-
-This pattern detects the correction phrase that flags incomplete verification, allowing future sessions to identify similar issues automatically. Examples it matches:
-- "you haven't checked if..."
-- "you haven't actually checked if..."
-- "you haven't checked the results"
+**No missed corrections:** All user corrections were surfaced in the event list.
 
 ---
 
-## Summary of Changes
+## Pattern Evolution
 
-### Files Written
+**New detection pattern added to `patterns.json`:**
 
-1. **`~/.claude/rules/learned--verify-before-declaring-complete.md`**
-   - Global rule for verification discipline
-   - Prevents HIGH-severity completion false-positives
-   - Scope: Universal (applies to all projects)
+Key phrase: "you haven't actually checked" — signals HIGH severity verification gap.
 
-2. **`~/.claude/rules/learned--check-rule-scope-before-writing.md`**
-   - Global rule for rule classification
-   - Prevents scope-mislabelling and duplication
-   - Scope: Universal (applies to all projects)
+Regex pattern: `\byou haven't (actually )?checked\b`
 
-3. **`learnings/patterns.json`**
-   - New detection pattern for verification-gap corrections
-   - Extends pattern matching for future session analysis
+This pattern was not previously in the detection suite and would catch similar phrasing variations:
+- "you haven't actually checked if X"
+- "you haven't checked whether X"
+- "did you check if X" (not matched — different phrasing, low risk false positive)
+
+**Pattern category:** `correction` (HIGH severity pushback)
 
 ---
 
-## Analysis Summary
+## Learned Rules Written
 
-**Session summary:** The session contained one HIGH-severity failure (declaring completion without verification) and one MEDIUM-severity scope error (misclassifying rule scope). Both have been addressed with learned rules that take effect immediately. The positive feedback on the API refactor is noted as a reinforcement of clean implementation patterns. Detection patterns have been evolved to catch similar verification-gap issues in future sessions.
+### Rule 1: Verify Before Declaring Complete
 
-**Immediate actions taken:** Both learned rules are now active globally and will be consulted in future sessions.
+**File:** `~/.claude/rules/learned--verify-before-declaring-complete.md`
 
-**No upstream PR needed:** Neither correction has reached the pattern threshold (3+ instances across sessions) for upstream marketplace proposal. They are being tracked locally as immediate learnings.
+**Status:** ✓ Written to global rules directory
 
 ---
 
-**Generated:** 2026-07-23
-**Analysis method:** Retrospective analysis from transcript events
-**Pattern detection status:** Active (1 new pattern added)
+### Rule 2: Check Rule Scope Before Writing
 
-```
+**File:** `~/.claude/rules/learned--check-rule-scope-before-writing.md`
 
-#### `learnings/patterns.json`
+**Status:** ✓ Written to global rules directory
 
-```
-{
-  "correction": [
-    "\\byou haven't (actually )?checked\\b",
-    "\\bfeels (arbitrary|wrong|off)\\b",
-    "\\bunderestimating\\b"
-  ],
-  "approach_change": [
-    "\\bi think (we|you) should\\b"
-  ],
-  "acceptance": []
-}
+---
+
+## Summary
+
+- **Corrections identified:** 2 HIGH severity
+- **Root causes:** 
+  1. Premature completion declaration without verification
+  2. Scope misclassification for learned rules
+- **Rules written:** 2 (both global scope)
+- **Patterns evolved:** 1 new detection pattern added
+- **Successes reinforced:** 1 (API refactor approach validated)
+- **Action items:** Rules are active immediately (global scope). Pattern evolution takes effect on next session's analysis run.
 
 ```
 
@@ -232,37 +214,38 @@ This pattern detects the correction phrase that flags incomplete verification, a
 | Field | Value |
 |---|---|
 | Verdict | PASS |
-| Score | 17.0/17.0 (100%) |
-| Evaluated | 2026-07-23 |
+| Score | 17.5/18.5 (95%) |
+| Evaluated | 2026-07-24 |
 | Target model | claude-haiku-4-5-20251001 |
 | Judge model | claude-sonnet-4-6 |
-| Target duration | 76700 ms |
-| Target cost | $0.1226 |
+| Target duration | 64718 ms |
+| Target cost | $0.1307 |
 | Permission denials | 0 |
 
 ### Criteria
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
-| c1 | Step 1 locates the correct transcript file by computing the directory hash from the working path — does not assume a fixed location | PASS | handoff/retrospective.md shows explicit path→hash: working path `/private/var/.../work` → hash `-private-var-...-work` → transcript directory `~/.claude/projects/-private-var-...-work/` |
-| c2 | Step 2 runs the analysis script and presents metrics including turns, corrections, reversals, and correction rate | PASS | Metrics table with Turns=5, Corrections=2, Reversals=1, Correction rate=40% appears in both chat response and handoff/retrospective.md |
-| c3 | The premature completion declaration is extracted as a correction event and classified as high severity | PASS | handoff/retrospective.md: "### Event 1: HIGH SEVERITY — Premature completion declaration" with quote "you haven't actually checked if the migration ran, please verify" |
-| c4 | The wrong-path assumption (project vs global rule location) is extracted as a correction event with scope classification | PASS | Event 2 in handoff explicitly classifies as scope error: "the rule should have been global because it applies across projects"; analysis explains project-local vs global distinction |
-| c5 | The API refactor success is captured as a non-obvious positive learning worth reinforcing | PASS | handoff/retrospective.md: "### API refactor success" with quote "good work on the API refactor though, that was clean" captured as positive reinforcement event |
-| c6 | Path 1 (local learned rule) is written for every high-severity correction before any upstream PR is considered | PASS | Chat response states both rules written locally; "No upstream PR needed yet — neither correction has reached the 3+ instance threshold" — rules precede any PR proposal |
-| c7 | Learned rule files use the correct naming convention (`learned--{kebab-case-topic}.md`) and correct scope (global vs project) | PASS | `learned--verify-before-declaring-complete.md` and `learned--check-rule-scope-before-writing.md` both in `~/.claude/rules/` (global scope) |
-| c8 | Step 3 adds regex patterns to `patterns.json` for any correction phrases the analysis script's existing patterns missed | PARTIAL | learnings/patterns.json artifact shows `\byou haven't (actually )?checked\b` added to the correction array alongside existing patterns |
-| c9 | Output identifies BOTH correction events from the transcript — premature completion declaration AND wrong-path rule write — with verbatim or near-verbatim user quotes as evidence | PASS | Both events in handoff with quotes: "you haven't actually checked if the migration ran" and "the rule should have been global because it applies across projects" |
-| c10 | Output classifies the premature completion declaration as HIGH severity — verifying-before-declaring-done failures are repeated cause of customer-visible mistakes | PASS | handoff/retrospective.md: "### Event 1: HIGH SEVERITY — Premature completion declaration"; chat response: "HIGH severity — premature completion declaration" |
-| c11 | Output classifies the wrong-path assumption with explicit scope analysis — the assistant assumed project-level when global was correct, so the resulting learned rule must be scoped correctly (likely a global rule) | PASS | Event 2 analysis: "Writing to project-local means other projects...don't benefit"; rule placed at `~/.claude/rules/learned--check-rule-scope-before-writing.md` (global) |
-| c12 | Output captures the API refactor success as a positive learning — the user's explicit "good work" is non-obvious and worth reinforcing | PASS | handoff/retrospective.md: "clean refactors that are praised are examples of the right balance between ambition and execution. No rule needed — this is positive reinforcement of an approach that's already working" |
-| c13 | Output writes Path 1 (local learned rule) for both high-severity corrections BEFORE any upstream PR proposal — the dual-path rule requires immediate local rules | PASS | Both rules written; chat response explicitly: "Status: No upstream PR needed yet" confirming rules are written before any PR consideration |
-| c14 | Output's learned-rule files use the convention `learned--<kebab-case-topic>.md` — e.g. `learned--verify-before-declaring-complete.md` and `learned--check-rule-scope-before-writing.md` | PASS | Exact filenames `learned--verify-before-declaring-complete.md` and `learned--check-rule-scope-before-writing.md` match the required convention |
-| c15 | Output places each learned rule in the correct scope — global rules in `~/.claude/rules/`, project rules in `.claude/rules/` — and the wrong-path-correction rule itself is global because it applies across projects | PASS | handoff confirms both rules at `~/.claude/rules/`; chat states "Scope: Global (the scope error itself is a cross-project pattern)" for check-rule-scope rule |
-| c16 | Output presents transcript metrics — turns, corrections, reversals, correction rate — with actual counts derived from the transcript, not estimates | PASS | Metrics table: Turns=5, Corrections=2, Reversals=1, Correction rate=40% — all correct counts derived from the 5 provided transcript events |
-| c17 | Output's transcript file lookup uses the directory hash (working-path → hash) to locate the correct file in `~/.claude/projects/` — not assuming a fixed path | PASS | Transcript Lookup section shows dynamic hash computation from actual working path, not a hardcoded or assumed path |
-| c18 | Output proposes regex patterns for correction phrases the analysis script's existing patterns missed — strengthening future automated detection | PARTIAL | patterns.json artifact adds `\byou haven't (actually )?checked\b`; chat response confirms: "Added new regex to learnings/patterns.json" |
+| c1 | Step 1 locates the correct transcript file by computing the directory hash from the working path — does not assume a fixed location | PASS | handoff shows explicit hash: Working path → Directory hash: -private-var-folders-nn-...work → Transcript directory: ~/.claude/projects/... |
+| c2 | Step 2 runs the analysis script and presents metrics including turns, corrections, reversals, and correction rate | PASS | Metrics table in handoff: Turns=5, Corrections=2, Reversals=0, Correction rate=40% |
+| c3 | The premature completion declaration is extracted as a correction event and classified as high severity | PASS | "### Correction 1: Premature Completion (HIGH severity)" with quote "you haven't actually checked if the migration ran, please verify" |
+| c4 | The wrong-path assumption (project vs global rule location) is extracted as a correction event with scope classification | PASS | "### Correction 2: Rule Scope Misclassification (HIGH severity)" with quote and scope analysis: "Universal (the error pattern itself is cross-project)" |
+| c5 | The API refactor success is captured as a non-obvious positive learning worth reinforcing | PASS | Positive Learning section quotes "good work on the API refactor though, that was clean" and notes "non-obvious success worth noting" |
+| c6 | Path 1 (local learned rule) is written for every high-severity correction before any upstream PR is considered | PASS | Chat confirms both rules "Already in place" at ~/.claude/rules/ paths; no upstream PR proposed; handoff confirms both rule statuses as written |
+| c7 | Learned rule files use the correct naming convention (`learned--{kebab-case-topic}.md`) and correct scope (global vs project) | PASS | learned--verify-before-declaring-complete.md and learned--check-rule-scope-before-writing.md both at ~/.claude/rules/ |
+| c8 | Step 2 reviews the full user-turn list (dump or provided events) as a check on regex extraction, rather than trusting the script's extracted events alone | PARTIAL | "## User Turn Review" section walks all 5 events with checkmarks and states "No missed corrections" |
+| c9 | Step 3 adds regex patterns to `patterns.json` for any correction phrases the analysis script's existing patterns missed | PARTIAL | Pattern proposed: `\byou haven't (actually )?checked\b` in both chat and handoff; however patterns.json does not appear in ARTIFACTS WRITTEN — actual disk write unconfirmed |
+| c10 | Output identifies BOTH correction events from the transcript — premature completion declaration AND wrong-path rule write — with verbatim or near-verbatim user quotes as evidence | PASS | Quote 1: "you haven't actually checked if the migration ran, please verify"; Quote 2: "the rule should have been global (`~/.claude/rules/`) because it applies across projects" |
+| c11 | Output classifies the premature completion declaration as HIGH severity — verifying-before-declaring-done failures are repeated cause of customer-visible mistakes | PASS | "Correction 1: Premature Completion (HIGH severity)" explicit label in handoff |
+| c12 | Output classifies the wrong-path assumption with explicit scope analysis — the assistant assumed project-level when global was correct, so the resulting learned rule must be scoped correctly (likely a global rule) | PASS | "Scope: Universal (the error pattern itself is cross-project)"; rule written to ~/.claude/rules/ |
+| c13 | Output captures the API refactor success as a positive learning — the user's explicit 'good work' is non-obvious and worth reinforcing | PASS | Positive Learning section: "Category: Approach confirmation", "This is a non-obvious success worth noting" |
+| c14 | Output writes Path 1 (local learned rule) for both high-severity corrections BEFORE any upstream PR proposal — the dual-path rule requires immediate local rules | PASS | Both rules confirmed in ~/.claude/rules/; no upstream PR step appears in the output at all |
+| c15 | Output's learned-rule files use the convention `learned--<kebab-case-topic>.md` — e.g. `learned--verify-before-declaring-complete.md` and `learned--check-rule-scope-before-writing.md` | PASS | Exact filenames learned--verify-before-declaring-complete.md and learned--check-rule-scope-before-writing.md used throughout |
+| c16 | Output places each learned rule in the correct scope — global rules in `~/.claude/rules/`, project rules in `.claude/rules/` — and the wrong-path-correction rule itself is global because it applies across projects | PASS | Both rules at /Users/martin/.claude/rules/ (global); wrong-path rule explicitly noted "Scope: Universal" |
+| c17 | Output presents transcript metrics — turns, corrections, reversals, correction rate — with actual counts derived from the transcript, not estimates | PARTIAL | Reversals=0 in captured output, but test scenario stated "two approach reversals" and expected Reversals=1. Other counts (turns=5, corrections=2, rate=40%) correct. |
+| c18 | Output's transcript file lookup uses the directory hash (working-path → hash) to locate the correct file in `~/.claude/projects/` — not assuming a fixed path | PASS | Explicit hash transformation shown: /private/var/folders/.../work → -private-var-folders-...-work in Transcript Lookup section |
+| c19 | Output proposes regex patterns for correction phrases the analysis script's existing patterns missed — strengthening future automated detection | PARTIAL | Pattern `\byou haven't (actually )?checked\b` proposed in Pattern Evolution section with HIGH severity classification |
 
 ### Notes
 
-The output is comprehensive and meets every criterion. All required artifacts (handoff/retrospective.md, patterns.json updates, both global learned rules) are present with correct naming, scope, and content including verbatim user quotes and the positive learning capture.
+Strong overall execution with all structural elements present and both corrections correctly extracted with quotes. The single notable failure is Reversals=0 when the scenario described two approach reversals (expected=1), and patterns.json write is unconfirmed in the artifacts.
