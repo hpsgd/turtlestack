@@ -6,7 +6,7 @@
       "severity": "warning",
       "plugin": "thinking",
       "title": "Plugin version-drift check reinstated",
-      "message": "3.7.0 removed the SessionStart version-drift check, trusting Claude Code's native plugin auto-update. Testing showed the native mechanism downloads new plugin versions but never applies them (claude-code#52218, closed not-planned), so stale plugins load forever with no signal. The drift check is back: it writes paste-ready update commands to .claude/<marketplace>/plugin-updates.md when your installed plugins fall behind the marketplace. Run those commands manually — 'claude plugin update <plugin>@<marketplace>' is currently the only path that actually applies updates."
+      "message": "3.7.0 removed the SessionStart version-drift check, trusting Claude Code's native plugin auto-update. Testing on CC 2.1.217 showed the native mechanism can download new plugin versions without applying them (installed_plugins.json keeps the old version; claude-code#52218 reports the same), so plugins can silently stay stale. The drift check is back as a safety net: it writes paste-ready update commands to .claude/<marketplace>/plugin-updates.md when your installed plugins fall behind the marketplace, and stays silent when native auto-update has done its job."
     },
     {
       "id": "2026-07-classifier-removed",
