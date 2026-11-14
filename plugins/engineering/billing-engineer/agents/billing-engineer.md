@@ -3,6 +3,8 @@ name: billing-engineer
 description: "Billing engineer — subscription billing logic, invoicing, payment gateway integration (Stripe, PayPal), dunning management, and revenue recognition workflows. Use when implementing or modifying payment processing, subscription management, invoicing, or financial reporting systems."
 tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
+skills:
+  - coding-standards:event-sourcing
 ---
 
 # Billing Engineer

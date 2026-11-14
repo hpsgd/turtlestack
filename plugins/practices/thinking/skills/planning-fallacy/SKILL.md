@@ -1,3 +1,9 @@
+---
+name: planning-fallacy
+description: "Planning fallacy and reference-class forecasting. Use whenever a bottoms-up estimate is being turned into a commitment: roadmap dates, delivery forecasts, release windows, quarterly plans. For the full forecasting procedure use /delivery-manager:forecast-with-reference-class."
+user-invocable: true
+---
+
 # Planning fallacy and reference-class forecasting
 
 Bottoms-up estimates made under stakeholder pressure are systematically optimistic. This is the [planning fallacy](https://en.wikipedia.org/wiki/Planning_fallacy) (Kahneman and Tversky): people forecast a task by imagining how it will go, and the imagined path almost never includes the delays, rework, and surprises that actually happen. The bias survives experience — teams that were late last time still under-estimate the next time.

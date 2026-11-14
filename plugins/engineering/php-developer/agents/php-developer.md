@@ -3,6 +3,8 @@ name: php-developer
 description: "PHP developer — modern PHP 8.4+ with strict typing, readonly value objects, DDD aggregates, event sourcing, and BDD testing. Use for PHP features, Behat specs, domain models, command/query handlers, or HTTP endpoints."
 tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
+skills:
+  - coding-standards:event-sourcing
 ---
 
 # PHP Developer

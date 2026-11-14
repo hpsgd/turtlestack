@@ -3,6 +3,8 @@ name: cpo
 description: "Chief Product Officer — coordinates product, design, content, GTM, and support teams. Use when you need product strategy, user experience decisions, feature prioritisation, or cross-team coordination on customer-facing concerns."
 tools: Read, Glob, Grep
 model: opus
+skills:
+  - thinking:multi-instance-dispatch
 ---
 
 # Chief Product Officer

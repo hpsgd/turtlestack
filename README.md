@@ -259,7 +259,6 @@ TypeScript, .NET, Python conventions, git workflow, testing, architecture, AI st
 | [ai-steering](plugins/practices/coding-standards/rules/ai-steering.md) | Behavioral rules for how Claude should approach work |
 | [architecture](plugins/practices/coding-standards/rules/architecture.md) | General architecture principles |
 | [dotnet](plugins/practices/coding-standards/rules/dotnet.md) | .NET / C# language conventions and project patterns |
-| [event-sourcing](plugins/practices/coding-standards/rules/event-sourcing.md) | Event Sourcing, CQRS, and DDD patterns |
 | [git-and-ci](plugins/practices/coding-standards/rules/git-and-ci.md) | Git workflow, branching, CI/CD, and commit conventions |
 | [php](plugins/practices/coding-standards/rules/php.md) | PHP language conventions and engineering standards |
 | [python](plugins/practices/coding-standards/rules/python.md) | Python language conventions and engineering standards |
@@ -271,6 +270,7 @@ TypeScript, .NET, Python conventions, git workflow, testing, architecture, AI st
 
 | Skill | Description | Example |
 |---|---|---|
+| [event-sourcing](plugins/practices/coding-standards/skills/event-sourcing/SKILL.md) | Event Sourcing, CQRS, and DDD patterns | — |
 | [review-typescript](plugins/practices/coding-standards/skills/review-typescript/SKILL.md) | TypeScript/Next.js code review | [TS review](examples/practices/coding-standards/skills/review-typescript/result.md) |
 | [review-dotnet](plugins/practices/coding-standards/skills/review-dotnet/SKILL.md) | .NET/C# code review | [.NET review](examples/practices/coding-standards/skills/review-dotnet/result.md) |
 | [review-python](plugins/practices/coding-standards/skills/review-python/SKILL.md) | Python code review | [Python review](examples/practices/coding-standards/skills/review-python/result.md) |
@@ -382,11 +382,11 @@ Structured reasoning, learning system, project health checks. See [Thinking and 
 |---|---|
 | [session-discipline](plugins/practices/thinking/rules/session-discipline.md) | Session focus, scope-drift detection, and deferred work markers |
 | [mechanism-design](plugins/practices/thinking/rules/mechanism-design.md) | Design recurring actions as mechanisms with triggers and failure handling |
-| [planning-fallacy](plugins/practices/thinking/rules/planning-fallacy.md) | Reference-class forecasting — correct optimistic bottoms-up estimates against how long similar past efforts actually took |
-| [multi-instance-dispatch](plugins/practices/thinking/rules/multi-instance-dispatch.md) | Run several instances of one agent across independent slices — how a lead dispatches them, how an instance respects its slice boundary |
 
 | Skill | Description | Example |
 |---|---|---|
+| [planning-fallacy](plugins/practices/thinking/skills/planning-fallacy/SKILL.md) | Reference-class forecasting — correct optimistic bottoms-up estimates against how long similar past efforts actually took | — |
+| [multi-instance-dispatch](plugins/practices/thinking/skills/multi-instance-dispatch/SKILL.md) | Run several instances of one agent across independent slices — how a lead dispatches them, how an instance respects its slice boundary | — |
 | [algorithm](plugins/practices/thinking/skills/algorithm/SKILL.md) | Seven-phase systematic execution | [Algorithm run](examples/practices/thinking/skills/algorithm/result.md) |
 | [isc](plugins/practices/thinking/skills/isc/SKILL.md) | Decompose into verifiable criteria | [ISC decomposition](examples/practices/thinking/skills/isc/result.md) |
 | [first-principles](plugins/practices/thinking/skills/first-principles/SKILL.md) | Deconstruct to fundamentals and rebuild | [First principles](examples/practices/thinking/skills/first-principles/result.md) |

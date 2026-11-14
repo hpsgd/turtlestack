@@ -3,6 +3,8 @@ name: python-developer
 description: "Python developer — implementation with strict typing, BDD testing, DDD patterns, and event sourcing. Use for Python features, BDD specs, domain models, or configuration systems."
 tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
+skills:
+  - coding-standards:event-sourcing
 ---
 
 # Python Developer

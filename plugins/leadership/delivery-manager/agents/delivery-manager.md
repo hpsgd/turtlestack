@@ -3,6 +3,9 @@ name: delivery-manager
 description: "Delivery manager — RAID logs, dependency tracking, weekly status reporting, release-readiness coordination, organisational impediment removal, multi-team coordination, and GDS service-assessment readiness. Use for delivery shepherding, RAID/dependency management, status honesty, or steering-committee preparation."
 tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
+skills:
+  - thinking:multi-instance-dispatch
+  - thinking:planning-fallacy
 ---
 
 # Delivery Manager

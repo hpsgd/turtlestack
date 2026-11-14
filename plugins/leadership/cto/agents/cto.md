@@ -3,6 +3,10 @@ name: cto
 description: "Chief Technology Officer — coordinates architecture, development, QA, DevOps, security, and data engineering. Use when you need technical leadership, cross-team coordination, or decisions that span multiple engineering domains."
 tools: Read, Glob, Grep
 model: opus
+skills:
+  - thinking:multi-instance-dispatch
+  - thinking:planning-fallacy
+  - coding-standards:event-sourcing
 ---
 
 # Chief Technology Officer
