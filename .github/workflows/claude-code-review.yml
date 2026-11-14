@@ -10,10 +10,15 @@ on:
 
 jobs:
   claude-review:
-    # Skip release-please PRs: the action refuses non-human actors (the release
-    # bot), and everything in a release PR was already reviewed pre-merge on its
-    # feature branch.
-    if: ${{ !startsWith(github.event.pull_request.head.ref, 'release-please--') }}
+    # Skip bot PRs: the action refuses non-human actors.
+    # - release-please: everything in a release PR was already reviewed
+    #   pre-merge on its feature branch.
+    # - Dependabot: its runs get Dependabot secrets, not Actions secrets, so
+    #   CLAUDE_CODE_OAUTH_TOKEN is empty and allowed_bots alone wouldn't help.
+    #   Version bumps are reviewed by whoever merges them.
+    if: >-
+      ${{ !startsWith(github.event.pull_request.head.ref, 'release-please--') &&
+          github.event.pull_request.user.login != 'dependabot[bot]' }}
 
     runs-on: ubuntu-latest
     permissions:
@@ -24,7 +29,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 1
 
