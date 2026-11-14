@@ -8,3 +8,10 @@ updates:
       day: monday
       time: '08:00'
       timezone: Australia/Brisbane
+    # One PR per weekly run instead of one per action. Separate PRs go
+    # BEHIND main as each one merges (the Main ruleset requires up-to-date
+    # branches), and every Dependabot rebase dismisses the approval.
+    groups:
+      github-actions:
+        patterns:
+          - '*'
