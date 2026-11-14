@@ -91,11 +91,11 @@ Every commit message must follow the Conventional Commits specification.
 
 ### Pass 3: Branch Model
 
-1. **Squash merges only** — the project uses squash merges for linear history. Check for merge commits:
+1. **Linear history** — branches land by rebase-then-fast-forward or by squash merge, never by merging `main` into the branch first. Check for merge commits:
    ```bash
    git log --merges [range]
    ```
-   Merge commits on the main branch (except from the initial repo setup) are findings.
+   Merge commits on the main branch (except from the initial repo setup) are findings, including `Merge branch 'main' into feature/...` carried in by a fast-forward.
 
 2. **No force push to shared branches** — grep the reflog or check CI for force-push events. Force pushing to `main`, `develop`, or any shared branch is a critical finding. Force pushing to a personal feature branch is acceptable.
 

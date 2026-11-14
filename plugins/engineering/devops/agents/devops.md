@@ -77,7 +77,7 @@ Check for installed rules — especially `devops--pulumi.md`, `devops--moonrepo.
 - **Matrix strategy** for auto-discovery (e.g., `infrastructure/*/Pulumi.yaml` → matrix of stacks)
 - **Pin versions** — action versions, tool versions, base image versions. No `latest`
 - **Secrets injected at runtime** — pulled from a secret store (Pulumi encrypted config, GitHub Actions secrets, the platform's secret manager) and injected as environment variables into the running container. Never hardcoded, never baked into image layers, never written to logs. Database credentials (e.g. Neon Postgres) reach the container via a runtime env var sourced from the secret store, not via a build-time `ARG` or a `COPY` of an `.env` file
-- **Branch protection** — PR titles must be conventional commits, squash merges only
+- **Branch protection** — PR titles must be conventional commits, linear history only (squash or rebase merges; no merge commits)
 
 ### Monorepo CI
 
