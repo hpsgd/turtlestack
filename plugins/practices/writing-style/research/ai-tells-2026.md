@@ -1,12 +1,12 @@
 # AI Writing Tells — Comprehensive Research 2026
 
-> **What this is:** the source research that informed the AI tell coverage in `../rules/tone-and-voice.md`. Not a rule itself — not installed via the SessionStart hook. Reference material for anyone maintaining the rule file: source URLs, corpus citations, disconfirming evidence, contested attributions, and patterns that didn't make the cut for the rule file (mostly model-specific markers in Section 8 which are noisy and migrate quickly).
+> **What this is:** the source research that informed the AI tell coverage in `../skills/style-guide/references/ai-tells-catalogue.md` (the always-on core is `../rules/tone-and-voice.md`). Not a rule itself — not installed via the SessionStart hook. Reference material for anyone maintaining the rule file: source URLs, corpus citations, disconfirming evidence, contested attributions, and patterns that didn't make the cut for the rule file (mostly model-specific markers in Section 8 which are noisy and migrate quickly).
 >
 > If you're updating the rule file, start here to check provenance. If a claim in the rule file feels shaky, search this document for the source.
 
 ## Method and scope
 
-Research conducted 2026-05-31. Scope: identify AI writing tells from open-source literature (academic papers, detector tool blogs, writer critique posts, Reddit threads, Wikipedia "Signs of AI writing") that are NOT already covered in the existing rule file at `plugins/practices/writing-style/rules/tone-and-voice.md`.
+Research conducted 2026-05-31. Scope: identify AI writing tells from open-source literature (academic papers, detector tool blogs, writer critique posts, Reddit threads, Wikipedia "Signs of AI writing") that are NOT already covered in the existing rule file at `plugins/practices/writing-style/rules/tone-and-voice.md` (since moved to `skills/style-guide/references/ai-tells-catalogue.md`).
 
 Already covered (excluded from this research scope): Tier 1/2 banned vocabulary listed in the brief, the "not just X but Y" construction, em-dash overuse, -ing participial phrases, rule-of-three, uniform sentence/paragraph length, formal transitions, scene-setting openers, and the major tonal patterns (hedging, both-sides balance, flat register).
 

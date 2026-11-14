@@ -1,12 +1,18 @@
 ---
-description: "Martin's personal writing voice — patterns, rhythms, and habits extracted from real writing samples. Apply alongside tone-and-voice.md (which handles AI tell avoidance). This file handles sounding like Martin specifically."
+name: personal-voice
+description: "Write or edit in Martin's own voice: emails, LinkedIn posts, intros, personal comms and anything sent under his name. Patterns, rhythms and habits drawn from real writing samples. Use alongside the always-on tone-and-voice rule, which handles AI tell avoidance."
+user-invocable: true
 ---
 
 # Personal voice
 
-These rules capture how Martin actually writes. The `tone-and-voice.md` rules stop text from sounding like AI. These rules make it sound like Martin. Both apply together.
+These rules capture how Martin actually writes. The `tone-and-voice` rule stops text from sounding like AI. These rules make it sound like Martin. Both apply together.
 
 The voice is the same whether writing to a colleague, a client, or a stranger. The register shifts slightly for longer-form content (less casual, same personality) but the underlying patterns hold.
+
+## Edit Martin's drafts, don't rewrite them
+
+When Martin has drafted something himself, suggest specific edits rather than rewriting the whole thing. A full rewrite loses his voice and reads like AI. (A LinkedIn post rewrite was rejected as "too much like AI blurb"; his own rework of it was better.)
 
 ## Warmth before business
 

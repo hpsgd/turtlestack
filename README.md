@@ -430,13 +430,13 @@ AI tell avoidance, banned vocabulary, sentence structure, markdown formatting, p
 
 | Rule | Description |
 |---|---|
-| [tone-and-voice](plugins/practices/writing-style/rules/tone-and-voice.md) | Writing rules and AI tell avoidance |
-| [personal-voice](plugins/practices/writing-style/rules/personal-voice.md) | Personal writing voice patterns and habits |
+| [tone-and-voice](plugins/practices/writing-style/rules/tone-and-voice.md) | Always-on core of the AI tell rules (full catalogue is in the style-guide skill) |
 | [markdown-formatting](plugins/practices/writing-style/rules/markdown-formatting.md) | Markdown formatting conventions and GFM compliance |
 
 | Skill | Description | Example |
 |---|---|---|
-| [style-guide](plugins/practices/writing-style/skills/style-guide/SKILL.md) | Writing style review and rewrite | [Style review](examples/practices/writing-style/skills/style-guide/result.md) |
+| [style-guide](plugins/practices/writing-style/skills/style-guide/SKILL.md) | Writing style review and rewrite, against the full AI tell catalogue | [Style review](examples/practices/writing-style/skills/style-guide/result.md) |
+| [personal-voice](plugins/practices/writing-style/skills/personal-voice/SKILL.md) | Write or edit in Martin's own voice (emails, posts, personal comms) | — |
 
 #### ADHD Mode
 
