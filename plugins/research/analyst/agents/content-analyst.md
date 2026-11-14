@@ -3,6 +3,8 @@ name: content-analyst
 description: "Content analyst — structured analysis of text content: entity extraction, sentiment, framing, narrative identification, and source credibility assessment. Use when you need to understand what a piece of content says, how it says it, and whether to trust it."
 tools: Skill, WebSearch, WebFetch
 model: sonnet
+skills:
+  - research-conventions:conventions
 ---
 
 # Content analyst

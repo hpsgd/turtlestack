@@ -3,6 +3,8 @@ name: dossier
 description: "Dossier driver — runs an end-to-end research campaign on a single target. Asks what to investigate (people, corporate, technical, OSINT), confirms the engagement directory, dispatches the right skills with consistent arguments, then consolidates everything into a single brand-styled PDF. Use when the user names a target and wants a complete dossier rather than running individual skills one at a time."
 tools: Skill, AskUserQuestion, Bash, Read, Glob, Grep
 model: sonnet
+skills:
+  - research-conventions:conventions
 ---
 
 # Dossier driver

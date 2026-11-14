@@ -8,6 +8,8 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion
 
 # Executive summary
 
+Load `/research-conventions:conventions` with the Skill tool before starting, unless it is already loaded this session. It carries the report-conventions, source-quality and source-citations rules this skill refers to.
+
 Draft and inject the executive summary section of a dossier. The skill is interactive end-to-end: nothing is written to `DOSSIER.md` until the user signs off on the final draft.
 
 This skill is a sibling of `/dossier:consolidate`. Consolidate builds the document skeleton with a `<!-- TODO -->` placeholder where the summary belongs; this skill fills that placeholder. Run it standalone any time you want to regenerate without re-running consolidate.

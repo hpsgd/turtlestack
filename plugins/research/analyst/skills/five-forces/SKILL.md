@@ -6,6 +6,8 @@ user-invocable: true
 allowed-tools: WebSearch, WebFetch, Read, Write, Bash
 ---
 
+Load `/research-conventions:conventions` with the Skill tool before starting, unless it is already loaded this session. It carries the report-conventions, source-quality and source-citations rules this skill refers to.
+
 Run [Porter's Five Forces](https://hbr.org/2008/01/the-five-competitive-forces-that-shape-strategy) (Michael Porter, HBR
 1979, updated 2008) on the named industry or segment and write a conforming report. The framework models the structural
 profitability of an industry — *why* airlines struggle and pharmaceuticals print money — rather than what any one company

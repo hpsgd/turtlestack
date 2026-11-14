@@ -6,6 +6,8 @@ user-invocable: true
 allowed-tools: WebSearch, WebFetch, Read, Write, Bash, Glob
 ---
 
+Load `/research-conventions:conventions` with the Skill tool before starting, unless it is already loaded this session. It carries the report-conventions, source-quality and source-citations rules this skill refers to.
+
 Produce a market landscape report for an executive audience and write a conforming report. This is a stitching skill: it
 combines existing analyst outputs rather than re-researching from scratch. Its genuine workflow inputs are
 `/analyst:market-sizing` (the TAM/SAM/SOM figures) and `/analyst:competitive-analysis` (the competitive set and recent

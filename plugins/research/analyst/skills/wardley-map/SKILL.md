@@ -6,6 +6,8 @@ user-invocable: true
 allowed-tools: WebSearch, WebFetch, Read, Write, Bash
 ---
 
+Load `/research-conventions:conventions` with the Skill tool before starting, unless it is already loaded this session. It carries the report-conventions, source-quality and source-citations rules this skill refers to.
+
 Build a [Wardley Map](https://learnwardleymapping.com/) (Simon Wardley, ~2005) for the named user need and write a
 conforming report. Wardley framed strategy as situational awareness: generals have maps of terrain, business strategists
 usually don't. A Wardley Map plots a value chain on two axes so you can see where components are heading toward

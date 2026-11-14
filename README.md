@@ -538,7 +538,7 @@ End-to-end research campaigns and report consolidation. Drives multiple research
 |---|---|---|
 | [consolidate](plugins/research/dossier/skills/consolidate/SKILL.md) | Gather every conforming research report under an engagement directory into one `DOSSIER.md` plus brand-styled PDF | — |
 
-`dossier` and the other research plugins (`analyst`, `investigator`) share `research-conventions` as an internal dependency — installed automatically; you don't install it directly.
+`dossier` and the other research plugins (`analyst`, `investigator`) share `research-conventions` as an internal dependency — installed automatically; you don't install it directly. It ships one skill, `/research-conventions:conventions`, which the research agents preload and each research skill loads at the start, so it costs nothing in sessions that aren't doing research.
 
 #### Web Tools
 

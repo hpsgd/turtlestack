@@ -6,6 +6,8 @@ user-invocable: true
 allowed-tools: WebSearch, WebFetch, Read, Write, Bash
 ---
 
+Load `/research-conventions:conventions` with the Skill tool before starting, unless it is already loaded this session. It carries the report-conventions, source-quality and source-citations rules this skill refers to.
+
 Produce a deep teardown of a single competitor and write a conforming report. A teardown is not a quarterly document and
 not a competitive landscape — it is a one-time deep investigation triggered by a strategic event that made this
 competitor material. It is broader and deeper than `/analyst:competitive-analysis` (which maps a whole set at the

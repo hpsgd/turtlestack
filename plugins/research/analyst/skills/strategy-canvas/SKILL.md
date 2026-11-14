@@ -6,6 +6,8 @@ user-invocable: true
 allowed-tools: WebSearch, WebFetch, Read, Write, Bash
 ---
 
+Load `/research-conventions:conventions` with the Skill tool before starting, unless it is already loaded this session. It carries the report-conventions, source-quality and source-citations rules this skill refers to.
+
 Build a [Blue Ocean Strategy](https://www.blueoceanstrategy.com/) strategy canvas (Kim & Mauborgne, 2005) for the named
 market and write a conforming report. The canvas plots how every player performs across the factors the industry actually
 competes on; when the value curves bunch together, the industry has converged and everyone is competing on

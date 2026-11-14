@@ -6,6 +6,8 @@ user-invocable: true
 allowed-tools: WebSearch, WebFetch, Read, Write, Bash
 ---
 
+Load `/research-conventions:conventions` with the Skill tool before starting, unless it is already loaded this session. It carries the report-conventions, source-quality and source-citations rules this skill refers to.
+
 Mine public review sites for a product (yours or a competitor's) and write a conforming report. Reviews contain verbatim,
 unsolicited customer language — which makes them more honest than survey responses, where the question shapes the answer.
 This is the analyst's strategic review-VoC lens. It deliberately overlaps with the voice-of-customer work other roles
