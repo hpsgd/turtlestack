@@ -1,5 +1,16 @@
 # Changelog
 
+## [4.0.0](https://github.com/hpsgd/turtlestack/compare/v3.7.1...v4.0.0) (2026-11-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* /thinking:learning and /thinking:wisdom are removed.
+
+### Features
+
+* fit always-on instructions under Claude Code's 150k budget ([#80](https://github.com/hpsgd/turtlestack/issues/80)) ([527b486](https://github.com/hpsgd/turtlestack/commit/527b48668fb36770ece55c1f47d9c46f17c9bbf3))
+
 ## [3.7.1](https://github.com/hpsgd/turtlestack/compare/v3.7.0...v3.7.1) (2026-07-24)
 
 
