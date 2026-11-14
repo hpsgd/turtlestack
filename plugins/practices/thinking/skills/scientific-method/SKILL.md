@@ -197,4 +197,4 @@ For debugging (the 15-minute rule):
 
 - `/first-principles` — when the scientific method reveals that the problem framing itself is wrong. Decompose and rebuild.
 - `/algorithm` — for systematic execution once you know WHAT to do. Scientific method figures out what's true; algorithm executes the plan.
-- `/learning` — capture experimental results as learnings for future reference.
+- `/thinking:retrospective` — turn a lesson from the experiment into a learned rule when it should hold everywhere.

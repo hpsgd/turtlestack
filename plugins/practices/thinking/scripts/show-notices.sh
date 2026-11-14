@@ -22,7 +22,7 @@ CONFIG_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-}"
 
 # Derive marketplace name from CLAUDE_PLUGIN_ROOT to namespace notice state,
-# exactly as learning-readback.sh does (strip version, strip plugin, basename;
+# the same way the other hook scripts do (strip version, strip plugin, basename;
 # fall back to "turtlestack" if not running as an installed hook).
 MARKETPLACE=""
 cache_path="${CLAUDE_PLUGIN_ROOT%/}"

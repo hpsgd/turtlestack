@@ -1,27 +1,25 @@
 ---
 name: reconcile-rules
 description: "Review learned rules against marketplace rules for overlap. Identifies learned rules that have been superseded by upstream changes and recommends cleanup. Use periodically to reduce context bloat from duplicate rules."
-argument-hint: "['global' to check ~/.claude/rules/, 'project' for .claude/rules/, or 'all']"
+argument-hint: "['global' to check the config dir's rules/, 'project' for .claude/rules/, or 'all']"
 user-invocable: true
 allowed-tools: Read, Bash, Glob, Grep
 ---
 
 # Reconcile Rules
 
-Compare learned rules against marketplace rules to find overlap and recommend cleanup. Learned rules are created by the retrospective system when corrections are detected. Marketplace rules are installed by plugins. Over time, learnings get folded into the marketplace — but the local learned rules stick around, doubling up in context.
+Compare learned rules against marketplace rules to find overlap and recommend cleanup. Learned rules are written by `/thinking:retrospective` when a session surfaces a lesson that should apply everywhere. Marketplace rules are installed by plugins. Over time, learnings get folded into the marketplace — but the local learned rules stick around, doubling up in context.
 
 ## Path resolution
 
-All rules and learnings paths are overridable via environment variables. Test harnesses set these to redirect writes outside permission-gated `.claude/` paths. Users will almost never set them.
+All rules paths are overridable via environment variables. Test harnesses set these to redirect writes outside permission-gated `.claude/` paths. Users will almost never set them.
 
 ```bash
 RULES_DIR="${RULES_DIR:-.claude/rules}"
-GLOBAL_RULES_DIR="${GLOBAL_RULES_DIR:-$HOME/.claude/rules}"
-LEARNINGS_DIR="${LEARNINGS_DIR:-.claude/turtlestack/learnings}"
-GLOBAL_LEARNINGS_DIR="${GLOBAL_LEARNINGS_DIR:-$HOME/.claude/turtlestack/learnings}"
+GLOBAL_RULES_DIR="${GLOBAL_RULES_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}/rules}"
 ```
 
-Run those four lines first in each shell invocation, then use the variables everywhere that follows.
+Run those two lines first in each shell invocation, then use the variables everywhere that follows.
 
 ## Step 1: Inventory rules
 
@@ -29,7 +27,7 @@ Scan both locations based on `$ARGUMENTS`:
 
 ```bash
 RULES_DIR="${RULES_DIR:-.claude/rules}"
-GLOBAL_RULES_DIR="${GLOBAL_RULES_DIR:-$HOME/.claude/rules}"
+GLOBAL_RULES_DIR="${GLOBAL_RULES_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}/rules}"
 
 # Global learned rules
 find "$GLOBAL_RULES_DIR" -maxdepth 1 -name 'learned--*.md' -type f 2>/dev/null
@@ -128,7 +126,7 @@ is what catches a concurrent session deleting an unapproved keep-rule.
 
 ```bash
 RULES_DIR="${RULES_DIR:-.claude/rules}"
-GLOBAL_RULES_DIR="${GLOBAL_RULES_DIR:-$HOME/.claude/rules}"
+GLOBAL_RULES_DIR="${GLOBAL_RULES_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}/rules}"
 
 # 1. Snapshot the exact set of learned rules present BEFORE deletion (both locations).
 before="$(mktemp)"; after="$(mktemp)"; approved="$(mktemp)"
@@ -164,35 +162,9 @@ fi
 rm -f "$before" "$after" "$approved"
 ```
 
-If the ALARM fires, surface it to the user immediately and help restore before doing anything else — do not
-update the snapshot over a corrupted state.
+If the ALARM fires, surface it to the user immediately and help restore before doing anything else.
 
 Report what was removed.
-
-After cleanup, update the reconciliation snapshot so the SessionStart hook won't nudge again until plugins change:
-
-```bash
-RULES_DIR="${RULES_DIR:-.claude/rules}"
-GLOBAL_RULES_DIR="${GLOBAL_RULES_DIR:-$HOME/.claude/rules}"
-GLOBAL_LEARNINGS_DIR="${GLOBAL_LEARNINGS_DIR:-$HOME/.claude/turtlestack/learnings}"
-
-RULES_DIR="$RULES_DIR" GLOBAL_RULES_DIR="$GLOBAL_RULES_DIR" GLOBAL_LEARNINGS_DIR="$GLOBAL_LEARNINGS_DIR" \
-python3 -c "
-import json, os, glob, datetime
-plugins = set()
-for d in [os.environ['GLOBAL_RULES_DIR'], os.environ['RULES_DIR']]:
-    for f in glob.glob(os.path.join(d, '*.md')):
-        basename = os.path.basename(f)
-        if not basename.startswith('learned--'):
-            parts = basename.split('--', 1)
-            if len(parts) == 2:
-                plugins.add(parts[0])
-snapshot = {'marketplace_plugins': sorted(plugins), 'reconciled_at': datetime.datetime.now(datetime.UTC).strftime('%Y-%m-%dT%H:%M:%SZ')}
-os.makedirs(os.environ['GLOBAL_LEARNINGS_DIR'], exist_ok=True)
-with open(os.path.join(os.environ['GLOBAL_LEARNINGS_DIR'], 'reconcile-snapshot.json'), 'w') as f:
-    json.dump(snapshot, f, indent=2)
-"
-```
 
 **Do NOT remove rules the user hasn't explicitly approved.** Present the list, wait for confirmation, then act.
 
@@ -201,8 +173,8 @@ with open(os.path.join(os.environ['GLOBAL_LEARNINGS_DIR'], 'reconcile-snapshot.j
 - **Never auto-delete.** This skill recommends. The user decides. Present the evidence and wait.
 - **Single-session by design.** Deletion targets a shared global dir with no git safety net. If other Claude sessions are live (Step 4a), defer — never race them. Verify removals by name, never by count (Step 4b): a count check passes even when the wrong file went missing.
 - **Err toward keeping.** If you're unsure whether a marketplace rule fully covers a learned rule, classify as "partial overlap" not "superseded." False removal is worse than slight duplication.
-- **Context cost matters.** Each rule loaded into context costs tokens. 6 learned rules at ~15 lines each is ~90 lines of context. If 3 are superseded, removing them saves ~45 lines per session, every session.
-- **Check both locations.** Global (`$GLOBAL_RULES_DIR`, default `~/.claude/rules/`) and project (`$RULES_DIR`, default `.claude/rules/`). A global learned rule might be superseded by a project-installed marketplace rule.
+- **Context cost matters.** Every always-on rule is paid for in every session, and Claude Code warns once instruction files pass 150k characters in total. Removing a superseded rule saves its full size in every future session.
+- **Check both locations.** Global (`$GLOBAL_RULES_DIR`, default `$CLAUDE_CONFIG_DIR/rules/`, falling back to `~/.claude/rules/`) and project (`$RULES_DIR`, default `.claude/rules/`). A global learned rule might be superseded by a project-installed marketplace rule.
 - **Learned rules with evidence are more valuable.** A learned rule with "Session 681945ff, user corrected 3 times" carries more weight than a generic marketplace rule. If the marketplace rule is weaker, flag it — maybe the marketplace needs updating instead.
 
 ## Related Skills

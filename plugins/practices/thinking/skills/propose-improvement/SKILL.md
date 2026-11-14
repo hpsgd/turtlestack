@@ -1,7 +1,7 @@
 ---
 name: propose-improvement
-description: "Propose a change to a marketplace repo based on learned patterns — new rules, updated skills, evolved regex patterns. Infers which upstream marketplace the learning belongs to, confirms with the user, then creates a branch, applies changes, shows diff for review, and raises a PR on approval. Use when patterns have enough evidence to share upstream."
-argument-hint: "[pattern-id, 'all' to review all pending patterns, or describe the change]"
+description: "Propose a change to a marketplace repo based on a learned rule or a described lesson — new rules, updated skills or agents. Infers which upstream marketplace the learning belongs to, confirms with the user, then creates a branch, applies changes, shows diff for review, and raises a PR on approval. Use when a learned rule has enough evidence to share upstream."
+argument-hint: "[learned rule name, or describe the change]"
 user-invocable: true
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 ---
@@ -12,16 +12,14 @@ Stage a change to a marketplace repo based on $ARGUMENTS. This skill handles the
 
 ## Path resolution
 
-All learnings and rules paths are overridable via environment variables. Test harnesses set these to redirect writes outside permission-gated `.claude/` paths. Users will almost never set them.
+All rules paths are overridable via environment variables. Test harnesses set these to redirect writes outside permission-gated `.claude/` paths. Users will almost never set them.
 
 ```bash
-LEARNINGS_DIR="${LEARNINGS_DIR:-.claude/turtlestack/learnings}"
-GLOBAL_LEARNINGS_DIR="${GLOBAL_LEARNINGS_DIR:-$HOME/.claude/turtlestack/learnings}"
 RULES_DIR="${RULES_DIR:-.claude/rules}"
-GLOBAL_RULES_DIR="${GLOBAL_RULES_DIR:-$HOME/.claude/rules}"
+GLOBAL_RULES_DIR="${GLOBAL_RULES_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}/rules}"
 ```
 
-Run those four lines first in each shell invocation, then use the variables everywhere that follows.
+Run those two lines first in each shell invocation, then use the variables everywhere that follows.
 
 ## Step 1: Enumerate known marketplaces
 
@@ -34,7 +32,7 @@ import json, os
 marketplaces = {}
 
 # Read settings files for extraKnownMarketplaces
-for f in [os.path.expanduser('~/.claude/settings.json'), '.claude/settings.json', '.claude/settings.local.json']:
+for f in [os.path.join(os.environ.get('CLAUDE_CONFIG_DIR', os.path.expanduser('~/.claude')), 'settings.json'), '.claude/settings.json', '.claude/settings.local.json']:
     try:
         d = json.load(open(f))
         mkts = d.get('extraKnownMarketplaces', {})
@@ -48,7 +46,7 @@ for f in [os.path.expanduser('~/.claude/settings.json'), '.claude/settings.json'
 
 # Read enabledPlugins to map plugin -> marketplace
 enabled = {}
-for f in [os.path.expanduser('~/.claude/settings.json'), '.claude/settings.json', '.claude/settings.local.json']:
+for f in [os.path.join(os.environ.get('CLAUDE_CONFIG_DIR', os.path.expanduser('~/.claude')), 'settings.json'), '.claude/settings.json', '.claude/settings.local.json']:
     try:
         d = json.load(open(f))
         for key, val in d.get('enabledPlugins', {}).items():
@@ -83,10 +81,9 @@ This gives you two maps:
 Determine which plugin the learning relates to. Sources of signal (check in order):
 
 1. **Explicit in arguments** — the user named a plugin or marketplace
-2. **Pattern metadata** — the pattern file may reference specific skills or files
-3. **Learned rule filename** — `learned--es-mindset-review.md` relates to event sourcing, likely the `coding-standards` plugin
-4. **Session context** — which plugins were active when the correction happened
-5. **File paths in evidence** — if the correction involved files under `plugins/practices/coding-standards/`, the target is obvious
+2. **Learned rule filename** — `learned--es-mindset-review.md` relates to event sourcing, likely the `coding-standards` plugin
+3. **Session context** — which plugins were active when the correction happened
+4. **File paths in evidence** — if the correction involved files under `plugins/practices/coding-standards/`, the target is obvious
 
 Once you have a candidate plugin, resolve its marketplace:
 
@@ -153,24 +150,15 @@ If the user says **change target**, let them specify the correct marketplace and
 
 ## Step 3: Identify what to propose
 
-### From a pattern ID
-
-Read the pattern file from `$LEARNINGS_DIR/patterns/{pattern-id}.json` or `$GLOBAL_LEARNINGS_DIR/patterns/`.
-
-Check:
-- `count` >= 3 (minimum for a proposal)
-- `status` is `detected` or `pending_review` (not already submitted)
-- Evidence is sufficient (multiple sessions, clear common thread)
-
 ### From a learned rule
 
-If the user has a local learned rule (`$RULES_DIR/learned--{topic}.md`) that they want to upstream:
+If the user has a learned rule (`$RULES_DIR/learned--{topic}.md` or `$GLOBAL_RULES_DIR/learned--{topic}.md`) that they want to upstream:
 - Read the rule content
 - The target plugin was already resolved in Step 2
 
 ### From a direct description
 
-If the user describes the change directly, skip the pattern lookup and proceed to Step 4.
+If the user describes the change directly, proceed to Step 4.
 
 **Output:** The proposed change: what, where, why, and evidence.
 
@@ -180,10 +168,10 @@ Map the learning to a file in the target marketplace repo:
 
 | Learning type | Target in marketplace |
 |---|---|
-| New rule (process/convention) | `plugins/{category}/{plugin}/rules/{topic}.md` |
+| New rule (needed in nearly every session) | `plugins/{category}/{plugin}/rules/{topic}.md` |
+| New guidance (needed only for some work) | a skill, preloaded by the agents that need it — rules count against the 150k always-on instruction budget |
 | Skill update (methodology change) | `plugins/{category}/{plugin}/skills/{skill}/SKILL.md` |
 | Agent update (responsibility change) | `plugins/{category}/{plugin}/agents/{agent}.md` |
-| Regex pattern evolution | `scripts/analyse-session.py` |
 | Template improvement | `plugins/{category}/{plugin}/templates/{template}.md` |
 | Cross-cutting rule | `plugins/practices/coding-standards/rules/{topic}.md` |
 
@@ -225,10 +213,6 @@ Write the complete rule file using `Write`. Follow the existing rule format (YAM
 
 Use `Edit` to modify the specific section. Keep changes minimal — only add what the learning requires.
 
-### Regex pattern update
-
-Read the current seed patterns in the script, add the new patterns to the appropriate list. Use `Edit`.
-
 **Output:** Files modified on the branch.
 
 ## Step 6: Show diff for review (mandatory — never skip)
@@ -246,7 +230,6 @@ Present the diff to the user with context:
 
 **Target:** `{org}/{repo}` ({marketplace name})
 **Branch:** `learning/{topic}`
-**Pattern:** [pattern-id] — [N] instances across [M] sessions
 **Evidence:**
 - [session date]: [correction summary]
 - [session date]: [correction summary]
@@ -278,14 +261,12 @@ git add <changed-files>
 git commit -m "$(cat <<'COMMITEOF'
 feat: learned rule — {topic}
 
-Pattern observed {N} times across {M} sessions.
 Local rule has been active since {date}.
 
 Evidence:
 - {session1}: {summary}
 - {session2}: {summary}
 
-Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
 COMMITEOF
 )"
 
@@ -298,12 +279,11 @@ gh pr create \
   --body "$(cat <<'PREOF'
 ## Summary
 
-Proposed by the learning system based on observed patterns.
+Proposed from a learned rule.
 
 **Source project:** {project where the learning was captured}
-**Pattern:** {description}
-**Instances:** {N} across {M} sessions
-**First seen:** {date} | **Last seen:** {date}
+**Lesson:** {description}
+**First seen:** {date}
 **Local rule:** Active as `$RULES_DIR/learned--{topic}.md` since {date}
 
 ## Evidence
@@ -329,48 +309,21 @@ git checkout main
 
 ## Step 8: Update tracking
 
-After the PR is created:
-
-1. Update the pattern file (`$LEARNINGS_DIR/patterns/{pattern-id}.json`):
-   ```json
-   {
-     "status": "pr_submitted",
-     "pr_url": "https://github.com/...",
-     "pr_submitted_at": "2026-04-03T...",
-     "target_marketplace": "{marketplace-name}",
-     "target_repo": "{org}/{repo}"
-   }
-   ```
-
-2. Add a note to the local learned rule:
+After the PR is created, add a note to the learned rule:
    ```markdown
    <!-- Upstream PR: {pr_url} ({org}/{repo}) — remove this rule after PR is merged -->
    ```
 
-3. Log the proposal in `$LEARNINGS_DIR/proposals/`:
-   ```json
-   {
-     "pattern_id": "pat-...",
-     "pr_url": "...",
-     "target_marketplace": "...",
-     "target_repo": "...",
-     "branch": "learning/...",
-     "files_changed": [...],
-     "submitted_at": "...",
-     "status": "open"
-   }
-   ```
-
-**Output:** Tracking updated, PR URL confirmed.
+**Output:** Learned rule annotated, PR URL confirmed.
 
 ## Rules
 
 - **Never push without user approval.** Step 6 (diff review) is mandatory. The user must see exactly what will be proposed before anything is pushed.
 - **Always confirm the target.** Step 2 confirmation is mandatory. The user must agree with the inferred target marketplace before any changes are made.
-- **One change per PR.** Each pattern or learned rule gets its own branch and PR. Don't bundle unrelated changes.
+- **One change per PR.** Each learned rule gets its own branch and PR. Don't bundle unrelated changes.
 - **Evidence is mandatory.** Every PR must include the session IDs and correction summaries that justify the change. A rule without evidence is an opinion.
 - **Minimal changes.** Only modify what the learning requires. Don't refactor surrounding code or "improve" adjacent content.
-- **Clean branch hygiene.** Always branch from a fresh `main`. Delete the branch locally after PR creation. If the PR is rejected, note the reason in the pattern file.
+- **Clean branch hygiene.** Always branch from a fresh `main`. Delete the branch locally after PR creation. If the PR is rejected, note the reason in the learned rule.
 - **Local rule stays until merge.** The `$RULES_DIR/learned--*.md` file (default `.claude/rules/`) remains active locally until the upstream PR is merged. Don't remove it prematurely.
 - **Return to main.** Always `git checkout main` at the end, regardless of outcome. Never leave a repo on a feature branch.
 - **Same org = owned, different org = third-party.** Org comparison uses the GitHub org of the repo where this skill resides vs the target marketplace's repo. No config flags needed.
@@ -384,7 +337,7 @@ After the PR is created:
 **Target:** `{org}/{repo}` ({marketplace name})
 **PR:** [url]
 **Branch:** `learning/{topic}`
-**Pattern:** {N} instances across {M} sessions
+**Evidence:** {sessions and corrections cited}
 **Files changed:** [count]
 **Status:** PR submitted — awaiting review
 
@@ -396,6 +349,5 @@ After the PR is created:
 
 ## Related Skills
 
-- `/thinking:retrospective` — identifies patterns and proposes changes. This skill executes the proposal.
-- `/thinking:learning` — captures individual learnings. Patterns emerge from accumulated learnings.
+- `/thinking:retrospective` — writes learned rules from session lessons. Rules with enough evidence are candidates to propose upstream.
 - `/thinking:reconcile-rules` — cleans up local rules after upstream PRs are merged.
