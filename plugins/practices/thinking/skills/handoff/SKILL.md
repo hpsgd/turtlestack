@@ -206,5 +206,5 @@ If nothing exists, say so plainly.
 
 ## Related skills
 
-- `/learning` — capture lessons from the work after resuming. Handoffs are continuation; learnings are extraction.
+- `/thinking:retrospective` — capture lessons from the work after resuming. Handoffs are continuation; retrospectives are extraction.
 - `/retrospective` — analyse a session for patterns. Use after resuming a complex handoff to capture what made it hard or smooth.

@@ -6,6 +6,8 @@ user-invocable: true
 allowed-tools: WebSearch, WebFetch, Read, Write, Bash
 ---
 
+Load `/research-conventions:conventions` with the Skill tool before starting, unless it is already loaded this session. It carries the report-conventions, source-quality and source-citations rules this skill refers to.
+
 Run a win/loss analysis for the named product or competitor and write a conforming report. Win/loss examines why deals
 closed the way they did from the buyer's point of view — not the sales rep's. The whole value of the method is that
 buyers tell a neutral interviewer things they never tell the rep who just lost the deal. This skill produces the

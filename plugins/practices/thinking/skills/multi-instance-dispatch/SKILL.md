@@ -1,4 +1,15 @@
+---
+name: multi-instance-dispatch
+description: "Run several instances of the same agent, each scoped to one slice (two architects on different subsystems, a PM per product slice). Use when writing a dispatch plan that fans a role out across slices, or when executing one."
+user-invocable: true
+---
+
 # Multi-instance dispatch
+
+> **This is no longer an always-on rule, so dispatched instances will not see it.** Every instance's dispatch
+> prompt must carry its slice contract and the boundary block from "When you are a dispatched instance" below,
+> copied in verbatim. The executor (the main conversation) is responsible for including it.
+
 
 A role is not always singular. When a role's work splits into independent slices that can progress at the
 same time — two architects on different subsystems, two delivery managers on different streams, a product

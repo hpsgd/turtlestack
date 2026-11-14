@@ -1,5 +1,7 @@
 ---
-description: Event Sourcing, CQRS, and DDD patterns — cross-language architectural conventions
+name: event-sourcing
+description: "Event sourcing, CQRS and DDD patterns: aggregates, lifecycle events, idempotent creation handlers, projections, snapshotting, API design for event-sourced systems. Use when designing, implementing or reviewing an event-sourced system, and after an event-sourcing decision is made (run the ES mindset review)."
+user-invocable: true
 ---
 
 # Event Sourcing & CQRS Patterns
@@ -83,3 +85,7 @@ Each handler does one thing (one API call, one persistence operation) and return
 - **Replied** = incoming response (output, tokens, cost)
 - Use consistent naming: `ProcessStarted`, `PageVisited`, `ProcessCompleted`
 - Enforcement checks (code-backed containers) emit proper Invoked/Replied events for trace visibility
+
+## ES mindset review after an event-sourcing decision
+
+Once event sourcing is adopted, do a dedicated pass across all documentation (system design, data dictionary, ADRs) to strip CRUD thinking. Agents default to relational patterns and will produce `is_deleted` booleans, denormalised counters, `updated_at` columns and UPDATE semantics, none of which belong in an event-sourced system. One systematic pass catches them all at once; on one project it found 24 across three files.

@@ -3,6 +3,8 @@ name: open-source-researcher
 description: "Open-source researcher — general research using public web sources. Use for background research, topic overviews, or source discovery in unfamiliar domains before deeper analysis."
 tools: Skill, WebSearch, WebFetch, Read, Write, Edit, Glob, Grep
 model: sonnet
+skills:
+  - research-conventions:conventions
 ---
 
 # Open-source researcher

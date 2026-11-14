@@ -3,6 +3,8 @@ name: dotnet-developer
 description: ".NET/C# developer — backend implementation with Wolverine, Marten, event sourcing, and CQRS. Use for API endpoints, command handlers, event-sourced aggregates, or .NET service work."
 tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
+skills:
+  - coding-standards:event-sourcing
 ---
 
 # .NET/C# Developer

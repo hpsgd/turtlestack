@@ -1,6 +1,14 @@
 {
   "notices": [
     {
+      "id": "2026-11-instruction-budget",
+      "version": "3.8.0",
+      "severity": "warning",
+      "plugin": "thinking",
+      "title": "Always-on rules cut to fit Claude Code's 150k instruction budget",
+      "message": "Claude Code now warns when instruction files pass 150k characters. tone-and-voice is now a ~4k core (full catalogue in /writing-style:style-guide); personal-voice, research-conventions, event-sourcing, multi-instance-dispatch and planning-fallacy are now skills, preloaded by the agents that use them. The SessionStart learning pipeline and the learning and wisdom skills are gone — native auto memory covers them; /thinking:retrospective stays for learned rules. You can delete .claude/<marketplace>/learnings/ and <config>/<marketplace>/learnings/. If you run more than one Claude config dir with projects under ~, check /thinking:health-check for rules loaded twice (fix with claudeMdExcludes)."
+    },
+    {
       "id": "2026-07-drift-check-reinstated",
       "version": "3.7.1",
       "severity": "warning",

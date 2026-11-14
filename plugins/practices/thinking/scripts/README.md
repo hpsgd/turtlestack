@@ -1,7 +1,7 @@
 # thinking scripts
 
-Most scripts here are internal to the thinking plugin's hooks (session analysis, metrics,
-learning readback). One is a **supported cross-marketplace entry point**: `install-rules.sh`.
+Most scripts here are internal to the thinking plugin's hooks (version-drift check, change
+notices). One is a **supported cross-marketplace entry point**: `install-rules.sh`.
 
 ## `install-rules.sh` — rule installer (public entry point)
 
@@ -56,6 +56,5 @@ The cross-marketplace contract is regression-guarded by
 
 ## Other scripts
 
-`analyse-session.py`, `detect-patterns.py`, `generate-metrics.py`,
-`learning-hook.sh`, `learning-readback.sh`, `show-notices.sh`, `check-plugin-versions.sh` are
+`show-notices.sh` and `check-plugin-versions.sh` are
 internal to thinking's hooks and carry no cross-marketplace stability promise.

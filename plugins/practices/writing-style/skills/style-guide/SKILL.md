@@ -20,6 +20,8 @@ Every piece of text must pass these five tests:
 
 ## Step 2: Scan for banned words and phrases (mandatory)
 
+Read `references/ai-tells-catalogue.md` (next to this file) first. It is the full catalogue behind the always-on `tone-and-voice` rule: every banned word, phrase, opener, closer and structural tell, plus the 37-point editing pass. Check the text against all of it; the tables below are the quick substitutions.
+
 ### Word substitutions
 
 Replace the left column with the right:

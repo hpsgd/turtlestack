@@ -1,57 +1,51 @@
 # Test: health-check full project setup audit
 
-Scenario: A developer joins a new project and wants to understand the current state of the Claude Code setup — what rules are installed, which plugins are active, and whether the memory system is healthy.
+Scenario: A developer starts getting Claude Code's "instruction files add up to more than the 150k-char limit" warning and runs a health check to see what is loading, what is duplicated, and what else in the setup needs attention.
 
 ## Prompt
 
 /health-check
 
-Treat the following as the actual filesystem state for this health-check (the workspace is sandboxed; substitute these values for the real Glob/ls results):
+Treat the following as the actual filesystem state for this health-check (the workspace is sandboxed; substitute these values for the real Glob/ls/wc results):
 
 ```
-~/.claude/rules/                                  → 5 files (all marketplace, prefixed e.g. turtlestack--coding-standards--*.md, turtlestack--writing-style--*.md)
-.claude/rules/                                    → 3 files (all learned; learned--verify-before-declaring-complete.md, learned--check-rule-scope-before-writing.md, learned--retrospective-over-realtime.md)
-CLAUDE.md (project root)                          → present
-.claude/memory/wisdom-development.md              → present, last_updated: 2026-03-19 (45 days ago)
-.claude/memory/wisdom-deployment.md               → present, last_updated: 2026-03-19 (45 days ago)
-.claude/learnings/*.md                            → 12 files total
-.claude/learnings/critical/                       → 2 files (unresolved): critical-data-loss-on-force-push.md, critical-prod-deploy-without-staging.md
+CLAUDE_CONFIG_DIR                                 → ~/.claude-work
+~/.claude-work/rules/                             → 20 files, 40,000 chars (all learned--*.md)
+~/.claude/rules/                                  → 20 files, 40,000 chars, byte-identical to ~/.claude-work/rules/ (loaded as an ANCESTOR of the project, which lives under ~)
+.claude/rules/                                    → 25 files: 22 marketplace (turtlestack--*), 3 learned; 95,000 chars always-on, plus 4 path-scoped files (paths: frontmatter) totalling 12,000 chars
+  largest: turtlestack--writing-style--3.7.1--tone-and-voice.md 38,000 chars; turtlestack--coding-standards--3.7.1--ai-steering.md 9,000 chars
+CLAUDE.md (project root)                          → present, 5,000 chars
+~/.claude-work/settings.json                      → no claudeMdExcludes key
 .claude/settings.json                             → ABSENT
 .claude/settings.local.json                       → ABSENT
-Enabled plugins (claude config plugin list)       → 8 plugins enabled including thinking
+~/.claude-work/projects/-<hash>/memory/           → 14 files (MEMORY.md index + 6 feedback, 5 project, 2 reference); newest 2 days ago; 1 references src/legacy/auth.ts, which no longer exists
+Enabled plugins                                   → 8 plugins enabled including thinking
 ```
 
 A few specifics for the response:
 
-- **Report what IS found** in each section (not "directory empty" — use the values above). Each section reports the actual state, recommendations go in a separate final section.
-- **Two-bucket rule reporting**: report `~/.claude/rules/` (5 marketplace) AND `.claude/rules/` (3 learned) as separate counts — never combined into "8 rules".
-- **Wisdom frame staleness**: explicitly flag both wisdom frames as STALE (45 days exceeds 30-day stable threshold). Don't list as "stable".
-- **Critical unresolved learnings flagged by name**: list the 2 critical files with their names — don't just say "2 unresolved".
-- **CLAUDE.md PRESENT**, project settings.json ABSENT — both reported, neither skipped.
-- **Summary header** at top with rolled-up status: `Setup ATTENTION NEEDED — 2 stale wisdom frames + 2 unresolved Critical learnings + missing settings.json` (or HEALTHY/CRITICAL as appropriate).
-- **Thinking plugin role**: explicitly note that the thinking plugin is the rule installer — its absence would be a silent failure where marketplace rules don't reach `~/.claude/rules/`. Confirm it IS enabled.
-- **Recommendations tied to findings**: e.g. "Update `wisdom-development.md` (45 days stale)", "Resolve the 2 Critical learnings: critical-data-loss-on-force-push, critical-prod-deploy-without-staging", "Create `.claude/settings.json` if project overrides are needed". NOT generic "consider reviewing".
+- **Instruction budget first**: compute the always-on total (180,000 chars: 40k + 40k + 95k + 5k), state it against the 150,000 limit, and exclude the 4 path-scoped files from the total.
+- **Duplicate load**: identify that `~/.claude/rules/` duplicates `~/.claude-work/rules/` because the project sits under `~`, and name `claudeMdExcludes` in `~/.claude-work/settings.json` as the fix.
+- **Two-bucket rule reporting**: marketplace and learned rules reported separately, global and project separately.
+- **Memory**: report counts by type and freshness, and flag the stale reference to `src/legacy/auth.ts` without quoting memory contents.
 
 ## Criteria
 
-- [ ] PASS: Skill checks both global (`~/.claude/rules/`) and project-level (`.claude/rules/`) rule locations using actual tool calls, not assumptions
+- [ ] PASS: Skill measures the instruction budget with tool calls (wc / ls), not assumptions
+- [ ] PASS: Reported always-on total excludes path-scoped rule files
+- [ ] PASS: The `~/.claude/rules/` duplicate is identified as an ancestor-directory load, with `claudeMdExcludes` as the fix
 - [ ] PASS: Report distinguishes marketplace rules from learned rules with counts for each
-- [ ] PASS: Stale wisdom frames (last updated 45 days ago, exceeding the 30-day stable threshold) are flagged as stale — not reported as stable
-- [ ] PASS: Unresolved Critical learnings are explicitly flagged as a finding, not just counted
-- [ ] PASS: Each section reports what IS found, not what should be — recommendations go in a separate section
+- [ ] PASS: Each section reports what IS found; recommendations go in a separate section
 - [ ] PASS: Missing project-level settings.json is reported as "none found" — section is not skipped
 - [ ] PASS: Report uses the defined output format with a summary header then per-section details
-- [ ] PARTIAL: Recommendations section produces specific actions (e.g., "update wisdom-development frame" or "resolve 2 Critical learnings") rather than generic suggestions
+- [ ] PARTIAL: Recommendations name the largest always-on files as candidates to move into skills
 
 ## Output expectations
 
-- [ ] PASS: Output reports the 5 marketplace rules in `~/.claude/rules/` and the 3 learned rules in `.claude/rules/` separately with their counts — not a single combined "8 rules" total
-- [ ] PASS: Output uses real tool calls (Glob / ls) to enumerate the rule files and lists each by name — not asserting counts without evidence
-- [ ] PASS: Output flags the 2 wisdom frames as STALE (45 days since last update, exceeding the 30-day threshold) — not just listed as "present"
-- [ ] PASS: Output flags the 2 unresolved Critical learnings explicitly as a finding requiring resolution — with their names, not just a count of "2 unresolved"
-- [ ] PASS: Output reports the 12 learning files with the breakdown by severity (e.g. "12 total: 2 Critical unresolved, X Important, Y Minor")
-- [ ] PASS: Output reports CLAUDE.md as PRESENT (project root) and project-level `settings.json` as ABSENT — neither section skipped
-- [ ] PASS: Output's findings are descriptive (what IS), separated from recommendations (what to do) — not mixed in the same paragraph
-- [ ] PASS: Output's recommendations are specific actions tied to findings — e.g. "Update `wisdom-development.md` (45 days stale)", "Resolve the 2 Critical learnings: <name1>, <name2>", "Consider creating `.claude/settings.json` if project-specific overrides are needed" — not "consider reviewing"
-- [ ] PASS: Output's summary header gives an at-a-glance project state (e.g. "Setup HEALTHY with 2 stale items requiring attention") before the per-section detail
-- [ ] PARTIAL: Output flags whether the thinking plugin (the rule installer) is enabled — without it, marketplace rules in `~/.claude/rules/` may not be reaching the project, which is a common silent failure
+- [ ] PASS: Summary header states the instruction budget as a number against 150,000 (180,000 / 150,000, over by 30,000)
+- [ ] PASS: Output names `tone-and-voice` (38,000 chars) as the largest always-on file
+- [ ] PASS: Output says removing the duplicate load alone brings the total to 140,000, under the limit
+- [ ] PASS: Output reports memory as 14 files with the per-type breakdown and flags the stale `src/legacy/auth.ts` reference
+- [ ] PASS: Output reports CLAUDE.md as PRESENT and project-level `settings.json` as ABSENT
+- [ ] PASS: Recommendations are specific actions tied to findings (e.g. "add `claudeMdExcludes: [\"~/.claude/rules/**\"]` to `~/.claude-work/settings.json`") — not "consider reviewing"
+- [ ] PARTIAL: Output notes that the thinking plugin (the rule installer) is enabled

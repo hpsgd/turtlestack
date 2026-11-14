@@ -3,6 +3,8 @@ name: product-analyst
 description: "Product analyst — North Star and metric-hierarchy definition, instrumentation specs, cohort and retention analysis, and experiment design. Use for defining product metrics, specifying analytics events, analysing retention/cohorts, or designing A/B experiments."
 tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
+skills:
+  - research-conventions:conventions
 ---
 
 # Product Analyst

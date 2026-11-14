@@ -139,5 +139,5 @@ Progress: [X]/[N] criteria met
 ## Related Skills
 
 - `/isc` — the criteria decomposition methodology used in Phase 1. Use for the Splitting Test.
-- `/learning` — capture insights from Phase 7 for future reference.
+- `/thinking:retrospective` — turn insights from Phase 7 into learned rules when they should hold everywhere.
 - `/scientific-method` — for investigation tasks where the goal is understanding rather than building.

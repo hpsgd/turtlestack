@@ -207,15 +207,13 @@ This delegates to each installed agent's bootstrap skill, creating a `docs/` str
 
 ## Thinking and learning
 
-The `thinking` plugin is the one to install first. It gives Claude structured ways to reason through problems and a learning loop that gets better the more you use it.
+The `thinking` plugin is the one to install first. It gives Claude structured ways to reason through problems, a way to turn hard-won lessons into rules, and the hook that installs every plugin's rules.
 
 **Reasoning skills** help with specific situations. `/thinking:first-principles` when you're stuck on a design decision. `/thinking:council` when you need multiple perspectives on a trade-off. `/thinking:red-team` to stress-test a plan before committing. `/thinking:isc` at the start of any task to make sure nothing gets missed. Claude auto-invokes these when the context matches, or you can call them directly.
 
-**The learning loop** watches how you work across sessions. When you correct Claude ("no, not like that" or "stop doing X"), the system spots the pattern. After enough evidence, it writes a rule so the same mistake doesn't happen again. Run `/thinking:retrospective` to review what it's learned, or let it run automatically at the start of each session.
+**Learning** leans on Claude Code's native auto memory for the day-to-day: it captures corrections and preferences per project, on its own. The thinking plugin covers what auto memory doesn't. `/thinking:retrospective` looks back over a session and turns lessons that should hold everywhere into learned rules, `/thinking:propose-improvement` sends a proven rule upstream to the marketplace, and `/thinking:reconcile-rules` cleans up learned rules once the marketplace covers them.
 
-**Wisdom frames** are the long-term version. Patterns that have held up across many sessions get crystallised into reusable knowledge via `/thinking:wisdom`. Think of it as the difference between "I learned this yesterday" and "I've seen this enough times to trust it."
-
-See the [thinking plugin](#thinking) section below for the full skill list, or the [technical detail](#the-learning-system-technical-detail) for how the hooks and classifiers work.
+See the [thinking plugin](#thinking) section below for the full skill list, or the [technical detail](#the-learning-system-technical-detail) for how the hooks work.
 
 ## Plugins
 
@@ -259,7 +257,6 @@ TypeScript, .NET, Python conventions, git workflow, testing, architecture, AI st
 | [ai-steering](plugins/practices/coding-standards/rules/ai-steering.md) | Behavioral rules for how Claude should approach work |
 | [architecture](plugins/practices/coding-standards/rules/architecture.md) | General architecture principles |
 | [dotnet](plugins/practices/coding-standards/rules/dotnet.md) | .NET / C# language conventions and project patterns |
-| [event-sourcing](plugins/practices/coding-standards/rules/event-sourcing.md) | Event Sourcing, CQRS, and DDD patterns |
 | [git-and-ci](plugins/practices/coding-standards/rules/git-and-ci.md) | Git workflow, branching, CI/CD, and commit conventions |
 | [php](plugins/practices/coding-standards/rules/php.md) | PHP language conventions and engineering standards |
 | [python](plugins/practices/coding-standards/rules/python.md) | Python language conventions and engineering standards |
@@ -271,6 +268,7 @@ TypeScript, .NET, Python conventions, git workflow, testing, architecture, AI st
 
 | Skill | Description | Example |
 |---|---|---|
+| [event-sourcing](plugins/practices/coding-standards/skills/event-sourcing/SKILL.md) | Event Sourcing, CQRS, and DDD patterns | — |
 | [review-typescript](plugins/practices/coding-standards/skills/review-typescript/SKILL.md) | TypeScript/Next.js code review | [TS review](examples/practices/coding-standards/skills/review-typescript/result.md) |
 | [review-dotnet](plugins/practices/coding-standards/skills/review-dotnet/SKILL.md) | .NET/C# code review | [.NET review](examples/practices/coding-standards/skills/review-dotnet/result.md) |
 | [review-python](plugins/practices/coding-standards/skills/review-python/SKILL.md) | Python code review | [Python review](examples/practices/coding-standards/skills/review-python/result.md) |
@@ -370,7 +368,7 @@ Framework-specific conventions. Install what matches your project.
 
 #### Thinking
 
-Structured reasoning, learning system, project health checks. See [Thinking and learning](#thinking-and-learning) for the overview.
+Structured reasoning, learned rules, project health checks. See [Thinking and learning](#thinking-and-learning) for the overview.
 
 ```
 /plugin install thinking@turtlestack
@@ -382,11 +380,11 @@ Structured reasoning, learning system, project health checks. See [Thinking and 
 |---|---|
 | [session-discipline](plugins/practices/thinking/rules/session-discipline.md) | Session focus, scope-drift detection, and deferred work markers |
 | [mechanism-design](plugins/practices/thinking/rules/mechanism-design.md) | Design recurring actions as mechanisms with triggers and failure handling |
-| [planning-fallacy](plugins/practices/thinking/rules/planning-fallacy.md) | Reference-class forecasting — correct optimistic bottoms-up estimates against how long similar past efforts actually took |
-| [multi-instance-dispatch](plugins/practices/thinking/rules/multi-instance-dispatch.md) | Run several instances of one agent across independent slices — how a lead dispatches them, how an instance respects its slice boundary |
 
 | Skill | Description | Example |
 |---|---|---|
+| [planning-fallacy](plugins/practices/thinking/skills/planning-fallacy/SKILL.md) | Reference-class forecasting — correct optimistic bottoms-up estimates against how long similar past efforts actually took | — |
+| [multi-instance-dispatch](plugins/practices/thinking/skills/multi-instance-dispatch/SKILL.md) | Run several instances of one agent across independent slices — how a lead dispatches them, how an instance respects its slice boundary | — |
 | [algorithm](plugins/practices/thinking/skills/algorithm/SKILL.md) | Seven-phase systematic execution | [Algorithm run](examples/practices/thinking/skills/algorithm/result.md) |
 | [isc](plugins/practices/thinking/skills/isc/SKILL.md) | Decompose into verifiable criteria | [ISC decomposition](examples/practices/thinking/skills/isc/result.md) |
 | [first-principles](plugins/practices/thinking/skills/first-principles/SKILL.md) | Deconstruct to fundamentals and rebuild | [First principles](examples/practices/thinking/skills/first-principles/result.md) |
@@ -395,10 +393,8 @@ Structured reasoning, learning system, project health checks. See [Thinking and 
 | [creative](plugins/practices/thinking/skills/creative/SKILL.md) | Divergent ideation | [Creative ideation](examples/practices/thinking/skills/creative/result.md) |
 | [iterative-depth](plugins/practices/thinking/skills/iterative-depth/SKILL.md) | Multi-lens analysis | [Multi-lens analysis](examples/practices/thinking/skills/iterative-depth/result.md) |
 | [scientific-method](plugins/practices/thinking/skills/scientific-method/SKILL.md) | Hypothesis-driven investigation | [Scientific method](examples/practices/thinking/skills/scientific-method/result.md) |
-| [retrospective](plugins/practices/thinking/skills/retrospective/SKILL.md) | Session analysis and learning extraction | [Retrospective](examples/practices/thinking/skills/retrospective/result.md) |
-| [learning](plugins/practices/thinking/skills/learning/SKILL.md) | Capture a learning manually | [Learning capture](examples/practices/thinking/skills/learning/result.md) |
-| [wisdom](plugins/practices/thinking/skills/wisdom/SKILL.md) | Crystallised pattern library | [Wisdom frame](examples/practices/thinking/skills/wisdom/result.md) |
-| [health-check](plugins/practices/thinking/skills/health-check/SKILL.md) | Project setup audit | [Health check](examples/practices/thinking/skills/health-check/result.md) |
+| [retrospective](plugins/practices/thinking/skills/retrospective/SKILL.md) | Turn session lessons into learned rules | — |
+| [health-check](plugins/practices/thinking/skills/health-check/SKILL.md) | Project setup audit | — |
 | [review-settings](plugins/practices/thinking/skills/review-settings/SKILL.md) | Settings.json audit | [Settings audit](examples/practices/thinking/skills/review-settings/result.md) |
 | [reconcile-rules](plugins/practices/thinking/skills/reconcile-rules/SKILL.md) | Deduplicate learned vs marketplace rules | [Rule reconciliation](examples/practices/thinking/skills/reconcile-rules/result.md) |
 | [propose-improvement](plugins/practices/thinking/skills/propose-improvement/SKILL.md) | PR against marketplace from learned pattern | [Improvement PR](examples/practices/thinking/skills/propose-improvement/result.md) |
@@ -430,13 +426,13 @@ AI tell avoidance, banned vocabulary, sentence structure, markdown formatting, p
 
 | Rule | Description |
 |---|---|
-| [tone-and-voice](plugins/practices/writing-style/rules/tone-and-voice.md) | Writing rules and AI tell avoidance |
-| [personal-voice](plugins/practices/writing-style/rules/personal-voice.md) | Personal writing voice patterns and habits |
+| [tone-and-voice](plugins/practices/writing-style/rules/tone-and-voice.md) | Always-on core of the AI tell rules (full catalogue is in the style-guide skill) |
 | [markdown-formatting](plugins/practices/writing-style/rules/markdown-formatting.md) | Markdown formatting conventions and GFM compliance |
 
 | Skill | Description | Example |
 |---|---|---|
-| [style-guide](plugins/practices/writing-style/skills/style-guide/SKILL.md) | Writing style review and rewrite | [Style review](examples/practices/writing-style/skills/style-guide/result.md) |
+| [style-guide](plugins/practices/writing-style/skills/style-guide/SKILL.md) | Writing style review and rewrite, against the full AI tell catalogue | [Style review](examples/practices/writing-style/skills/style-guide/result.md) |
+| [personal-voice](plugins/practices/writing-style/skills/personal-voice/SKILL.md) | Write or edit in Martin's own voice (emails, posts, personal comms) | — |
 
 #### ADHD Mode
 
@@ -538,7 +534,7 @@ End-to-end research campaigns and report consolidation. Drives multiple research
 |---|---|---|
 | [consolidate](plugins/research/dossier/skills/consolidate/SKILL.md) | Gather every conforming research report under an engagement directory into one `DOSSIER.md` plus brand-styled PDF | — |
 
-`dossier` and the other research plugins (`analyst`, `investigator`) share `research-conventions` as an internal dependency — installed automatically; you don't install it directly.
+`dossier` and the other research plugins (`analyst`, `investigator`) share `research-conventions` as an internal dependency — installed automatically; you don't install it directly. It ships one skill, `/research-conventions:conventions`, which the research agents preload and each research skill loads at the start, so it costs nothing in sessions that aren't doing research.
 
 #### Web Tools
 
@@ -1117,14 +1113,14 @@ Claude Code plugins support tools, agents, skills, and output styles. Team instr
 
 The thinking plugin hooks into every session:
 
-- **`SessionStart`** — analyses the previous session's transcript, detects patterns, generates metrics, and injects recent learnings into context. Also checks for plugin version drift and shows any unread [change notices](plugins/practices/thinking/notices.json) once — a fresh install starts silent, existing users see what changed. (Claude Code's native plugin auto-update refreshes marketplace catalogs but has been observed staging plugin versions without applying them — see [claude-code#52218](https://github.com/anthropics/claude-code/issues/52218) — so the plugin carries its own drift check as a safety net; it stays silent when native auto-update has kept things current. In-session correction capture is handled by Claude Code's native auto memory; this system covers the retrospective pass — per its own retrospective-over-realtime principle.)
+- **`SessionStart`** — installs enabled plugins' rules into `.claude/rules/`, checks for plugin version drift and shows any unread [change notices](plugins/practices/thinking/notices.json) once — a fresh install starts silent, existing users see what changed. (Claude Code's native plugin auto-update refreshes marketplace catalogs but has been observed staging plugin versions without applying them — see [claude-code#52218](https://github.com/anthropics/claude-code/issues/52218) — so the plugin carries its own drift check as a safety net; it stays silent when native auto-update has kept things current. Correction capture is handled by Claude Code's native auto memory; the thinking plugin no longer analyses transcripts on its own.)
 
 Learnings flow through two paths:
 
-1. **Local (immediate):** Rules written to `.claude/rules/learned--*.md` take effect next session.
-2. **Shared (upstream):** When patterns recur (5+ instances), `/thinking:propose-improvement` proposes a PR against the marketplace repo with evidence.
+1. **Local (immediate):** `/thinking:retrospective` writes `learned--*.md` rules to the project's `.claude/rules/` or the config dir's `rules/`; they take effect next session.
+2. **Shared (upstream):** When a learned rule has held up, `/thinking:propose-improvement` proposes a PR against the marketplace repo with evidence.
 
-The detection regexes self-evolve. When a retrospective surfaces a correction the analysis script missed, it extracts a new regex pattern and writes it to `.claude/<marketplace>/learnings/signals/patterns.json`, which `analyse-session.py` loads on every subsequent run.
+Always-on rules count against Claude Code's 150k-character instruction budget. Guidance that only some work needs ships as a skill, preloaded by the agents that use it, and `/thinking:health-check` reports where the budget stands.
 
 ### Evaluation framework
 

@@ -8,6 +8,8 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion, Skill
 
 # Consolidate
 
+Load `/research-conventions:conventions` with the Skill tool before starting, unless it is already loaded this session. It carries the report-conventions, source-quality and source-citations rules this skill refers to.
+
 Build a single dossier from every conforming research report in an engagement directory. The output is one markdown file (`DOSSIER.md`) with all source reports embedded inline, then rendered to PDF with a dossier-specific stylesheet that page-breaks before each embedded report.
 
 This skill is the back end of the dossier workflow. The companion `dossier` agent drives end-to-end campaigns; this skill just does the gather-and-render step. Run this skill directly when you've already produced reports manually or via individual skills and want to compile them.

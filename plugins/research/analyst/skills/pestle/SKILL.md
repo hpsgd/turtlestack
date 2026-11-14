@@ -6,6 +6,8 @@ user-invocable: true
 allowed-tools: WebSearch, WebFetch, Read, Write, Bash
 ---
 
+Load `/research-conventions:conventions` with the Skill tool before starting, unless it is already loaded this session. It carries the report-conventions, source-quality and source-citations rules this skill refers to.
+
 Run a [PESTLE](https://en.wikipedia.org/wiki/PEST_analysis) macro-environmental scan (Political, Economic, Social,
 Technological, Legal, Environmental) for the named market or decision and write a conforming report. PESTLE exists to
 prevent tunnel vision — teams fixated on competitive dynamics miss the regulatory shift or demographic change that

@@ -3,6 +3,8 @@ name: architect
 description: "Software architect — system design, ADRs, technology evaluation, API strategy, migration planning. Use for architectural decisions, technology evaluation, system design, or any work that affects system structure."
 tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
+skills:
+  - coding-standards:event-sourcing
 ---
 
 # Software Architect

@@ -6,6 +6,8 @@ user-invocable: true
 allowed-tools: WebSearch, WebFetch, Read, Write, Bash
 ---
 
+Load `/research-conventions:conventions` with the Skill tool before starting, unless it is already loaded this session. It carries the report-conventions, source-quality and source-citations rules this skill refers to.
+
 Produce a domain intelligence report for the given domain using passive public sources only. The report is written to a deterministic file path so the dossier plugin and other consumers can find it.
 
 ## Step 0: Resolve arguments
