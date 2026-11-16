@@ -1,5 +1,13 @@
 # Changelog
 
+## [4.0.1](https://github.com/hpsgd/turtlestack/compare/v4.0.0...v4.0.1) (2026-11-16)
+
+
+### Bug Fixes
+
+* **thinking:** retire the plugin version-drift check ([#84](https://github.com/hpsgd/turtlestack/issues/84)) ([b8c40ac](https://github.com/hpsgd/turtlestack/commit/b8c40ac7fcf858f858e9c1b246ce446945b2d6e1))
+* **thinking:** stop install-rules downgrading rules or writing into a folder of repos ([#83](https://github.com/hpsgd/turtlestack/issues/83)) ([2aedbf9](https://github.com/hpsgd/turtlestack/commit/2aedbf9370ed8477abe9f5803c0e06d1405a3b39))
+
 ## [4.0.0](https://github.com/hpsgd/turtlestack/compare/v3.7.1...v4.0.0) (2026-11-14)
 
 

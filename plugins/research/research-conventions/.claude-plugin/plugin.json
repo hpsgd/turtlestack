@@ -1,7 +1,7 @@
 {
   "name": "research-conventions",
   "description": "Shared conventions for research, investigation, and analysis output: report frontmatter contract, file naming, source tiers and confidence rubric, citation quality. Delivered as the /research-conventions:conventions skill, preloaded by the research agents and loaded by each research skill. Installed automatically as a dependency of analyst, investigator, and dossier.",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "author": {
     "name": "hps.gd"
   },
