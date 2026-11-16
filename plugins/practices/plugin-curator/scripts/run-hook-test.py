@@ -36,6 +36,7 @@ A hook test is a `hook-test.md` file:
     - stdout regex: PreToolUse
     - stdout empty
     - file exists: config/turtlestack/notices-seen.json
+    - file not exists: project/.claude/rules
     - file contains: config/.../foo.md :: some text
 
 Tokens usable in Env values, Setup, and file-path assertions:
@@ -213,6 +214,12 @@ def _check_one(a: str, rc: int, out: str, err: str,
         target = (workspace / rel) if not Path(rel).is_absolute() else Path(rel)
         ok = target.exists()
         return CheckResult(a, ok, f"{'exists' if ok else 'missing'}: {target}")
+
+    if low.startswith("file not exists:"):
+        rel = substitute(a[len("file not exists:"):].strip(), tokens)
+        target = (workspace / rel) if not Path(rel).is_absolute() else Path(rel)
+        ok = not target.exists()
+        return CheckResult(a, ok, f"{'absent' if ok else 'present'}: {target}")
 
     if low.startswith("file contains:"):
         spec = a[len("file contains:"):].strip()

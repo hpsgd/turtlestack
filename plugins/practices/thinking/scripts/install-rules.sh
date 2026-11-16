@@ -18,6 +18,25 @@ if [[ -z "$PROJECT_DIR" ]]; then
   exit 0
 fi
 
+# --- Refuse a folder that holds repos but isn't one ---
+# Rules written to <folder>/.claude/rules load as an ancestor into every repo
+# below it, so each of them would get the rules twice. A .git file (worktree)
+# counts as well as a .git directory.
+inside_repo=0
+d="$PROJECT_DIR"
+while [[ -n "$d" ]]; do
+  if [[ -e "$d/.git" ]]; then
+    inside_repo=1
+    break
+  fi
+  [[ "$d" == "/" ]] && break
+  d=$(dirname "$d")
+done
+if [[ $inside_repo -eq 0 ]] && [[ -n "$(find "$PROJECT_DIR" -mindepth 2 -maxdepth 3 -name .git -print -quit 2>/dev/null)" ]]; then
+  echo "install-rules: skipped ${PROJECT_DIR}: it contains git repos but is not one itself. Start the session inside a repo."
+  exit 0
+fi
+
 # --- Derive marketplace name and cache root ---
 # PLUGIN_ROOT can be either:
 #   - cache path:  ~/.claude/plugins/cache/<marketplace>/<plugin>/<version>
@@ -100,11 +119,20 @@ if [[ ${#enabled_plugins[@]} -eq 0 ]]; then
   exit 0
 fi
 
-# --- Install rules from enabled plugins ---
-installed_count=0
-plugin_count=0
+# --- Version helpers ---
+# version_gt A B: true when A sorts after B (semver-aware)
+version_gt() {
+  [[ "$1" != "$2" && "$(printf '%s\n%s\n' "$1" "$2" | sort -V | tail -n 1)" == "$1" ]]
+}
+
+# rule_version FILENAME: the <version> field of <marketplace>--<plugin>--<version>--<file>.md
+rule_version() { local rest="${1#"${MARKETPLACE}"--}"; rest="${rest#*--}"; echo "${rest%%--*}"; }
+
+# --- Resolve each enabled plugin's cached version ---
 pruned_versions=0
-installed_files=()  # Track what we install for cleanup
+resolved_plugins=()
+resolved_versions=()
+profile_max=""
 
 for plugin in "${enabled_plugins[@]}"; do
   plugin_cache="${CACHE_ROOT}/${plugin}"
@@ -140,7 +168,66 @@ for plugin in "${enabled_plugins[@]}"; do
     ((pruned_versions++)) || true
   done
 
-  rules_source="${plugin_cache}/${version}/rules"
+  resolved_plugins+=("$plugin")
+  resolved_versions+=("$version")
+  if [[ -z "$profile_max" ]] || version_gt "$version" "$profile_max"; then
+    profile_max="$version"
+  fi
+done
+
+# Nothing cached for any enabled plugin: nothing to install or clean up against
+if [[ ${#resolved_plugins[@]} -eq 0 ]]; then
+  exit 0
+fi
+
+# --- Never roll a project's rules back to an older version ---
+# Two Claude Code profiles can share one project dir. If the project already
+# holds rules from a newer version of this marketplace than anything in this
+# profile's cache, this profile is the stale one: leave every rule alone, so
+# it neither downgrades them nor brings back rules the newer version dropped.
+project_max=""
+for existing in "$RULES_DIR"/${MARKETPLACE}--*.md; do
+  [[ -f "$existing" ]] || continue
+  v=$(rule_version "$(basename "$existing")")
+  if [[ -z "$project_max" ]] || version_gt "$v" "$project_max"; then
+    project_max="$v"
+  fi
+done
+if [[ -n "$project_max" && -n "$profile_max" ]] && version_gt "$project_max" "$profile_max"; then
+  echo "install-rules: kept ${MARKETPLACE} ${project_max} rules; this profile's plugins are older (${profile_max}). Update them with /plugin."
+  exit 0
+fi
+
+# --- Install rules from enabled plugins ---
+installed_count=0
+plugin_count=0
+installed_files=()  # Track what we install for cleanup
+kept_newer=()       # Plugins whose project rules are newer than this profile's
+
+for i in "${!resolved_plugins[@]}"; do
+  plugin="${resolved_plugins[$i]}"
+  version="${resolved_versions[$i]}"
+
+  # Per-plugin guard, for marketplaces whose plugins version independently:
+  # keep a plugin's existing rules when they come from a newer version.
+  newer=0
+  for existing in "$RULES_DIR"/${MARKETPLACE}--${plugin}--*.md; do
+    [[ -f "$existing" ]] || continue
+    if version_gt "$(rule_version "$(basename "$existing")")" "$version"; then
+      newer=1
+      break
+    fi
+  done
+  if [[ $newer -eq 1 ]]; then
+    for existing in "$RULES_DIR"/${MARKETPLACE}--${plugin}--*.md; do
+      [[ -f "$existing" ]] || continue
+      installed_files+=("$(basename "$existing")")
+    done
+    kept_newer+=("$plugin")
+    continue
+  fi
+
+  rules_source="${CACHE_ROOT}/${plugin}/${version}/rules"
   if [[ ! -d "$rules_source" ]]; then
     continue
   fi
@@ -222,6 +309,9 @@ if [[ -d "$user_rules_dir" && "$user_rules_dir" != "$RULES_DIR" ]]; then
 fi
 
 # --- Output summary ---
+if [[ ${#kept_newer[@]} -gt 0 ]]; then
+  echo "install-rules: kept newer project rules for ${kept_newer[*]}; this profile's versions are older. Update them with /plugin."
+fi
 if [[ $installed_count -gt 0 || $removed_count -gt 0 || $pruned_versions -gt 0 || $user_swept_count -gt 0 ]]; then
   echo "<learning-context>"
   if [[ $installed_count -gt 0 ]]; then
