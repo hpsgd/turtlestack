@@ -37,15 +37,23 @@ canonical installs the downstream marketplace's rules. Glob the `<version>` segm
 
 ### Behaviour
 
+- Does nothing if `CLAUDE_PROJECT_DIR` is not inside a git repo but has repos below it (a folder of
+  repos such as `~/Projects`). Rules there would load as an ancestor into every repo below it. It
+  prints one warning line instead.
 - Reads `enabledPlugins` from both project (`$CLAUDE_PROJECT_DIR/.claude/settings.json`) and global
   (`$CLAUDE_CONFIG_DIR/settings.json`) settings, keeping the keys suffixed `@<marketplace>`.
 - For each enabled plugin of that marketplace, finds the highest-version cache dir and copies every
   `rules/*.md` into `RULES_DIR` as `<marketplace>--<plugin>--<version>--<file>.md`.
+- Never rolls a project's rules back. Two Claude Code profiles can share one project, so if
+  `RULES_DIR` already holds `<marketplace>--*` rules from a newer version than anything in this
+  profile's cache, it leaves every rule alone. If only some plugins are newer (marketplaces that
+  version plugins independently), it keeps those plugins' rules. Either way it prints one warning line.
 - Writes atomically (temp file then move) and skips files whose content is unchanged.
 - Prunes older cached version dirs (never the one currently executing).
 - Removes stale `<marketplace>--*.md` rules that are no longer shipped by an enabled plugin.
 - Sweeps orphan `<marketplace>--*.md` files left at the user level by an older scheme.
-- Prints a `<learning-context>` summary to stdout **only when something changed**; silent otherwise.
+- Prints a `<learning-context>` summary to stdout **only when something changed** (plus the
+  one-line warnings above); silent otherwise.
 
 ### Stability promise
 

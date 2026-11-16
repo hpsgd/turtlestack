@@ -257,6 +257,7 @@ sets it — so a hook starts from a clean slate, not the operator's environment.
 | `stdout regex: <pattern>` | the pattern matches somewhere in stdout |
 | `stderr contains: <text>` | the substring is present in stderr |
 | `file exists: <path>` | the workspace-relative (or absolute) path exists |
+| `file not exists: <path>` | the workspace-relative (or absolute) path does not exist |
 | `file contains: <path> :: <text>` | the file exists and contains the substring |
 
 Exit codes: `0` PASS, `2` FAIL, `3` infra error. A JSON summary prints to stdout;
