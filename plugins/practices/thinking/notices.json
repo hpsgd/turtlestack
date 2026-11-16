@@ -1,6 +1,14 @@
 {
   "notices": [
     {
+      "id": "2026-11-drift-check-retired",
+      "version": "4.0.1",
+      "severity": "info",
+      "plugin": "thinking",
+      "title": "Plugin version-drift check retired",
+      "message": "The SessionStart drift check is gone. It compared installed plugins against the local marketplace checkout, so it stayed silent whenever that checkout was stale (the case that matters) and only fired after a catalog refresh. Claude Code's native marketplace auto-update now refreshes catalogs as expected; check /plugin if you turned auto-update off. You can delete leftover .claude/<marketplace>/plugin-updates.md files."
+    },
+    {
       "id": "2026-11-instruction-budget",
       "version": "3.8.0",
       "severity": "warning",
